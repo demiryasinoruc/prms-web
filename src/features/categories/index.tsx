@@ -1,0 +1,271 @@
+import { useState } from "react"
+import { useDebounce } from "@/hooks/use-debounce"
+import { type ColumnDef } from "@tanstack/react-table"
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  FolderTree,
+  ChevronRight,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { DataTable } from "@/components/data-table"
+import { useCategories, useDeleteCategory, useCategorySelectParent } from "./hooks"
+import { CategoryDialog } from "./category-dialog"
+import type { Category } from "./api"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { usePermission } from "@/hooks/use-permission"
+import { Permissions } from "@/lib/permissions"
+
+export default function CategoriesPage() {
+  const canManage = usePermission(Permissions.Category.Update)
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 400)
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
+  const [sorting, setSorting] = useState<{ sortBy: string | null; sortDir: "asc" | "desc" | null }>({
+    sortBy: null,
+    sortDir: null,
+  })
+  const [parentFilter, setParentFilter] = useState<string | undefined>(undefined)
+
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  const { data: parentCategories } = useCategorySelectParent()
+
+  const { data, isLoading } = useCategories({
+    pageNumber: page + 1,
+    pageSize,
+    searchTerm: debouncedSearch || undefined,
+    sortBy: sorting.sortBy || undefined,
+    sortDir: sorting.sortDir || undefined,
+    parentId: parentFilter,
+  })
+
+  const deleteCategory = useDeleteCategory()
+
+  const handleEdit = (category: Category) => {
+    setEditingCategory(category)
+    setDialogOpen(true)
+  }
+
+  const handleDelete = (id: string) => {
+    setDeleteId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (deleteId) {
+      await deleteCategory.mutateAsync(deleteId)
+      setDeleteId(null)
+    }
+  }
+
+  const handleDialogClose = () => {
+    setDialogOpen(false)
+    setEditingCategory(null)
+  }
+
+  const columns: ColumnDef<Category>[] = [
+    {
+      accessorKey: "name",
+      header: "Kategori Adı",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+            <FolderTree className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <span className="font-medium">{row.original.name}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "parentCategoryName",
+      header: "Üst Kategori",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const parentName = row.original.parentCategoryName
+        if (!parentName) {
+          return <span className="text-muted-foreground">-</span>
+        }
+        return (
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <ChevronRight className="h-3 w-3" />
+            <span>{parentName}</span>
+          </div>
+        )
+      },
+    },
+    {
+      id: "actions",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-1">
+          {canManage && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                title="Düzenle"
+                onClick={() => handleEdit(row.original)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                title="Sil"
+                onClick={() => handleDelete(row.original.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Kategoriler</h1>
+          <p className="text-muted-foreground">
+            Ürün kategorilerini yönetin
+          </p>
+        </div>
+        {canManage && (
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Yeni Kategori
+          </Button>
+        )}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Kategori Listesi</CardTitle>
+          <CardDescription>
+            Toplam {data?.totalCount || 0} kategori kaydı
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Kategori ara..."
+                className="pl-9"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setPage(0)
+                }}
+              />
+            </div>
+            <Select
+              value={parentFilter ?? "all"}
+              onValueChange={(value) => {
+                setParentFilter(value === "all" ? undefined : value)
+                setPage(0)
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Üst Kategori" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Kategoriler</SelectItem>
+                {parentCategories?.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DataTable
+            columns={columns}
+            data={data?.items || []}
+            isLoading={isLoading}
+            emptyMessage="Henüz kategori eklenmemiş"
+            pagination={{
+              pageIndex: page,
+              pageSize,
+              pageCount: data?.totalPages || 0,
+              onPageChange: setPage,
+              onPageSizeChange: (size) => {
+                setPageSize(size)
+                setPage(0)
+              },
+            }}
+            sorting={{
+              sortBy: sorting.sortBy,
+              sortDir: sorting.sortDir,
+              onSortChange: (newSortBy, newSortDir) => {
+                setSorting({ sortBy: newSortBy, sortDir: newSortDir })
+                setPage(0)
+              },
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      <CategoryDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogClose}
+        category={editingCategory}
+      />
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kategoriyi silmek istediğinize emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu işlem geri alınamaz. Kategori kalıcı olarak silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
