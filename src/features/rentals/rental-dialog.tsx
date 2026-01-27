@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Loader2, Plus, Trash2, ChevronDown, ChevronRight, Settings2 } from "lucide-react"
+import { Loader2, Plus, Trash2, ChevronDown, ChevronRight, Settings2, ChevronUp, Receipt } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -132,6 +132,9 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const [openItemAdvanced, setOpenItemAdvanced] = useState<Set<number>>(new Set())
   const [openServices, setOpenServices] = useState<Set<number>>(new Set())
   const [openServiceAdvanced, setOpenServiceAdvanced] = useState<Set<number>>(new Set())
+
+  // Fiyat özeti footer açık/kapalı
+  const [isPriceSummaryOpen, setIsPriceSummaryOpen] = useState(true)
 
   // Kural önerileri state'i
   interface RuleSuggestion {
@@ -335,6 +338,76 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
     return { grossTotal, discountAmount, lineTotal, afterRentalDiscount }
   }
+
+  // Tüm toplamları hesapla
+  const calculateTotals = () => {
+    // Ürün toplamları
+    let itemsGrossTotal = 0
+    let itemsDiscountTotal = 0
+    let itemsLineTotal = 0
+    let itemsAfterRentalDiscount = 0
+
+    watchedItems?.forEach((_, index) => {
+      const calc = calculateItemTotal(index)
+      itemsGrossTotal += calc.grossTotal || 0
+      itemsDiscountTotal += calc.discountAmount || 0
+      itemsLineTotal += calc.lineTotal || 0
+      itemsAfterRentalDiscount += calc.afterRentalDiscount || 0
+    })
+
+    // Hizmet toplamları
+    let servicesGrossTotal = 0
+    let servicesDiscountTotal = 0
+    let servicesLineTotal = 0
+    let servicesAfterRentalDiscount = 0
+
+    watchedServices?.forEach((_, index) => {
+      const calc = calculateServiceTotal(index)
+      servicesGrossTotal += calc.grossTotal || 0
+      servicesDiscountTotal += calc.discountAmount || 0
+      servicesLineTotal += calc.lineTotal || 0
+      servicesAfterRentalDiscount += calc.afterRentalDiscount || 0
+    })
+
+    // Ara toplam (ürün + hizmet indirimleri uygulanmış)
+    const subtotal = itemsLineTotal + servicesLineTotal
+
+    // Genel indirim sonrası tutar
+    const afterRentalDiscountTotal = itemsAfterRentalDiscount + servicesAfterRentalDiscount
+
+    // Genel indirim tutarı (sadece tutar tipinde ayrıca uygulanır)
+    // Yüzde tipinde zaten afterRentalDiscount'ta hesaplanmış
+    let generalDiscountAmount = 0
+    if (watchedRentalDiscountType === DiscountType.Amount) {
+      generalDiscountAmount = watchedRentalDiscountValue || 0
+    } else {
+      // Yüzde tipinde indirim tutarı
+      generalDiscountAmount = subtotal - afterRentalDiscountTotal
+    }
+
+    // Genel toplam
+    const grandTotal = watchedRentalDiscountType === DiscountType.Amount
+      ? subtotal - generalDiscountAmount
+      : afterRentalDiscountTotal
+
+    // Depozito (ayrı gösterilir, toplama dahil değil - iade edilecek güvence bedeli)
+    const depositAmount = watch("depositAmount") || 0
+
+    return {
+      itemsGrossTotal,
+      itemsDiscountTotal,
+      itemsLineTotal,
+      servicesGrossTotal,
+      servicesDiscountTotal,
+      servicesLineTotal,
+      subtotal,
+      generalDiscountAmount,
+      grandTotal,
+      depositAmount,
+    }
+  }
+
+  const totals = calculateTotals()
 
   useEffect(() => {
     setSelectedCustomerId(watchedCustomerId)
@@ -649,6 +722,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       setRuleSuggestions([])
       setDismissedSuggestionIds(new Set())
       setSuggestionQuantities({})
+      setIsPriceSummaryOpen(true)
     }
   }, [open, isEditMode, editData])
 
@@ -806,11 +880,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="general">Genel</TabsTrigger>
               <TabsTrigger value="delivery">Teslimat</TabsTrigger>
               <TabsTrigger value="items">Ürünler</TabsTrigger>
               <TabsTrigger value="services">Hizmetler</TabsTrigger>
+              <TabsTrigger value="summary">Özet</TabsTrigger>
             </TabsList>
 
             {/* Genel Bilgiler */}
@@ -1934,9 +2009,258 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                 </div>
               )}
             </TabsContent>
+
+            {/* Özet */}
+            <TabsContent value="summary" className="space-y-4 mt-4">
+              {(() => {
+                const summaryCurrencyCode = selectedCurrency?.text || "TL"
+                const formatCurrency = (val: number) => val.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+                return (
+                  <div className="space-y-6">
+                    {/* Ürünler Listesi */}
+                    {watchedItems && watchedItems.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-sm flex items-center gap-2">
+                          <Receipt className="h-4 w-4" />
+                          Ürünler
+                        </h3>
+                        <div className="border rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left p-2 font-medium">Ürün</th>
+                                <th className="text-center p-2 font-medium w-16">Adet</th>
+                                <th className="text-right p-2 font-medium w-24">B.Fiyat</th>
+                                <th className="text-right p-2 font-medium w-24">Brüt</th>
+                                <th className="text-right p-2 font-medium w-24">İndirim</th>
+                                <th className="text-right p-2 font-medium w-24">Net</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {watchedItems.map((item, index) => {
+                                const calc = calculateItemTotal(index)
+                                const productName = getProductName(item?.productId || "")
+                                const hasItemDiscount = (calc.discountAmount || 0) > 0
+                                const hasRentalDiscount = item?.applyRentalDiscount && rentalDiscountPercent > 0
+
+                                return (
+                                  <tr key={index} className="border-t">
+                                    <td className="p-2">
+                                      <div className="font-medium">{productName}</div>
+                                      {hasItemDiscount && (
+                                        <div className="text-xs text-orange-600">
+                                          Ürün ind.: %{item?.discountValue || 0}
+                                        </div>
+                                      )}
+                                      {hasRentalDiscount && (
+                                        <div className="text-xs text-green-600">
+                                          Genel ind.: %{rentalDiscountPercent}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="p-2 text-center">{item?.quantity || 0}</td>
+                                    <td className="p-2 text-right">{formatCurrency(item?.unitPrice || 0)}</td>
+                                    <td className="p-2 text-right">{formatCurrency(calc.grossTotal || 0)}</td>
+                                    <td className="p-2 text-right text-orange-600">
+                                      {hasItemDiscount ? `-${formatCurrency(calc.discountAmount || 0)}` : "-"}
+                                    </td>
+                                    <td className="p-2 text-right font-medium">{formatCurrency(calc.lineTotal || 0)}</td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                            <tfoot className="bg-muted/30">
+                              <tr className="border-t font-medium">
+                                <td colSpan={3} className="p-2 text-right">Ürün Toplamı:</td>
+                                <td className="p-2 text-right">{formatCurrency(totals.itemsGrossTotal)}</td>
+                                <td className="p-2 text-right text-orange-600">
+                                  {totals.itemsDiscountTotal > 0 ? `-${formatCurrency(totals.itemsDiscountTotal)}` : "-"}
+                                </td>
+                                <td className="p-2 text-right text-primary">{formatCurrency(totals.itemsLineTotal)}</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hizmetler Listesi */}
+                    {watchedServices && watchedServices.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-sm flex items-center gap-2">
+                          <Receipt className="h-4 w-4" />
+                          Hizmetler
+                        </h3>
+                        <div className="border rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left p-2 font-medium">Hizmet</th>
+                                <th className="text-center p-2 font-medium w-16">Adet</th>
+                                <th className="text-right p-2 font-medium w-24">B.Fiyat</th>
+                                <th className="text-right p-2 font-medium w-24">Brüt</th>
+                                <th className="text-right p-2 font-medium w-24">İndirim</th>
+                                <th className="text-right p-2 font-medium w-24">Net</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {watchedServices.map((service, index) => {
+                                const calc = calculateServiceTotal(index)
+                                const serviceName = getServiceName(service?.extraServiceId || "")
+                                const hasServiceDiscount = (calc.discountAmount || 0) > 0
+                                const hasRentalDiscount = service?.applyRentalDiscount && rentalDiscountPercent > 0
+
+                                return (
+                                  <tr key={index} className="border-t">
+                                    <td className="p-2">
+                                      <div className="font-medium">{serviceName}</div>
+                                      {hasServiceDiscount && (
+                                        <div className="text-xs text-orange-600">
+                                          Hizmet ind.: %{service?.discountValue || 0}
+                                        </div>
+                                      )}
+                                      {hasRentalDiscount && (
+                                        <div className="text-xs text-green-600">
+                                          Genel ind.: %{rentalDiscountPercent}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="p-2 text-center">{service?.quantity || 0}</td>
+                                    <td className="p-2 text-right">{formatCurrency(service?.unitPrice || 0)}</td>
+                                    <td className="p-2 text-right">{formatCurrency(calc.grossTotal || 0)}</td>
+                                    <td className="p-2 text-right text-orange-600">
+                                      {hasServiceDiscount ? `-${formatCurrency(calc.discountAmount || 0)}` : "-"}
+                                    </td>
+                                    <td className="p-2 text-right font-medium">{formatCurrency(calc.lineTotal || 0)}</td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                            <tfoot className="bg-muted/30">
+                              <tr className="border-t font-medium">
+                                <td colSpan={3} className="p-2 text-right">Hizmet Toplamı:</td>
+                                <td className="p-2 text-right">{formatCurrency(totals.servicesGrossTotal)}</td>
+                                <td className="p-2 text-right text-orange-600">
+                                  {totals.servicesDiscountTotal > 0 ? `-${formatCurrency(totals.servicesDiscountTotal)}` : "-"}
+                                </td>
+                                <td className="p-2 text-right text-primary">{formatCurrency(totals.servicesLineTotal)}</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Genel Toplam */}
+                    <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Ürün Toplamı:</span>
+                        <span>{formatCurrency(totals.itemsLineTotal)} {summaryCurrencyCode}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Hizmet Toplamı:</span>
+                        <span>{formatCurrency(totals.servicesLineTotal)} {summaryCurrencyCode}</span>
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between text-sm font-medium">
+                        <span className="text-muted-foreground">Ara Toplam:</span>
+                        <span>{formatCurrency(totals.subtotal)} {summaryCurrencyCode}</span>
+                      </div>
+                      {totals.generalDiscountAmount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Genel İndirim {watchedRentalDiscountType === DiscountType.Percent ? `(%${watchedRentalDiscountValue})` : ""}:
+                          </span>
+                          <span className="text-orange-600">-{formatCurrency(totals.generalDiscountAmount)} {summaryCurrencyCode}</span>
+                        </div>
+                      )}
+                      <Separator className="my-2" />
+                      <div className="flex justify-between text-base font-bold">
+                        <span>Genel Toplam:</span>
+                        <span className="text-primary">{formatCurrency(totals.grandTotal)} {summaryCurrencyCode}</span>
+                      </div>
+                      {totals.depositAmount > 0 && (
+                        <div className="flex justify-between text-sm pt-2 border-t mt-2">
+                          <span className="text-muted-foreground">Depozito (Güvence Bedeli):</span>
+                          <span className="text-muted-foreground">{formatCurrency(totals.depositAmount)} {summaryCurrencyCode}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Boş durum */}
+                    {(!watchedItems || watchedItems.length === 0) && (!watchedServices || watchedServices.length === 0) && (
+                      <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                        Henüz ürün veya hizmet eklenmemiş.
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+            </TabsContent>
           </Tabs>
 
-          <Separator />
+          {/* Fiyat Özeti Footer - Açılır/Kapanır */}
+          <Collapsible open={isPriceSummaryOpen} onOpenChange={setIsPriceSummaryOpen}>
+            <div className="border rounded-lg bg-muted/20">
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full flex items-center justify-between p-3 h-auto"
+                >
+                  <div className="flex items-center gap-2">
+                    <Receipt className="h-4 w-4" />
+                    <span className="font-medium">Fiyat Özeti</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-lg font-bold text-primary">
+                      {totals.grandTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                    </span>
+                    {isPriceSummaryOpen ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronUp className="h-4 w-4" />
+                    )}
+                  </div>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 pt-0 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Ürünler</span>
+                    <p className="font-medium">
+                      {totals.itemsLineTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-muted-foreground">Hizmetler</span>
+                    <p className="font-medium">
+                      {totals.servicesLineTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                    </p>
+                  </div>
+                  {totals.generalDiscountAmount > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-muted-foreground">
+                        Genel İndirim {watchedRentalDiscountType === DiscountType.Percent ? `(%${watchedRentalDiscountValue})` : ""}
+                      </span>
+                      <p className="font-medium text-orange-600">
+                        -{totals.generalDiscountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                      </p>
+                    </div>
+                  )}
+                  {totals.depositAmount > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-muted-foreground">Depozito</span>
+                      <p className="font-medium">
+                        {totals.depositAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
 
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

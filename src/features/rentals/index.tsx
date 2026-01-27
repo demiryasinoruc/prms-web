@@ -211,10 +211,8 @@ export default function RentalsPage() {
         enableSorting: true,
         cell: ({ row }) => {
           const { totalAmount, depositAmount, paidAmount } = row.original
-          // Toplam ödenmesi gereken = kiralama tutarı + depozito
-          const totalDue = totalAmount + depositAmount
-          // Kalan bakiye = toplam ödenmesi gereken - ödenen
-          const remainingBalance = totalDue - paidAmount
+          // Kalan bakiye = kiralama tutarı - ödenen (depozito ayrı, zaten tahsil edilmiş güvence)
+          const remainingBalance = totalAmount - paidAmount
 
           return (
             <div>
