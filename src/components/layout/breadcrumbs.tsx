@@ -12,28 +12,35 @@ import { Fragment } from "react"
 
 const routeLabels: Record<string, string> = {
   "": "Ana Sayfa",
-  products: "Ürünler",
-  categories: "Kategoriler",
-  "category-attributes": "Kategori Özellikleri",
-  brands: "Markalar",
-  customers: "Müşteriler",
+  // Ana İşlemler
   rentals: "Kiralamalar",
+  calendar: "Takvim",
+  customers: "Müşteriler",
+  // Ürün & Stok
+  products: "Ürünler",
   inventory: "Envanter",
+  "maintenance-schedules": "Bakım Planları",
+  "maintenance-records": "Bakım Kayıtları",
+  // Kaynaklar
   warehouses: "Depolar",
-  operations: "Operasyon",
   vehicles: "Araçlar",
   employees: "Çalışanlar",
   certificates: "Sertifikalar",
-  "maintenance-schedules": "Bakım Planları",
-  "maintenance-records": "Bakım Kayıtları",
+  // Tanımlar
+  categories: "Kategoriler",
+  brands: "Markalar",
   "extra-services": "Ek Hizmetler",
-  rules: "Ürün Kuralları",
-  calendar: "Takvim",
+  "product-rules": "Ürün Kuralları",
+  // Ayarlar
   settings: "Ayarlar",
   company: "Firma Bilgileri",
   users: "Kullanıcılar",
   roles: "Roller",
   profile: "Profil",
+  // Geriye uyumluluk
+  operations: "Operasyon",
+  "category-attributes": "Kategori Özellikleri",
+  rules: "Ürün Kuralları",
 }
 
 export function Breadcrumbs() {

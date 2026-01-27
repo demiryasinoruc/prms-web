@@ -10,6 +10,21 @@ import {
   Calendar,
   Settings,
   ChevronDown,
+  Building2,
+  Car,
+  Award,
+  List,
+  FolderTree,
+  Tag,
+  PlusCircle,
+  GitBranch,
+  Building,
+  UsersRound,
+  Shield,
+  Boxes,
+  Wrench,
+  ClipboardCheck,
+  Loader2,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -32,96 +47,41 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { cn } from "@/lib/utils"
-import { usePermissions } from "@/hooks/use-permission"
-import { Permissions } from "@/lib/permissions"
-import { useMemo } from "react"
+import { useNavigation } from "@/features/navigation/hooks"
 
-interface NavSubItem {
-  title: string
-  href: string
-  permission?: string
+// Icon mapping - backend'den gelen icon isimlerini Lucide componentlerine eşle
+const iconMap: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  Package,
+  Users,
+  ClipboardList,
+  Warehouse,
+  Truck,
+  UserCog,
+  Calendar,
+  Settings,
+  Building2,
+  Car,
+  Award,
+  List,
+  FolderTree,
+  Tag,
+  PlusCircle,
+  GitBranch,
+  Building,
+  UsersRound,
+  Shield,
+  Boxes,
+  Wrench,
+  ClipboardCheck,
 }
 
-interface NavItem {
-  title: string
-  icon: LucideIcon
-  href?: string
-  permission?: string
-  items?: NavSubItem[]
-}
-
-const navigation: NavItem[] = [
-  {
-    title: "Ana Sayfa",
-    icon: LayoutDashboard,
-    href: "/",
-  },
-  {
-    title: "Müşteriler",
-    icon: Users,
-    href: "/customers",
-    permission: Permissions.Customer.View,
-  },
-  {
-    title: "Ürünler",
-    icon: Package,
-    items: [
-      { title: "Ürün Listesi", href: "/products", permission: Permissions.Product.View },
-      { title: "Kategoriler", href: "/products/categories", permission: Permissions.Category.View },
-      { title: "Kategori Özellikleri", href: "/products/category-attributes", permission: Permissions.CategoryAttribute.View },
-      { title: "Markalar", href: "/products/brands", permission: Permissions.Brand.View },
-      { title: "Ek Hizmetler", href: "/products/extra-services", permission: Permissions.ExtraServices.View },
-      { title: "Ürün Kuralları", href: "/products/rules", permission: Permissions.Product.View },
-    ],
-  },
-  {
-    title: "Envanter",
-    icon: Warehouse,
-    href: "/inventory",
-    permission: Permissions.Inventory.View,
-  },
-  {
-    title: "Kiralama",
-    icon: ClipboardList,
-    href: "/rentals",
-    permission: Permissions.Rental.View,
-  },
-  {
-    title: "Takvim",
-    icon: Calendar,
-    href: "/calendar",
-    permission: Permissions.Calendar.View,
-  },
-  {
-    title: "Operasyon",
-    icon: Truck,
-    items: [
-      { title: "Depolar", href: "/operations/warehouses", permission: Permissions.Warehouse.View },
-      { title: "Araçlar", href: "/operations/vehicles", permission: Permissions.Vehicle.View },
-      { title: "Çalışanlar", href: "/operations/employees", permission: Permissions.Employee.View },
-      { title: "Sertifikalar", href: "/operations/certificates", permission: Permissions.Certificates.View },
-      { title: "Bakım Planları", href: "/operations/maintenance-schedules", permission: Permissions.MaintenanceSchedule.View },
-      { title: "Bakım Kayıtları", href: "/operations/maintenance-records", permission: Permissions.MaintenanceRecord.View },
-    ],
-  },
-]
-
-const adminNavigation: NavItem[] = [
-  {
-    title: "Ayarlar",
-    icon: Settings,
-    items: [
-      { title: "Firma Bilgileri", href: "/settings/company", permission: Permissions.Settings.View },
-      { title: "Kullanıcılar", href: "/settings/users", permission: Permissions.User.View },
-      { title: "Roller", href: "/settings/roles", permission: Permissions.Role.View },
-    ],
-  },
-]
+// Fallback icon
+const DefaultIcon = Package
 
 export function AppSidebar() {
   const location = useLocation()
-  const userPermissions = usePermissions()
+  const { data: navigation, isLoading } = useNavigation()
 
   const isActive = (href: string, exact: boolean = false) => {
     if (href === "/") {
@@ -130,47 +90,16 @@ export function AppSidebar() {
     if (exact) {
       return location.pathname === href
     }
-    // For parent items, check if any child is active
     return location.pathname === href || location.pathname.startsWith(href + "/")
   }
 
-  const hasPermission = (permission?: string) => {
-    if (!permission) return true
-    return userPermissions.includes(permission)
+  const getIcon = (iconName: string): LucideIcon => {
+    return iconMap[iconName] || DefaultIcon
   }
 
-  // Filter navigation items based on permissions
-  const filteredNavigation = useMemo(() => {
-    return navigation
-      .map((item) => {
-        if (item.items) {
-          const filteredItems = item.items.filter((subItem) =>
-            hasPermission(subItem.permission)
-          )
-          if (filteredItems.length === 0) return null
-          return { ...item, items: filteredItems }
-        }
-        if (!hasPermission(item.permission)) return null
-        return item
-      })
-      .filter((item): item is NavItem => item !== null)
-  }, [userPermissions])
-
-  const filteredAdminNavigation = useMemo(() => {
-    return adminNavigation
-      .map((item) => {
-        if (item.items) {
-          const filteredItems = item.items.filter((subItem) =>
-            hasPermission(subItem.permission)
-          )
-          if (filteredItems.length === 0) return null
-          return { ...item, items: filteredItems }
-        }
-        if (!hasPermission(item.permission)) return null
-        return item
-      })
-      .filter((item): item is NavItem => item !== null)
-  }, [userPermissions])
+  // Yönetim menüsü (Ayarlar) ayrı gösterilecek
+  const mainNavigation = navigation?.filter(item => item.name !== "Ayarlar") || []
+  const adminNavigation = navigation?.filter(item => item.name === "Ayarlar") || []
 
   return (
     <Sidebar collapsible="icon">
@@ -196,87 +125,122 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Menü</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredNavigation.map((item) =>
-                item.items ? (
-                  <Collapsible key={item.title} asChild defaultOpen>
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={item.title}>
-                          <item.icon className="size-4" />
-                          <span>{item.title}</span>
-                          <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.items.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.href}>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={isActive(subItem.href, true)}
-                              >
-                                <Link to={subItem.href}>{subItem.title}</Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <SidebarMenu>
+                {mainNavigation.map((item) => {
+                  const Icon = getIcon(item.icon)
+
+                  // Alt menüsü olan item
+                  if (item.sub && item.sub.length > 0) {
+                    return (
+                      <Collapsible key={item.name} asChild defaultOpen>
+                        <SidebarMenuItem>
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuButton tooltip={item.name}>
+                              <Icon className="size-4" />
+                              <span>{item.name}</span>
+                              <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                            </SidebarMenuButton>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <SidebarMenuSub>
+                              {item.sub.map((subItem) => (
+                                <SidebarMenuSubItem key={subItem.to}>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    isActive={isActive(subItem.to, true)}
+                                  >
+                                    <Link to={subItem.to}>{subItem.name}</Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
+                        </SidebarMenuItem>
+                      </Collapsible>
+                    )
+                  }
+
+                  // Tekil item (alt menüsü yok)
+                  return (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.name}
+                        isActive={isActive(item.to)}
+                      >
+                        <Link to={item.to}>
+                          <Icon className="size-4" />
+                          <span>{item.name}</span>
+                        </Link>
+                      </SidebarMenuButton>
                     </SidebarMenuItem>
-                  </Collapsible>
-                ) : item.href ? (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={item.title}
-                      isActive={isActive(item.href)}
-                    >
-                      <Link to={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ) : null
-              )}
-            </SidebarMenu>
+                  )
+                })}
+              </SidebarMenu>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {filteredAdminNavigation.length > 0 && (
+        {adminNavigation.length > 0 && (
           <SidebarGroup>
             <SidebarGroupLabel>Yönetim</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {filteredAdminNavigation.map((item) => (
-                <Collapsible key={item.title} asChild defaultOpen>
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip={item.title}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                        <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                {adminNavigation.map((item) => {
+                  const Icon = getIcon(item.icon)
+
+                  if (item.sub && item.sub.length > 0) {
+                    return (
+                      <Collapsible key={item.name} asChild defaultOpen>
+                        <SidebarMenuItem>
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuButton tooltip={item.name}>
+                              <Icon className="size-4" />
+                              <span>{item.name}</span>
+                              <ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                            </SidebarMenuButton>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <SidebarMenuSub>
+                              {item.sub.map((subItem) => (
+                                <SidebarMenuSubItem key={subItem.to}>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    isActive={isActive(subItem.to, true)}
+                                  >
+                                    <Link to={subItem.to}>{subItem.name}</Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
+                        </SidebarMenuItem>
+                      </Collapsible>
+                    )
+                  }
+
+                  return (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.name}
+                        isActive={isActive(item.to)}
+                      >
+                        <Link to={item.to}>
+                          <Icon className="size-4" />
+                          <span>{item.name}</span>
+                        </Link>
                       </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.href}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={isActive(subItem.href, true)}
-                            >
-                              <Link to={subItem.href}>{subItem.title}</Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              ))}
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -287,7 +251,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link to="/settings" className="text-muted-foreground">
+              <Link to="/profile" className="text-muted-foreground">
                 <UserCog className="size-4" />
                 <span>Hesap Ayarları</span>
               </Link>

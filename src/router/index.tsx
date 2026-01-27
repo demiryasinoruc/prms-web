@@ -85,27 +85,12 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
+      // === ANA İŞLEMLER ===
       {
         index: true,
         element: (
           <Suspense fallback={<PageLoader />}>
             <DashboardPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "products",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <ProductsPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "customers",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <CustomersPage />
           </Suspense>
         ),
       },
@@ -118,14 +103,6 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "inventory",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <InventoryPage />
-          </Suspense>
-        ),
-      },
-      {
         path: "calendar",
         element: (
           <Suspense fallback={<PageLoader />}>
@@ -134,39 +111,33 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "operations/vehicles",
+        path: "customers",
         element: (
           <Suspense fallback={<PageLoader />}>
-            <VehiclesPage />
+            <CustomersPage />
+          </Suspense>
+        ),
+      },
+
+      // === ÜRÜN & STOK ===
+      {
+        path: "products",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProductsPage />
           </Suspense>
         ),
       },
       {
-        path: "operations/warehouses",
+        path: "inventory",
         element: (
           <Suspense fallback={<PageLoader />}>
-            <WarehousesPage />
+            <InventoryPage />
           </Suspense>
         ),
       },
       {
-        path: "operations/employees",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <EmployeesPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "operations/certificates",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <CertificatesPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "operations/maintenance-schedules",
+        path: "maintenance-schedules",
         element: (
           <Suspense fallback={<PageLoader />}>
             <MaintenanceSchedulesPage />
@@ -174,23 +145,51 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "operations/maintenance-records",
+        path: "maintenance-records",
         element: (
           <Suspense fallback={<PageLoader />}>
             <MaintenanceRecordsPage />
           </Suspense>
         ),
       },
+
+      // === KAYNAKLAR ===
       {
-        path: "products/brands",
+        path: "warehouses",
         element: (
           <Suspense fallback={<PageLoader />}>
-            <BrandsPage />
+            <WarehousesPage />
           </Suspense>
         ),
       },
       {
-        path: "products/categories",
+        path: "vehicles",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <VehiclesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "employees",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <EmployeesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "certificates",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <CertificatesPage />
+          </Suspense>
+        ),
+      },
+
+      // === TANIMLAR ===
+      {
+        path: "categories",
         element: (
           <Suspense fallback={<PageLoader />}>
             <CategoriesPage />
@@ -198,15 +197,15 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "products/category-attributes",
+        path: "brands",
         element: (
           <Suspense fallback={<PageLoader />}>
-            <CategoryAttributesPage />
+            <BrandsPage />
           </Suspense>
         ),
       },
       {
-        path: "products/extra-services",
+        path: "extra-services",
         element: (
           <Suspense fallback={<PageLoader />}>
             <ExtraServicesPage />
@@ -214,26 +213,20 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "products/rules",
+        path: "product-rules",
         element: (
           <Suspense fallback={<PageLoader />}>
             <ProductRulesPage />
           </Suspense>
         ),
       },
+
+      // === AYARLAR ===
       {
         path: "settings/company",
         element: (
           <Suspense fallback={<PageLoader />}>
             <CompanySettingsPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: "settings/roles",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <RolesPage />
           </Suspense>
         ),
       },
@@ -245,6 +238,27 @@ export const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: "settings/roles",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <RolesPage />
+          </Suspense>
+        ),
+      },
+
+      // === GERİYE UYUMLULUK (eski URL'ler) ===
+      { path: "operations/vehicles", element: <Navigate to="/vehicles" replace /> },
+      { path: "operations/warehouses", element: <Navigate to="/warehouses" replace /> },
+      { path: "operations/employees", element: <Navigate to="/employees" replace /> },
+      { path: "operations/certificates", element: <Navigate to="/certificates" replace /> },
+      { path: "operations/maintenance-schedules", element: <Navigate to="/maintenance-schedules" replace /> },
+      { path: "operations/maintenance-records", element: <Navigate to="/maintenance-records" replace /> },
+      { path: "products/brands", element: <Navigate to="/brands" replace /> },
+      { path: "products/categories", element: <Navigate to="/categories" replace /> },
+      { path: "products/category-attributes", element: <Navigate to="/categories" replace /> },
+      { path: "products/extra-services", element: <Navigate to="/extra-services" replace /> },
+      { path: "products/rules", element: <Navigate to="/product-rules" replace /> },
     ],
   },
   {
