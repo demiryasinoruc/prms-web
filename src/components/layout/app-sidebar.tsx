@@ -72,6 +72,7 @@ const navigation: NavItem[] = [
       { title: "Kategori Özellikleri", href: "/products/category-attributes", permission: Permissions.CategoryAttribute.View },
       { title: "Markalar", href: "/products/brands", permission: Permissions.Brand.View },
       { title: "Ek Hizmetler", href: "/products/extra-services", permission: Permissions.ExtraServices.View },
+      { title: "Ürün Kuralları", href: "/products/rules", permission: Permissions.Product.View },
     ],
   },
   {

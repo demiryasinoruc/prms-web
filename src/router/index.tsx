@@ -18,6 +18,7 @@ const InventoryPage = lazy(() => import("@/features/inventory"))
 const BrandsPage = lazy(() => import("@/features/brands"))
 const CategoriesPage = lazy(() => import("@/features/categories"))
 const CategoryAttributesPage = lazy(() => import("@/features/category-attributes"))
+const ProductRulesPage = lazy(() => import("@/features/product-rules"))
 const ExtraServicesPage = lazy(() => import("@/features/extra-services"))
 const CertificatesPage = lazy(() => import("@/features/certificates"))
 const RolesPage = lazy(() => import("@/features/roles"))
@@ -209,6 +210,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <ExtraServicesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "products/rules",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProductRulesPage />
           </Suspense>
         ),
       },

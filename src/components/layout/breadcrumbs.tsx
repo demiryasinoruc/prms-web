@@ -27,6 +27,7 @@ const routeLabels: Record<string, string> = {
   "maintenance-schedules": "Bakım Planları",
   "maintenance-records": "Bakım Kayıtları",
   "extra-services": "Ek Hizmetler",
+  rules: "Ürün Kuralları",
   calendar: "Takvim",
   settings: "Ayarlar",
   company: "Firma Bilgileri",

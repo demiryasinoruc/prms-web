@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
-import { useForm, Controller, useFieldArray } from "react-hook-form"
+import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Loader2, Plus, Trash2 } from "lucide-react"
+import { Loader2, Plus, Trash2, ChevronDown, ChevronRight, Settings2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,11 @@ import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { useCreateRental, useUpdateRental, useRentalForEdit } from "./hooks"
 import { RentalStatus } from "./api"
 import { useCustomerSelect, useCustomerAddresses } from "@/features/customers/hooks"
@@ -34,6 +39,9 @@ import { useExtraServiceSelectForRental } from "@/features/extra-services/hooks"
 import { useCompanySettings } from "@/features/settings/hooks"
 import { DeliveryType } from "@/features/company/api"
 import { Switch } from "@/components/ui/switch"
+import { useAllProductRules } from "@/features/product-rules/hooks"
+import { ProductRuleType, ProductRuleBehavior } from "@/features/product-rules/api"
+import { toast } from "sonner"
 
 // İndirim tipi enum
 export enum DiscountType {
@@ -110,6 +118,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const { data: pricePeriods, isLoading: isLoadingPricePeriods } = usePricePeriodSelect()
   const { data: extraServices, isLoading: isLoadingExtraServices } = useExtraServiceSelectForRental()
   const { data: companySettings } = useCompanySettings()
+  const { data: productRules } = useAllProductRules()
 
   // Lookup veriler yüklenene kadar loading göster
   const isLoadingLookups = isLoadingCustomers || isLoadingWarehouses || isLoadingVehicles ||
@@ -117,6 +126,32 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     isLoadingPricePeriods || isLoadingExtraServices
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("")
+
+  // Collapsible state'leri - hangi kalemler açık
+  const [openItems, setOpenItems] = useState<Set<number>>(new Set())
+  const [openItemAdvanced, setOpenItemAdvanced] = useState<Set<number>>(new Set())
+  const [openServices, setOpenServices] = useState<Set<number>>(new Set())
+  const [openServiceAdvanced, setOpenServiceAdvanced] = useState<Set<number>>(new Set())
+
+  // Kural önerileri state'i
+  interface RuleSuggestion {
+    id: string
+    sourceProductId: string
+    sourceProductName: string
+    targetProductId: string | null
+    targetProductName: string | null
+    targetCategoryId: string | null
+    targetCategoryName: string | null
+    quantity: number
+    behavior: ProductRuleBehavior
+    type: ProductRuleType
+    ruleGroupId: string | null
+  }
+  const [ruleSuggestions, setRuleSuggestions] = useState<RuleSuggestion[]>([])
+  // Kullanıcının "Geç" dediği öneri ID'leri (sadece Suggested tipi için)
+  const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<Set<string>>(new Set())
+  // Her öneri için kullanıcının seçtiği miktar
+  const [suggestionQuantities, setSuggestionQuantities] = useState<Record<string, number>>({})
 
   // Müşteri ID'si: selectedCustomerId set edildiyse onu kullan,
   // yoksa edit modunda editData.customerId'yi fallback olarak kullan
@@ -217,7 +252,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   })
 
   const watchedCustomerId = watch("customerId")
-  const watchedItems = watch("items")
+  // useWatch kullanarak items değişikliklerini reaktif olarak takip et
+  const watchedItems = useWatch({ control, name: "items" })
   const watchedServices = watch("services")
   const watchedRentalDiscountType = watch("discountType")
   const watchedRentalDiscountValue = watch("discountValue")
@@ -326,12 +362,261 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     }
   }, [warehouses, vehicles, employees, setValue, isEditMode, open])
 
+  // Ürün kuralına göre hedef ürün ekleme fonksiyonu
+  const addProductByRule = (targetProductId: string, quantity: number, sourceProductName: string) => {
+    const targetProduct = products?.find((p) => p.id === targetProductId)
+    if (!targetProduct) return
+
+    // Zaten eklenmişse miktar güncelle
+    const existingIndex = watchedItems?.findIndex((item) => item.productId === targetProductId)
+    if (existingIndex !== undefined && existingIndex >= 0) {
+      const currentQty = watchedItems?.[existingIndex]?.quantity || 0
+      setValue(`items.${existingIndex}.quantity`, currentQty + quantity)
+      return
+    }
+
+    // Yeni ürün olarak ekle
+    const previousItems = watch("items")
+    const lastItem = previousItems.length > 0 ? previousItems[previousItems.length - 1] : null
+    const newIndex = previousItems.length
+
+    appendItem({
+      productId: targetProductId,
+      inventoryId: null,
+      quantity: quantity,
+      unitPrice: targetProduct.basePrice,
+      pricePeriodId: targetProduct.pricePeriodId || companySettings?.defaultPricePeriodId || null,
+      startDateTime: null,
+      endDateTime: null,
+      discountType: lastItem?.discountType ?? DiscountType.Percent,
+      discountValue: 0,
+      applyRentalDiscount: lastItem?.applyRentalDiscount ?? true,
+    })
+
+    // Yeni eklenen kalemi otomatik aç
+    setOpenItems((prev) => new Set(prev).add(newIndex))
+  }
+
+  // Ürün kurallarını işle (sadece Automatic davranış için)
+  // Suggested ve Required öneriler useEffect tarafından yönetiliyor
+  const processProductRules = (sourceProductId: string, sourceQuantity: number) => {
+    if (!productRules || !sourceProductId) return
+
+    // Bu ürün için otomatik kuralları bul
+    const automaticRules = productRules.filter(
+      (rule) =>
+        rule.sourceProductId === sourceProductId &&
+        rule.isActive &&
+        rule.behavior === ProductRuleBehavior.Automatic &&
+        rule.targetProductId
+    )
+
+    automaticRules.forEach((rule) => {
+      // Miktar hesapla
+      let quantityToAdd = rule.quantity
+      if (rule.type === ProductRuleType.Ratio) {
+        quantityToAdd = Math.ceil(rule.quantity * sourceQuantity)
+      }
+
+      // Hedef ürün zaten ekliyse miktar güncelle veya yeni ekle
+      addProductByRule(rule.targetProductId!, quantityToAdd, rule.sourceProductName)
+      toast.success(
+        `"${rule.targetProductName}" otomatik olarak eklendi (${quantityToAdd} adet)`,
+        { duration: 3000 }
+      )
+    })
+  }
+
+  // Öneriyi kabul et
+  const acceptSuggestion = (suggestion: RuleSuggestion, customQuantity?: number) => {
+    if (suggestion.targetProductId) {
+      // Kullanıcının belirlediği miktar veya varsayılan miktar
+      const quantityToAdd = customQuantity ?? suggestionQuantities[suggestion.id] ?? suggestion.quantity
+      addProductByRule(suggestion.targetProductId, quantityToAdd, suggestion.sourceProductName)
+    }
+    // Öneriyi listeden kaldır
+    setRuleSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id))
+    // Miktar state'ini temizle
+    setSuggestionQuantities((prev) => {
+      const next = { ...prev }
+      delete next[suggestion.id]
+      return next
+    })
+  }
+
+  // Öneri miktarını güncelle
+  const updateSuggestionQuantity = (suggestionId: string, quantity: number) => {
+    setSuggestionQuantities((prev) => ({
+      ...prev,
+      [suggestionId]: Math.max(1, quantity),
+    }))
+  }
+
+  // Öneriyi reddet (sadece Suggested tipi için)
+  const dismissSuggestion = (suggestionId: string) => {
+    // ID'yi dismissed listesine ekle
+    setDismissedSuggestionIds((prev) => new Set(prev).add(suggestionId))
+    // Öneriyi listeden kaldır
+    setRuleSuggestions((prev) => prev.filter((s) => s.id !== suggestionId))
+  }
+
+  // Ürün kaldırıldığında ilgili önerileri de temizle
+  const handleRemoveItem = (index: number) => {
+    const removedProductId = watchedItems?.[index]?.productId
+    if (removedProductId) {
+      // Bu ürünün tetiklediği önerileri kaldır
+      setRuleSuggestions((prev) => prev.filter((s) => s.sourceProductId !== removedProductId))
+    }
+    removeItem(index)
+  }
+
+  // Ürün listesi değiştiğinde önerileri yeniden hesapla
+  useEffect(() => {
+    if (!productRules || !products) return
+
+    const currentItems = watchedItems || []
+
+    // Tüm ürünlerin miktarlarını topla
+    const productQuantities = new Map<string, number>()
+    currentItems.forEach((item) => {
+      if (!item.productId) return
+      const current = productQuantities.get(item.productId) || 0
+      productQuantities.set(item.productId, current + (item.quantity || 1))
+    })
+
+    // VEYA gruplarını bul ve karşılanmış olanları belirle
+    // NOT: Gruptaki TÜM ürünlerin TOPLAM miktarı >= gerekli miktar ise grup karşılanmış sayılır
+    const satisfiedGroups = new Set<string>()
+
+    // Önce grupları ve gerekli miktarları hesapla
+    const groupInfo = new Map<string, { requiredQuantity: number; totalExisting: number }>()
+
+    productRules.forEach((rule) => {
+      if (!rule.ruleGroupId || !rule.isActive) return
+
+      // Kaynak ürünün toplam miktarını hesapla
+      const sourceQuantity = productQuantities.get(rule.sourceProductId) || 0
+      if (sourceQuantity === 0) return // Kaynak ürün yoksa kontrol etme
+
+      // Gerekli miktar (tüm kurallar aynı kaynak için aynı miktarı gerektirir)
+      const requiredQuantity = Math.ceil(rule.quantity * sourceQuantity)
+
+      // Hedef ürünün mevcut miktarı
+      const existingQuantity = rule.targetProductId
+        ? (productQuantities.get(rule.targetProductId) || 0)
+        : 0
+
+      // Grup bilgisini güncelle
+      const existing = groupInfo.get(rule.ruleGroupId)
+      if (existing) {
+        // Gruptaki tüm hedef ürünlerin toplamını hesapla
+        existing.totalExisting += existingQuantity
+      } else {
+        groupInfo.set(rule.ruleGroupId, {
+          requiredQuantity,
+          totalExisting: existingQuantity,
+        })
+      }
+    })
+
+    // Toplam miktar yeterliyse grubu karşılanmış say, değilse eksik miktarı kaydet
+    const groupMissingQuantity = new Map<string, number>()
+    groupInfo.forEach((info, groupId) => {
+      if (info.totalExisting >= info.requiredQuantity) {
+        satisfiedGroups.add(groupId)
+      } else {
+        // Grup bazında eksik miktar
+        groupMissingQuantity.set(groupId, info.requiredQuantity - info.totalExisting)
+      }
+    })
+
+    // Tüm önerileri yeniden hesapla
+    const newSuggestions: RuleSuggestion[] = []
+
+    productQuantities.forEach((totalQuantity, productId) => {
+      const sourceProduct = products.find((p) => p.id === productId)
+      if (!sourceProduct) return
+
+      // Bu kaynak için aktif kuralları bul
+      const applicableRules = productRules.filter(
+        (rule) =>
+          rule.sourceProductId === productId &&
+          rule.isActive &&
+          rule.behavior !== ProductRuleBehavior.Automatic
+      )
+
+      applicableRules.forEach((rule) => {
+        // VEYA grubu karşılanmışsa atla
+        if (rule.ruleGroupId && satisfiedGroups.has(rule.ruleGroupId)) return
+
+        // Dismissed listesinde ve Required değilse atla
+        if (dismissedSuggestionIds.has(rule.id) && rule.behavior !== ProductRuleBehavior.Required) return
+
+        // Gerekli miktar hesapla (toplam kaynak miktarına göre)
+        const requiredQuantity = Math.ceil(rule.quantity * totalQuantity)
+
+        // VEYA grubu için: grup bazında eksik miktarı kullan
+        if (rule.ruleGroupId) {
+          const groupMissing = groupMissingQuantity.get(rule.ruleGroupId)
+          if (!groupMissing || groupMissing <= 0) return // Grup karşılanmış
+
+          newSuggestions.push({
+            id: rule.id,
+            sourceProductId: rule.sourceProductId,
+            sourceProductName: sourceProduct.name,
+            targetProductId: rule.targetProductId,
+            targetProductName: rule.targetProductName,
+            targetCategoryId: rule.targetCategoryId,
+            targetCategoryName: rule.targetCategoryName,
+            quantity: groupMissing, // Grup bazında eksik miktar
+            behavior: rule.behavior,
+            type: rule.type,
+            ruleGroupId: rule.ruleGroupId,
+          })
+          return
+        }
+
+        // Bağımsız kural için: ürün bazında eksik miktarı hesapla
+        const existingQuantity = rule.targetProductId
+          ? (productQuantities.get(rule.targetProductId) || 0)
+          : 0
+
+        // Eksik miktar
+        const missingQuantity = requiredQuantity - existingQuantity
+
+        // Eksik yoksa öneri oluşturma
+        if (missingQuantity <= 0) return
+
+        newSuggestions.push({
+          id: rule.id,
+          sourceProductId: rule.sourceProductId,
+          sourceProductName: sourceProduct.name,
+          targetProductId: rule.targetProductId,
+          targetProductName: rule.targetProductName,
+          targetCategoryId: rule.targetCategoryId,
+          targetCategoryName: rule.targetCategoryName,
+          quantity: missingQuantity,
+          behavior: rule.behavior,
+          type: rule.type,
+          ruleGroupId: rule.ruleGroupId,
+        })
+      })
+    })
+
+    // Önerileri tamamen yenile (miktar güncellemeleri için)
+    setRuleSuggestions(newSuggestions)
+  }, [watchedItems, productRules, products, dismissedSuggestionIds])
+
   // Ürün seçildiğinde fiyat ve periyodu otomatik doldur
   const handleProductChange = (index: number, productId: string) => {
     const product = products?.find((p) => p.id === productId)
     if (product) {
       setValue(`items.${index}.unitPrice`, product.basePrice)
       setValue(`items.${index}.pricePeriodId`, product.pricePeriodId)
+
+      // Yeni ürün eklendiğinde kuralları kontrol et
+      const currentQuantity = watchedItems?.[index]?.quantity || 1
+      processProductRules(productId, currentQuantity)
     } else {
       setValue(`items.${index}.unitPrice`, 0)
       setValue(`items.${index}.pricePeriodId`, null)
@@ -356,10 +641,97 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       setSelectedCustomerId(editData.customerId)
     } else if (!open) {
       setSelectedCustomerId("")
+      // Dialog kapandığında state'leri sıfırla
+      setOpenItems(new Set())
+      setOpenItemAdvanced(new Set())
+      setOpenServices(new Set())
+      setOpenServiceAdvanced(new Set())
+      setRuleSuggestions([])
+      setDismissedSuggestionIds(new Set())
+      setSuggestionQuantities({})
     }
   }, [open, isEditMode, editData])
 
+  // Toggle fonksiyonları
+  const toggleItem = (index: number) => {
+    setOpenItems((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
+  const toggleItemAdvanced = (index: number) => {
+    setOpenItemAdvanced((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
+  const toggleService = (index: number) => {
+    setOpenServices((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
+  const toggleServiceAdvanced = (index: number) => {
+    setOpenServiceAdvanced((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
+  // Ürün adını bul
+  const getProductName = (productId: string) => {
+    return products?.find((p) => p.id === productId)?.name || "Ürün seçiniz..."
+  }
+
+  // Hizmet adını bul
+  const getServiceName = (serviceId: string) => {
+    return extraServices?.find((s) => s.id === serviceId)?.name || "Hizmet seçiniz..."
+  }
+
+  // Periyot adını bul
+  const getPeriodName = (periodId: number | null | undefined) => {
+    if (!periodId) return ""
+    return pricePeriods?.find((p) => p.value === periodId)?.text || ""
+  }
+
+  // Bekleyen zorunlu kuralları kontrol et
+  const getRequiredSuggestions = () => {
+    return ruleSuggestions.filter((s) => s.behavior === ProductRuleBehavior.Required)
+  }
+
   const onSubmit = async (data: RentalFormData) => {
+    // Bekleyen zorunlu kuralları kontrol et
+    const requiredSuggestions = getRequiredSuggestions()
+    if (requiredSuggestions.length > 0) {
+      toast.error(
+        `${requiredSuggestions.length} zorunlu ürün kuralı karşılanmadı. Lütfen ürünler sekmesindeki uyarıları kontrol edin.`,
+        { duration: 5000 }
+      )
+      return
+    }
     try {
       const payload = {
         ...data,
@@ -726,6 +1098,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                     // Önceki ürünün indirim değerlerini al
                     const items = watch("items")
                     const lastItem = items.length > 0 ? items[items.length - 1] : null
+                    const newIndex = items.length
 
                     appendItem({
                       productId: "",
@@ -739,10 +1112,13 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                       discountValue: 0,
                       applyRentalDiscount: lastItem?.applyRentalDiscount ?? true,
                     })
+
+                    // Yeni eklenen kalemi otomatik aç
+                    setOpenItems((prev) => new Set(prev).add(newIndex))
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Kalem Ekle
+                  Ürün Ekle
                 </Button>
               </div>
               {errors.items?.message && (
@@ -754,200 +1130,271 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                   Henüz ürün eklenmemiş. Taslak olarak kaydedebilirsiniz.
                 </div>
               ) : (
-              <div className="space-y-4">
-                {itemFields.map((field, index) => (
-                  <div key={field.id} className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Kalem #{index + 1}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => removeItem(index)}
+                <div className="space-y-2">
+                  {itemFields.map((field, index) => {
+                    const item = watchedItems?.[index]
+                    const calc = calculateItemTotal(index)
+                    const productName = getProductName(item?.productId || "")
+                    const periodName = getPeriodName(item?.pricePeriodId)
+                    const isOpen = openItems.has(index)
+                    const isAdvancedOpen = openItemAdvanced.has(index)
+                    const formatCurrency = (val: number) => val.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+                    return (
+                      <Collapsible
+                        key={field.id}
+                        open={isOpen}
+                        onOpenChange={() => toggleItem(index)}
+                        className="border rounded-lg"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        {/* Başlık - Her Zaman Görünür */}
+                        <div className="flex items-center gap-2 p-3 bg-muted/30">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              {isOpen ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </CollapsibleTrigger>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ürün *</Label>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.productId`}
-                          render={({ field }) => (
-                            <Select
-                              value={field.value || "none"}
-                              onValueChange={(value) => {
-                                const productId = value === "none" ? "" : value
-                                field.onChange(productId)
-                                handleProductChange(index, productId)
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Ürün seçiniz" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none" disabled>
-                                  Ürün seçiniz
-                                </SelectItem>
-                                {products?.map((product) => (
-                                  <SelectItem key={product.id} value={product.id}>
-                                    {product.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                        {errors.items?.[index]?.productId && (
-                          <p className="text-sm text-destructive">
-                            {errors.items[index]?.productId?.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Miktar *</Label>
-                        <Input
-                          type="number"
-                          step="1"
-                          {...register(`items.${index}.quantity`, { valueAsNumber: true })}
-                        />
-                      </div>
-
-                      <Controller
-                        control={control}
-                        name={`items.${index}.productId`}
-                        render={({ field: productField }) => (
-                          <div className="space-y-2">
-                            <Label>Birim Fiyat *</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              disabled={!productField.value}
-                              {...register(`items.${index}.unitPrice`, { valueAsNumber: true })}
-                            />
+                          <div className="flex-1 flex items-center gap-3 min-w-0">
+                            <span className="font-medium truncate">
+                              {productName}
+                            </span>
+                            {item?.productId && (
+                              <>
+                                <span className="text-muted-foreground text-sm">
+                                  ×{item?.quantity || 0}
+                                </span>
+                                <span className="text-muted-foreground text-sm">
+                                  @{formatCurrency(item?.unitPrice || 0)}
+                                  {periodName && `/${periodName}`}
+                                </span>
+                                <span className="text-primary font-medium">
+                                  = {formatCurrency(calc.lineTotal || 0)}
+                                </span>
+                                {(calc.discountAmount || 0) > 0 && (
+                                  <span className="text-orange-600 text-xs">
+                                    (-%{item?.discountValue})
+                                  </span>
+                                )}
+                              </>
+                            )}
                           </div>
-                        )}
-                      />
 
-                      <div className="space-y-2">
-                        <Label>Fiyat Periyodu</Label>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.pricePeriodId`}
-                          render={({ field }) => (
-                            <Select
-                              value={field.value ? String(field.value) : "none"}
-                              onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Periyot seçiniz" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">Periyot seçiniz</SelectItem>
-                                {pricePeriods?.map((period) => (
-                                  <SelectItem key={period.value} value={String(period.value)}>
-                                    {period.text}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Özel Başlangıç Tarihi/Saati</Label>
-                        <Input
-                          type="datetime-local"
-                          {...register(`items.${index}.startDateTime`)}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Boş bırakılırsa kiralama tarihi kullanılır
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Özel Bitiş Tarihi/Saati</Label>
-                        <Input
-                          type="datetime-local"
-                          {...register(`items.${index}.endDateTime`)}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Boş bırakılırsa kiralama tarihi kullanılır
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>İndirim Tipi</Label>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.discountType`}
-                          render={({ field }) => (
-                            <Select
-                              value={String(field.value)}
-                              onValueChange={(value) => field.onChange(Number(value))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value={String(DiscountType.Percent)}>Yüzde (%)</SelectItem>
-                                <SelectItem value={String(DiscountType.Amount)}>Tutar</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                      </div>
-
-                      <Controller
-                        control={control}
-                        name={`items.${index}.discountType`}
-                        render={({ field: typeField }) => (
-                          <div className="space-y-2">
-                            <Label>
-                              İndirim {typeField.value === DiscountType.Percent ? "(%)" : "Tutarı"}
-                            </Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              {...register(`items.${index}.discountValue`, { valueAsNumber: true })}
-                            />
-                          </div>
-                        )}
-                      />
-
-                      <div className="col-span-3 flex items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <Label>Kiralama İndirimi Uygulansın</Label>
-                          <p className="text-xs text-muted-foreground">
-                            Kiralamaya uygulanan genel indirim oranı bu ürüne de uygulansın mı?
-                          </p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveItem(index)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Controller
-                          control={control}
-                          name={`items.${index}.applyRentalDiscount`}
-                          render={({ field }) => (
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          )}
-                        />
-                      </div>
 
-                      {/* Hesaplama Özeti */}
-                      <div className="col-span-3 rounded-lg bg-muted/50 p-3 space-y-1">
-                        {(() => {
-                          const calc = calculateItemTotal(index)
-                          const item = watchedItems?.[index]
-                          const formatCurrency = (val: number) => val.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        {/* Detay İçeriği */}
+                        <CollapsibleContent>
+                          <div className="p-4 pt-2 space-y-4 border-t">
+                            {/* Temel Alanlar */}
+                            <div className="grid grid-cols-4 gap-4">
+                              <div className="space-y-2">
+                                <Label>Ürün *</Label>
+                                <Controller
+                                  control={control}
+                                  name={`items.${index}.productId`}
+                                  render={({ field }) => (
+                                    <Select
+                                      value={field.value || "none"}
+                                      onValueChange={(value) => {
+                                        const productId = value === "none" ? "" : value
+                                        field.onChange(productId)
+                                        handleProductChange(index, productId)
+                                      }}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Ürün seçiniz" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none" disabled>
+                                          Ürün seçiniz
+                                        </SelectItem>
+                                        {products?.map((product) => (
+                                          <SelectItem key={product.id} value={product.id}>
+                                            {product.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                                {errors.items?.[index]?.productId && (
+                                  <p className="text-sm text-destructive">
+                                    {errors.items[index]?.productId?.message}
+                                  </p>
+                                )}
+                              </div>
 
-                          return (
-                            <>
+                              <div className="space-y-2">
+                                <Label>Miktar *</Label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  {...register(`items.${index}.quantity`, { valueAsNumber: true })}
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label>Birim Fiyat *</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  {...register(`items.${index}.unitPrice`, { valueAsNumber: true })}
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label>Periyot</Label>
+                                <Controller
+                                  control={control}
+                                  name={`items.${index}.pricePeriodId`}
+                                  render={({ field }) => (
+                                    <Select
+                                      value={field.value ? String(field.value) : "none"}
+                                      onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Periyot" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">Seçiniz</SelectItem>
+                                        {pricePeriods?.map((period) => (
+                                          <SelectItem key={period.value} value={String(period.value)}>
+                                            {period.text}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Gelişmiş Seçenekler */}
+                            <Collapsible
+                              open={isAdvancedOpen}
+                              onOpenChange={() => toggleItemAdvanced(index)}
+                            >
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-2"
+                                >
+                                  <Settings2 className="h-4 w-4" />
+                                  Gelişmiş Seçenekler
+                                  {isAdvancedOpen ? (
+                                    <ChevronDown className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronRight className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </CollapsibleTrigger>
+
+                              <CollapsibleContent className="pt-4 space-y-4">
+                                {/* Özel Tarihler */}
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Özel Başlangıç</Label>
+                                    <Input
+                                      type="datetime-local"
+                                      {...register(`items.${index}.startDateTime`)}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      Boş = kiralama tarihi
+                                    </p>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label>Özel Bitiş</Label>
+                                    <Input
+                                      type="datetime-local"
+                                      {...register(`items.${index}.endDateTime`)}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      Boş = kiralama tarihi
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* İndirim Ayarları */}
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>İndirim Tipi</Label>
+                                    <Controller
+                                      control={control}
+                                      name={`items.${index}.discountType`}
+                                      render={({ field }) => (
+                                        <Select
+                                          value={String(field.value)}
+                                          onValueChange={(value) => field.onChange(Number(value))}
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value={String(DiscountType.Percent)}>Yüzde (%)</SelectItem>
+                                            <SelectItem value={String(DiscountType.Amount)}>Tutar</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      )}
+                                    />
+                                  </div>
+
+                                  <Controller
+                                    control={control}
+                                    name={`items.${index}.discountType`}
+                                    render={({ field: typeField }) => (
+                                      <div className="space-y-2">
+                                        <Label>
+                                          İndirim {typeField.value === DiscountType.Percent ? "(%)" : "Tutarı"}
+                                        </Label>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          {...register(`items.${index}.discountValue`, { valueAsNumber: true })}
+                                        />
+                                      </div>
+                                    )}
+                                  />
+
+                                  <div className="space-y-2 flex items-end">
+                                    <div className="flex items-center gap-2 h-10">
+                                      <Controller
+                                        control={control}
+                                        name={`items.${index}.applyRentalDiscount`}
+                                        render={({ field }) => (
+                                          <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                          />
+                                        )}
+                                      />
+                                      <Label className="text-sm">Genel indirim uygula</Label>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+
+                            {/* Hesaplama Özeti */}
+                            <div className="rounded-lg bg-muted/50 p-3 space-y-1">
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Brüt Tutar:</span>
                                 <span>{formatCurrency(calc.grossTotal || 0)}</span>
@@ -975,15 +1422,142 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                   </div>
                                 </>
                               )}
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Kural Önerileri */}
+              {ruleSuggestions.length > 0 && (() => {
+                // Önerileri grupla: VEYA grupları ve bağımsız kurallar
+                const groupedSuggestions = ruleSuggestions.reduce((acc, suggestion) => {
+                  const key = suggestion.ruleGroupId || `individual_${suggestion.id}`
+                  if (!acc[key]) {
+                    acc[key] = []
+                  }
+                  acc[key].push(suggestion)
+                  return acc
+                }, {} as Record<string, RuleSuggestion[]>)
+
+                // Tek öneri bileşeni render fonksiyonu
+                const renderSuggestion = (suggestion: RuleSuggestion, isInGroup: boolean = false) => {
+                  const currentQuantity = suggestionQuantities[suggestion.id] ?? suggestion.quantity
+                  return (
+                    <div
+                      key={suggestion.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                    >
+                      <div className="flex-1">
+                        <p className="text-sm">
+                          <span className="font-medium">{suggestion.sourceProductName}</span>
+                          {" için "}
+                          {suggestion.type === ProductRuleType.FromGroup ? (
+                            <>
+                              <span className="font-medium">{suggestion.targetCategoryName}</span>
+                              {" kategorisinden ürün"}
                             </>
-                          )
-                        })()}
+                          ) : (
+                            <span className="font-medium">{suggestion.targetProductName}</span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        {suggestion.targetProductId && (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                min={1}
+                                value={currentQuantity}
+                                onChange={(e) => updateSuggestionQuantity(suggestion.id, parseInt(e.target.value) || 1)}
+                                className="w-16 h-8 text-center text-sm"
+                              />
+                              <span className="text-xs text-muted-foreground">adet</span>
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => acceptSuggestion(suggestion)}
+                            >
+                              <Plus className="mr-1 h-3 w-3" />
+                              Ekle
+                            </Button>
+                          </>
+                        )}
+                        {!isInGroup && suggestion.behavior !== ProductRuleBehavior.Required && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => dismissSuggestion(suggestion.id)}
+                          >
+                            Geç
+                          </Button>
+                        )}
                       </div>
                     </div>
+                  )
+                }
+
+                return (
+                  <div className="mt-4 space-y-2">
+                    <Label className="text-sm font-medium">Ürün Kuralları</Label>
+                    <div className="space-y-3">
+                      {Object.entries(groupedSuggestions).map(([groupKey, suggestions]) => {
+                        // VEYA grubu (birden fazla öneri)
+                        if (suggestions.length > 1 && suggestions[0].ruleGroupId) {
+                          const isRequired = suggestions.some(s => s.behavior === ProductRuleBehavior.Required)
+                          return (
+                            <div
+                              key={groupKey}
+                              className={`rounded-lg border-2 border-dashed p-3 ${
+                                isRequired
+                                  ? "border-amber-500/50 bg-amber-500/5"
+                                  : "border-blue-500/30 bg-blue-500/5"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                                  isRequired
+                                    ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                                    : "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                                }`}>
+                                  VEYA
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Aşağıdakilerden birini ekleyin
+                                  {isRequired && (
+                                    <span className="text-amber-600 dark:text-amber-400 font-medium"> (zorunlu)</span>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="space-y-2">
+                                {suggestions.map((suggestion, idx) => (
+                                  <div key={suggestion.id}>
+                                    {renderSuggestion(suggestion, true)}
+                                    {idx < suggestions.length - 1 && (
+                                      <div className="flex items-center justify-center my-2">
+                                        <span className="text-xs text-muted-foreground">veya</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        // Tekil öneri (bağımsız kural veya tek üyeli grup)
+                        return renderSuggestion(suggestions[0])
+                      })}
+                    </div>
                   </div>
-                ))}
-              </div>
-              )}
+                )
+              })()}
             </TabsContent>
 
             {/* Ek Hizmetler */}
@@ -999,6 +1573,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                     // Önceki hizmetin indirim ayarlarını al
                     const services = watch("services")
                     const lastService = services.length > 0 ? services[services.length - 1] : null
+                    const newIndex = services.length
 
                     appendService({
                       extraServiceId: singleService?.id || "",
@@ -1013,6 +1588,9 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                       applyRentalDiscount: lastService?.applyRentalDiscount ?? true,
                       notes: "",
                     })
+
+                    // Yeni eklenen hizmeti otomatik aç
+                    setOpenServices((prev) => new Set(prev).add(newIndex))
                   }}
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -1025,96 +1603,121 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                   Henüz ek hizmet eklenmemiş
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {serviceFields.map((field, index) => (
-                    <div key={field.id} className="border rounded-lg p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">Hizmet #{index + 1}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => removeService(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                <div className="space-y-2">
+                  {serviceFields.map((field, index) => {
+                    const service = watchedServices?.[index]
+                    const calc = calculateServiceTotal(index)
+                    const serviceName = getServiceName(service?.extraServiceId || "")
+                    const periodName = getPeriodName(service?.pricePeriodId)
+                    const currencyCode = extraServices?.find(s => s.id === service?.extraServiceId)?.currencyCode || ""
+                    const isOpen = openServices.has(index)
+                    const isAdvancedOpen = openServiceAdvanced.has(index)
+                    const formatCurrency = (val: number) => val.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label>Hizmet *</Label>
-                          <Controller
-                            control={control}
-                            name={`services.${index}.extraServiceId`}
-                            render={({ field }) => (
-                              <Select
-                                value={field.value || "none"}
-                                onValueChange={(value) => {
-                                  const serviceId = value === "none" ? "" : value
-                                  field.onChange(serviceId)
-                                  handleServiceChange(index, serviceId)
-                                }}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Hizmet seçiniz" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none" disabled>
-                                    Hizmet seçiniz
-                                  </SelectItem>
-                                  {extraServices?.map((service) => (
-                                    <SelectItem key={service.id} value={service.id}>
-                                      {service.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                    return (
+                      <Collapsible
+                        key={field.id}
+                        open={isOpen}
+                        onOpenChange={() => toggleService(index)}
+                        className="border rounded-lg"
+                      >
+                        {/* Başlık - Her Zaman Görünür */}
+                        <div className="flex items-center gap-2 p-3 bg-muted/30">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              {isOpen ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </CollapsibleTrigger>
+
+                          <div className="flex-1 flex items-center gap-3 min-w-0">
+                            <span className="font-medium truncate">
+                              {serviceName}
+                            </span>
+                            {service?.extraServiceId && (
+                              <>
+                                <span className="text-muted-foreground text-sm">
+                                  ×{service?.quantity || 0}
+                                </span>
+                                <span className="text-muted-foreground text-sm">
+                                  @{formatCurrency(service?.unitPrice || 0)}
+                                  {periodName && `/${periodName}`}
+                                </span>
+                                <span className="text-primary font-medium">
+                                  = {formatCurrency(calc.lineTotal || 0)} {currencyCode}
+                                </span>
+                                {(calc.discountAmount || 0) > 0 && (
+                                  <span className="text-orange-600 text-xs">
+                                    (-%{service?.discountValue})
+                                  </span>
+                                )}
+                              </>
                             )}
-                          />
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeService(index)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label>Atanan Personel</Label>
-                          <Controller
-                            control={control}
-                            name={`services.${index}.assignedEmployeeId`}
-                            render={({ field }) => (
-                              <Select
-                                value={field.value || "none"}
-                                onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Personel seçiniz" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Personel seçiniz</SelectItem>
-                                  {employees?.map((employee) => (
-                                    <SelectItem key={employee.id} value={employee.id}>
-                                      {employee.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </div>
+                        {/* Detay İçeriği */}
+                        <CollapsibleContent>
+                          <div className="p-4 pt-2 space-y-4 border-t">
+                            {/* Temel Alanlar */}
+                            <div className="grid grid-cols-4 gap-4">
+                              <div className="space-y-2">
+                                <Label>Hizmet *</Label>
+                                <Controller
+                                  control={control}
+                                  name={`services.${index}.extraServiceId`}
+                                  render={({ field }) => (
+                                    <Select
+                                      value={field.value || "none"}
+                                      onValueChange={(value) => {
+                                        const serviceId = value === "none" ? "" : value
+                                        field.onChange(serviceId)
+                                        handleServiceChange(index, serviceId)
+                                      }}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Hizmet seçiniz" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none" disabled>
+                                          Hizmet seçiniz
+                                        </SelectItem>
+                                        {extraServices?.map((svc) => (
+                                          <SelectItem key={svc.id} value={svc.id}>
+                                            {svc.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                              </div>
 
-                        <div className="space-y-2">
-                          <Label>Miktar *</Label>
-                          <Input
-                            type="number"
-                            step="1"
-                            {...register(`services.${index}.quantity`, { valueAsNumber: true })}
-                          />
-                        </div>
+                              <div className="space-y-2">
+                                <Label>Miktar *</Label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  {...register(`services.${index}.quantity`, { valueAsNumber: true })}
+                                />
+                              </div>
 
-                        <Controller
-                          control={control}
-                          name={`services.${index}.extraServiceId`}
-                          render={({ field: serviceField }) => {
-                            const selectedService = extraServices?.find(s => s.id === serviceField.value)
-                            return (
                               <div className="space-y-2">
                                 <Label>Birim Fiyat *</Label>
                                 <Input
@@ -1122,171 +1725,212 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                   step="0.01"
                                   {...register(`services.${index}.unitPrice`, { valueAsNumber: true })}
                                 />
-                                {selectedService && (
-                                  <p className="text-xs text-muted-foreground">
-                                    {selectedService.currencyCode} cinsinden hesaplanacaktır
-                                  </p>
-                                )}
                               </div>
-                            )
-                          }}
-                        />
 
-                        <div className="space-y-2">
-                          <Label>Fiyat Periyodu</Label>
-                          <Controller
-                            control={control}
-                            name={`services.${index}.pricePeriodId`}
-                            render={({ field }) => (
-                              <Select
-                                value={field.value ? String(field.value) : "none"}
-                                onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Periyot seçiniz" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Periyot seçiniz</SelectItem>
-                                  {pricePeriods?.map((period) => (
-                                    <SelectItem key={period.value} value={String(period.value)}>
-                                      {period.text}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Özel Başlangıç Tarihi/Saati</Label>
-                          <Input
-                            type="datetime-local"
-                            {...register(`services.${index}.startDateTime`)}
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Boş bırakılırsa kiralama tarihi kullanılır
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Özel Bitiş Tarihi/Saati</Label>
-                          <Input
-                            type="datetime-local"
-                            {...register(`services.${index}.endDateTime`)}
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Boş bırakılırsa kiralama tarihi kullanılır
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>İndirim Tipi</Label>
-                          <Controller
-                            control={control}
-                            name={`services.${index}.discountType`}
-                            render={({ field }) => (
-                              <Select
-                                value={String(field.value)}
-                                onValueChange={(value) => field.onChange(Number(value))}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value={String(DiscountType.Percent)}>Yüzde (%)</SelectItem>
-                                  <SelectItem value={String(DiscountType.Amount)}>Tutar</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </div>
-
-                        <Controller
-                          control={control}
-                          name={`services.${index}.discountType`}
-                          render={({ field: typeField }) => (
-                            <div className="space-y-2">
-                              <Label>
-                                İndirim {typeField.value === DiscountType.Percent ? "(%)" : "Tutarı"}
-                              </Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                {...register(`services.${index}.discountValue`, { valueAsNumber: true })}
-                              />
+                              <div className="space-y-2">
+                                <Label>Periyot</Label>
+                                <Controller
+                                  control={control}
+                                  name={`services.${index}.pricePeriodId`}
+                                  render={({ field }) => (
+                                    <Select
+                                      value={field.value ? String(field.value) : "none"}
+                                      onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Periyot" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">Seçiniz</SelectItem>
+                                        {pricePeriods?.map((period) => (
+                                          <SelectItem key={period.value} value={String(period.value)}>
+                                            {period.text}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                              </div>
                             </div>
-                          )}
-                        />
 
-                        <div className="col-span-3 flex items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <Label>Kiralama İndirimi Uygulansın</Label>
-                            <p className="text-xs text-muted-foreground">
-                              Kiralamaya uygulanan genel indirim oranı bu hizmete de uygulansın mı?
-                            </p>
-                          </div>
-                          <Controller
-                            control={control}
-                            name={`services.${index}.applyRentalDiscount`}
-                            render={({ field }) => (
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            )}
-                          />
-                        </div>
+                            {/* Personel ve Notlar */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Atanan Personel</Label>
+                                <Controller
+                                  control={control}
+                                  name={`services.${index}.assignedEmployeeId`}
+                                  render={({ field }) => (
+                                    <Select
+                                      value={field.value || "none"}
+                                      onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Personel seçiniz" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">Personel seçiniz</SelectItem>
+                                        {employees?.map((employee) => (
+                                          <SelectItem key={employee.id} value={employee.id}>
+                                            {employee.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                              </div>
 
-                        <div className="col-span-3 space-y-2">
-                          <Label>Notlar</Label>
-                          <Input {...register(`services.${index}.notes`)} />
-                        </div>
+                              <div className="space-y-2">
+                                <Label>Notlar</Label>
+                                <Input {...register(`services.${index}.notes`)} />
+                              </div>
+                            </div>
 
-                        {/* Hesaplama Özeti */}
-                        <div className="col-span-3 rounded-lg bg-muted/50 p-3 space-y-1">
-                          {(() => {
-                            const calc = calculateServiceTotal(index)
-                            const service = watchedServices?.[index]
-                            const currencyCode = extraServices?.find(s => s.id === service?.extraServiceId)?.currencyCode || ""
-                            const formatCurrency = (val: number) => val.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            {/* Gelişmiş Seçenekler */}
+                            <Collapsible
+                              open={isAdvancedOpen}
+                              onOpenChange={() => toggleServiceAdvanced(index)}
+                            >
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-2"
+                                >
+                                  <Settings2 className="h-4 w-4" />
+                                  Gelişmiş Seçenekler
+                                  {isAdvancedOpen ? (
+                                    <ChevronDown className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronRight className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </CollapsibleTrigger>
 
-                            return (
-                              <>
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-muted-foreground">Brüt Tutar:</span>
-                                  <span>{formatCurrency(calc.grossTotal || 0)} {currencyCode}</span>
-                                </div>
-                                {(calc.discountAmount || 0) > 0 && (
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Hizmet İndirimi:</span>
-                                    <span className="text-orange-600">-{formatCurrency(calc.discountAmount || 0)} {currencyCode}</span>
+                              <CollapsibleContent className="pt-4 space-y-4">
+                                {/* Özel Tarihler */}
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Özel Başlangıç</Label>
+                                    <Input
+                                      type="datetime-local"
+                                      {...register(`services.${index}.startDateTime`)}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      Boş = kiralama tarihi
+                                    </p>
                                   </div>
-                                )}
-                                <div className="flex justify-between text-sm font-medium">
-                                  <span className="text-muted-foreground">Satır Tutarı:</span>
-                                  <span className="text-primary">{formatCurrency(calc.lineTotal || 0)} {currencyCode}</span>
+
+                                  <div className="space-y-2">
+                                    <Label>Özel Bitiş</Label>
+                                    <Input
+                                      type="datetime-local"
+                                      {...register(`services.${index}.endDateTime`)}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      Boş = kiralama tarihi
+                                    </p>
+                                  </div>
                                 </div>
-                                {service?.applyRentalDiscount && rentalDiscountPercent > 0 && (
-                                  <>
-                                    <Separator className="my-1" />
-                                    <div className="flex justify-between text-sm">
-                                      <span className="text-muted-foreground">Kiralama İndirimi (%{rentalDiscountPercent}):</span>
-                                      <span className="text-orange-600">-{formatCurrency((calc.lineTotal || 0) - (calc.afterRentalDiscount || 0))} {currencyCode}</span>
+
+                                {/* İndirim Ayarları */}
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>İndirim Tipi</Label>
+                                    <Controller
+                                      control={control}
+                                      name={`services.${index}.discountType`}
+                                      render={({ field }) => (
+                                        <Select
+                                          value={String(field.value)}
+                                          onValueChange={(value) => field.onChange(Number(value))}
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value={String(DiscountType.Percent)}>Yüzde (%)</SelectItem>
+                                            <SelectItem value={String(DiscountType.Amount)}>Tutar</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      )}
+                                    />
+                                  </div>
+
+                                  <Controller
+                                    control={control}
+                                    name={`services.${index}.discountType`}
+                                    render={({ field: typeField }) => (
+                                      <div className="space-y-2">
+                                        <Label>
+                                          İndirim {typeField.value === DiscountType.Percent ? "(%)" : "Tutarı"}
+                                        </Label>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          {...register(`services.${index}.discountValue`, { valueAsNumber: true })}
+                                        />
+                                      </div>
+                                    )}
+                                  />
+
+                                  <div className="space-y-2 flex items-end">
+                                    <div className="flex items-center gap-2 h-10">
+                                      <Controller
+                                        control={control}
+                                        name={`services.${index}.applyRentalDiscount`}
+                                        render={({ field }) => (
+                                          <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                          />
+                                        )}
+                                      />
+                                      <Label className="text-sm">Genel indirim uygula</Label>
                                     </div>
-                                    <div className="flex justify-between text-sm font-medium">
-                                      <span className="text-muted-foreground">İndirimli Tutar:</span>
-                                      <span className="text-green-600">{formatCurrency(calc.afterRentalDiscount || 0)} {currencyCode}</span>
-                                    </div>
-                                  </>
-                                )}
-                              </>
-                            )
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                                  </div>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+
+                            {/* Hesaplama Özeti */}
+                            <div className="rounded-lg bg-muted/50 p-3 space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Brüt Tutar:</span>
+                                <span>{formatCurrency(calc.grossTotal || 0)} {currencyCode}</span>
+                              </div>
+                              {(calc.discountAmount || 0) > 0 && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Hizmet İndirimi:</span>
+                                  <span className="text-orange-600">-{formatCurrency(calc.discountAmount || 0)} {currencyCode}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between text-sm font-medium">
+                                <span className="text-muted-foreground">Satır Tutarı:</span>
+                                <span className="text-primary">{formatCurrency(calc.lineTotal || 0)} {currencyCode}</span>
+                              </div>
+                              {service?.applyRentalDiscount && rentalDiscountPercent > 0 && (
+                                <>
+                                  <Separator className="my-1" />
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Kiralama İndirimi (%{rentalDiscountPercent}):</span>
+                                    <span className="text-orange-600">-{formatCurrency((calc.lineTotal || 0) - (calc.afterRentalDiscount || 0))} {currencyCode}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm font-medium">
+                                    <span className="text-muted-foreground">İndirimli Tutar:</span>
+                                    <span className="text-green-600">{formatCurrency(calc.afterRentalDiscount || 0)} {currencyCode}</span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )
+                  })}
                 </div>
               )}
             </TabsContent>
