@@ -270,16 +270,18 @@ export function ProductDialog({
       setLevel2CategoryId(null)
     } else {
       // Yeni ürün - şirket varsayılan ayarlarını kullan
+      const adetUnit = unitTypes?.find(u => u.text.toLowerCase() === "adet")
       reset({
         ...defaultValues,
         currencyId: companySettings?.defaultCurrencyId || 0,
         pricePeriodId: companySettings?.defaultPricePeriodId || 0,
+        unitTypeId: adetUnit?.value || 0, // Takipli ürün varsayılanı: Adet
       })
       setAttributeValues([])
       setLevel1CategoryId(null)
       setLevel2CategoryId(null)
     }
-  }, [open, editProduct, product, reset, companySettings])
+  }, [open, editProduct, product, reset, companySettings, unitTypes])
 
   // Özellik değeri değiştiğinde
   const handleAttributeChange = (newValue: ProductAttributeValue) => {
@@ -531,7 +533,7 @@ export function ProductDialog({
                     name="unitTypeId"
                     render={({ field }) => (
                       <Select
-                        key={`unitType-${field.value}`}
+                        key={`unitType-${field.value}-${unitTypes?.length ?? 0}`}
                         value={field.value ? String(field.value) : "none"}
                         onValueChange={(value) => field.onChange(value === "none" ? 0 : Number(value))}
                         disabled={productType === ProductType.Tracked}
@@ -587,7 +589,7 @@ export function ProductDialog({
                         name="lifespanUnitTypeId"
                         render={({ field }) => (
                           <Select
-                            key={`lifespan-${field.value}`}
+                            key={`lifespan-${field.value}-${lifespanUnitTypes?.length ?? 0}`}
                             value={field.value ? String(field.value) : "none"}
                             onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
                           >
@@ -659,7 +661,7 @@ export function ProductDialog({
                     name="pricePeriodId"
                     render={({ field }) => (
                       <Select
-                        key={`pricePeriod-${field.value}`}
+                        key={`pricePeriod-${field.value}-${pricePeriods?.length ?? 0}`}
                         value={field.value ? String(field.value) : "none"}
                         onValueChange={(value) => field.onChange(value === "none" ? 0 : Number(value))}
                       >
@@ -689,7 +691,7 @@ export function ProductDialog({
                     name="currencyId"
                     render={({ field }) => (
                       <Select
-                        key={`currency-${field.value}`}
+                        key={`currency-${field.value}-${currencies?.length ?? 0}`}
                         value={field.value ? String(field.value) : "none"}
                         onValueChange={(value) => field.onChange(value === "none" ? 0 : Number(value))}
                       >

@@ -98,7 +98,7 @@ export function CategoryAttributeDialog({
   const formValues =
     open && isEditMode && editData
       ? {
-          categoryId: editData.categoryId?.toLowerCase(),
+          categoryId: editData.categoryId,
           name: editData.name,
           displayName: editData.displayName,
           dataType: editData.dataType,
@@ -240,7 +240,7 @@ export function CategoryAttributeDialog({
                 name="categoryId"
                 render={({ field }) => (
                   <Select
-                    key={`category-${field.value}`}
+                    key={`category-${field.value}-${categories?.length ?? 0}`}
                     value={field.value || "none"}
                     onValueChange={(value) =>
                       field.onChange(value === "none" ? "" : value)
