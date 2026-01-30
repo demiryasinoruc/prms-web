@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -29,7 +29,6 @@ import {
   useCreateProduct,
   useUpdateProduct,
   useProductForEdit,
-  useBrandSelect,
   useUnitTypeSelect,
   usePricePeriodSelect,
   useCurrencySelect,
@@ -40,6 +39,7 @@ import { useCategorySelectByParent } from "@/features/categories/hooks"
 import { useCategoryAttributesByCategory } from "@/features/category-attributes/hooks"
 import { DynamicAttributeField } from "@/components/dynamic-attribute-field"
 import { ProductType, ProductTypeLabels, type Product, type ProductAttributeValue } from "./api"
+import { ProductVariantManager } from "./product-variant-manager"
 
 const productSchema = z.object({
   type: z.number(),
@@ -53,7 +53,6 @@ const productSchema = z.object({
   totalLifespan: z.number().nullable().optional(),
   lifespanUnitTypeId: z.number().nullable().optional(),
   categoryId: z.string().min(1, "Kategori seçiniz"),
-  brandId: z.string().min(1, "Marka seçiniz"),
   unitTypeId: z.number().min(1, "Birim tipi seçiniz"),
   trackExpiryDate: z.boolean().default(false),
   isActive: z.boolean().default(true),
@@ -93,7 +92,6 @@ export function ProductDialog({
   const editProduct = product ? productData : null
 
   // Lookup data
-  const { data: brands } = useBrandSelect()
   const { data: unitTypes } = useUnitTypeSelect()
   const { data: pricePeriods } = usePricePeriodSelect()
   const { data: currencies } = useCurrencySelect()
@@ -128,7 +126,6 @@ export function ProductDialog({
     totalLifespan: null,
     lifespanUnitTypeId: null,
     categoryId: "",
-    brandId: "",
     unitTypeId: 0,
     trackExpiryDate: false,
     isActive: true,
@@ -154,6 +151,13 @@ export function ProductDialog({
 
   // Kategori özelliklerini yükle - form'daki en spesifik seçilen kategoriden
   const { data: categoryAttributes } = useCategoryAttributesByCategory(watchedCategoryId || null)
+
+  // Varyant özellikleri (sadece isVariantAttribute=true olanlar)
+  const variantAttributes = useMemo(
+    () => categoryAttributes?.filter((a) => a.isVariantAttribute) ?? [],
+    [categoryAttributes]
+  )
+  const hasVariantAttributes = variantAttributes.length > 0
 
   // Ömür birim tipi kaldırıldığında toplam ömrü temizle
   useEffect(() => {
@@ -218,7 +222,6 @@ export function ProductDialog({
         totalLifespan: editProduct.totalLifespan,
         lifespanUnitTypeId: editProduct.lifespanUnitTypeId,
         categoryId: editProduct.categoryId,
-        brandId: editProduct.brandId,
         unitTypeId: editProduct.unitTypeId,
         trackExpiryDate: editProduct.trackExpiryDate,
         isActive: editProduct.isActive,
@@ -259,7 +262,6 @@ export function ProductDialog({
         totalLifespan: null,
         lifespanUnitTypeId: null,
         categoryId: "",
-        brandId: "",
         unitTypeId: 0,
         isActive: product.isActive,
         notes: "",
@@ -343,11 +345,18 @@ export function ProductDialog({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className={`grid w-full ${categoryAttributes && categoryAttributes.length > 0 ? "grid-cols-3" : "grid-cols-2"}`}>
+            <TabsList className={`grid w-full ${
+              product && hasVariantAttributes
+                ? (categoryAttributes && categoryAttributes.length > 0 ? "grid-cols-4" : "grid-cols-3")
+                : (categoryAttributes && categoryAttributes.length > 0 ? "grid-cols-3" : "grid-cols-2")
+            }`}>
               <TabsTrigger value="general">Genel Bilgiler</TabsTrigger>
               <TabsTrigger value="pricing">Fiyat ve Stok</TabsTrigger>
               {categoryAttributes && categoryAttributes.length > 0 && (
                 <TabsTrigger value="attributes">Özellikler</TabsTrigger>
+              )}
+              {product && hasVariantAttributes && (
+                <TabsTrigger value="variants">Varyantlar</TabsTrigger>
               )}
             </TabsList>
 
@@ -507,35 +516,6 @@ export function ProductDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Marka *</Label>
-                  <Controller
-                    control={control}
-                    name="brandId"
-                    render={({ field }) => (
-                      <Select
-                        value={field.value || "none"}
-                        onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Marka seçiniz" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none" disabled>Marka seçiniz</SelectItem>
-                          {brands?.map((brand) => (
-                            <SelectItem key={brand.value} value={brand.value}>
-                              {brand.text}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.brandId && (
-                    <p className="text-sm text-destructive">{errors.brandId.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
                   <div className="inline-flex items-center gap-1">
                     <Label>Birim Tipi *</Label>
                     <button
@@ -551,6 +531,7 @@ export function ProductDialog({
                     name="unitTypeId"
                     render={({ field }) => (
                       <Select
+                        key={`unitType-${field.value}`}
                         value={field.value ? String(field.value) : "none"}
                         onValueChange={(value) => field.onChange(value === "none" ? 0 : Number(value))}
                         disabled={productType === ProductType.Tracked}
@@ -606,6 +587,7 @@ export function ProductDialog({
                         name="lifespanUnitTypeId"
                         render={({ field }) => (
                           <Select
+                            key={`lifespan-${field.value}`}
                             value={field.value ? String(field.value) : "none"}
                             onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
                           >
@@ -677,6 +659,7 @@ export function ProductDialog({
                     name="pricePeriodId"
                     render={({ field }) => (
                       <Select
+                        key={`pricePeriod-${field.value}`}
                         value={field.value ? String(field.value) : "none"}
                         onValueChange={(value) => field.onChange(value === "none" ? 0 : Number(value))}
                       >
@@ -706,6 +689,7 @@ export function ProductDialog({
                     name="currencyId"
                     render={({ field }) => (
                       <Select
+                        key={`currency-${field.value}`}
                         value={field.value ? String(field.value) : "none"}
                         onValueChange={(value) => field.onChange(value === "none" ? 0 : Number(value))}
                       >
@@ -824,6 +808,15 @@ export function ProductDialog({
                     Bu kategori için tanımlanmış özellik bulunmuyor.
                   </p>
                 )}
+              </TabsContent>
+            )}
+
+            {product && hasVariantAttributes && (
+              <TabsContent value="variants" className="mt-4">
+                <ProductVariantManager
+                  productId={product.id}
+                  variantAttributes={variantAttributes}
+                />
               </TabsContent>
             )}
           </Tabs>

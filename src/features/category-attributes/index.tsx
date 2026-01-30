@@ -45,6 +45,7 @@ export default function CategoryAttributesPage() {
   }>({ sortBy: null, sortDir: null })
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [variantFilter, setVariantFilter] = useState<string>("all")
 
   const debouncedSearch = useDebounce(searchTerm, 300)
 
@@ -63,6 +64,7 @@ export default function CategoryAttributesPage() {
     sortDir: sorting.sortDir || undefined,
     categoryId: categoryFilter !== "all" ? categoryFilter : undefined,
     isActive: statusFilter === "all" ? undefined : statusFilter === "active",
+    isVariantAttribute: variantFilter === "all" ? undefined : variantFilter === "yes",
   })
   const deleteMutation = useDeleteCategoryAttribute()
 
@@ -149,6 +151,22 @@ export default function CategoryAttributesPage() {
               </SelectContent>
             </Select>
             <Select
+              value={variantFilter}
+              onValueChange={(value) => {
+                setVariantFilter(value)
+                setPage(0)
+              }}
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Varyant" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Özellikler</SelectItem>
+                <SelectItem value="yes">Varyant</SelectItem>
+                <SelectItem value="no">Varyant Değil</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
               value={statusFilter}
               onValueChange={(value) => {
                 setStatusFilter(value)
@@ -192,6 +210,7 @@ export default function CategoryAttributesPage() {
                   <TableHead>Veri Tipi</TableHead>
                   <TableHead>Zorunlu</TableHead>
                   <TableHead>Miras</TableHead>
+                  <TableHead>Varyant</TableHead>
                   <TableHead>Durum</TableHead>
                   <TableHead className="text-right">İşlemler</TableHead>
                 </TableRow>
@@ -199,13 +218,13 @@ export default function CategoryAttributesPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={8} className="h-24 text-center">
                       Yükleniyor...
                     </TableCell>
                   </TableRow>
                 ) : data?.items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={8} className="h-24 text-center">
                       Özellik bulunamadı.
                     </TableCell>
                   </TableRow>
@@ -232,6 +251,13 @@ export default function CategoryAttributesPage() {
                       <TableCell>
                         {attr.inheritToChildren ? (
                           <Badge variant="default">Evet</Badge>
+                        ) : (
+                          <Badge variant="secondary">Hayır</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {attr.isVariantAttribute ? (
+                          <Badge variant="default">Varyant</Badge>
                         ) : (
                           <Badge variant="secondary">Hayır</Badge>
                         )}

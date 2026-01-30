@@ -197,6 +197,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "category-attributes",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <CategoryAttributesPage />
+          </Suspense>
+        ),
+      },
+      {
         path: "brands",
         element: (
           <Suspense fallback={<PageLoader />}>

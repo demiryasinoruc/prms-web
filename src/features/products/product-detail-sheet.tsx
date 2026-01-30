@@ -149,17 +149,13 @@ export function ProductDetailSheet({
 
             <Separator />
 
-            {/* Kategori ve Marka */}
+            {/* Kategori ve Birim */}
             <div className="space-y-4">
               <h3 className="font-medium">Sınıflandırma</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Kategori</p>
                   <p className="font-medium">{product.categoryName}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Marka</p>
-                  <p className="font-medium">{product.brandName}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Birim</p>
@@ -171,6 +167,19 @@ export function ProductDetailSheet({
                 </div>
               </div>
             </div>
+
+            {product.variantCount > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="font-medium">Varyantlar</h3>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Toplam Varyant</p>
+                    <p className="font-medium">{product.variantCount} adet</p>
+                  </div>
+                </div>
+              </>
+            )}
 
             {product.type === ProductType.Tracked && product.totalLifespan && (
               <>

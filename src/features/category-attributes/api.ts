@@ -37,6 +37,7 @@ export interface CategoryAttribute {
   showInFilter: boolean
   isSearchable: boolean
   inheritToChildren: boolean
+  isVariantAttribute: boolean
   isActive: boolean
 }
 
@@ -57,6 +58,7 @@ export interface CategoryAttributeForEdit {
   showInFilter: boolean
   isSearchable: boolean
   inheritToChildren: boolean
+  isVariantAttribute: boolean
   isActive: boolean
 }
 
@@ -68,6 +70,7 @@ export interface CategoryAttributeListParams {
   sortDir?: "asc" | "desc"
   categoryId?: string
   isActive?: boolean
+  isVariantAttribute?: boolean
 }
 
 export interface CategoryAttributeCreateRequest {
@@ -86,6 +89,7 @@ export interface CategoryAttributeCreateRequest {
   showInFilter: boolean
   isSearchable: boolean
   inheritToChildren: boolean
+  isVariantAttribute: boolean
 }
 
 export interface CategoryAttributeUpdateRequest {
@@ -103,6 +107,7 @@ export interface CategoryAttributeUpdateRequest {
   showInFilter: boolean
   isSearchable: boolean
   inheritToChildren: boolean
+  isVariantAttribute: boolean
   isActive: boolean
 }
 
@@ -125,6 +130,7 @@ export const categoryAttributeApi = {
         "Sorting.SortDir": params.sortDir || undefined,
         "Filters.CategoryId": params.categoryId || undefined,
         "Filters.IsActive": params.isActive,
+        "Filters.IsVariantAttribute": params.isVariantAttribute,
       },
     })
 
@@ -171,6 +177,7 @@ export const categoryAttributeApi = {
       ShowInFilter: data.showInFilter,
       IsSearchable: data.isSearchable,
       InheritToChildren: data.inheritToChildren,
+      IsVariantAttribute: data.isVariantAttribute,
     })
     return response.data
   },
@@ -191,6 +198,7 @@ export const categoryAttributeApi = {
       ShowInFilter: data.showInFilter,
       IsSearchable: data.isSearchable,
       InheritToChildren: data.inheritToChildren,
+      IsVariantAttribute: data.isVariantAttribute,
       IsActive: data.isActive,
     })
     return response.data

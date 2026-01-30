@@ -25,8 +25,8 @@ export interface Product {
   pricePeriodName: string
   currencyCode: string
   categoryName: string
-  brandName: string
   isActive: boolean
+  variantCount: number
 }
 
 export interface ProductDetail {
@@ -43,10 +43,10 @@ export interface ProductDetail {
   lifespanUnitTypeName: string | null
   categoryName: string
   unitTypeName: string
-  brandName: string
   isActive: boolean
   notes: string | null
   createdDate: string
+  variantCount: number
 }
 
 export interface ProductAttributeValue {
@@ -69,7 +69,6 @@ export interface ProductForEdit {
   currencyId: number
   totalLifespan: number | null
   lifespanUnitTypeId: number | null
-  brandId: string
   categoryId: string
   categoryParentId: string | null      // Kategorinin parent'ı
   categoryGrandParentId: string | null // Kategorinin grandparent'ı
@@ -88,7 +87,6 @@ export interface ProductListParams {
   sortDir?: "asc" | "desc"
   // Filtreler
   categoryId?: string
-  brandId?: string
   isActive?: boolean
 }
 
@@ -105,7 +103,6 @@ export interface ProductCreateRequest {
   totalLifespan?: number | null
   lifespanUnitTypeId?: number | null
   categoryId: string
-  brandId: string
   unitTypeId: number
   trackExpiryDate: boolean
   notes?: string | null
@@ -125,7 +122,6 @@ export interface ProductUpdateRequest {
   totalLifespan?: number | null
   lifespanUnitTypeId?: number | null
   categoryId: string
-  brandId: string
   unitTypeId: number
   trackExpiryDate: boolean
   isActive: boolean
@@ -169,7 +165,6 @@ export const productApi = {
         "Sorting.SortBy": params.sortBy || undefined,
         "Sorting.SortDir": params.sortDir || undefined,
         "Filters.CategoryId": params.categoryId || undefined,
-        "Filters.BrandId": params.brandId || undefined,
         "Filters.IsActive": params.isActive,
       },
     })
@@ -228,7 +223,6 @@ export const productApi = {
       TotalLifespan: data.totalLifespan || null,
       LifespanUnitTypeId: data.lifespanUnitTypeId || null,
       CategoryId: data.categoryId,
-      BrandId: data.brandId,
       UnitTypeId: data.unitTypeId,
       TrackExpiryDate: data.trackExpiryDate,
       Notes: data.notes || null,
@@ -257,7 +251,6 @@ export const productApi = {
       TotalLifespan: data.totalLifespan || null,
       LifespanUnitTypeId: data.lifespanUnitTypeId || null,
       CategoryId: data.categoryId,
-      BrandId: data.brandId,
       UnitTypeId: data.unitTypeId,
       TrackExpiryDate: data.trackExpiryDate,
       IsActive: data.isActive,
@@ -290,11 +283,6 @@ export interface SelectItemInt {
 }
 
 export const lookupApi = {
-  getBrands: async () => {
-    const response = await api.get<SelectItem[]>("/brand/select")
-    return response.data
-  },
-
   getCategories: async () => {
     const response = await api.get<SelectItem[]>("/category/select")
     return response.data

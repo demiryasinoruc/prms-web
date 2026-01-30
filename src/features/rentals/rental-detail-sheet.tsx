@@ -260,26 +260,21 @@ export function RentalDetailSheet({
                             <TableCell>
                               <div>
                                 <p className="font-medium">{item.productName}</p>
+                                {item.productVariantSku && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Varyant: {item.productVariantSku}
+                                  </p>
+                                )}
                                 {item.inventorySerialNumber && (
                                   <p className="text-xs text-muted-foreground">
                                     SN: {item.inventorySerialNumber}
                                   </p>
                                 )}
-                                {(item.discountValue > 0 || item.applyRentalDiscount) && (
-                                  <div className="text-xs text-muted-foreground mt-1">
-                                    {item.discountValue > 0 && (
-                                      <span className="text-green-600">
-                                        İndirim: {item.discountType === DiscountType.Percent
-                                          ? `%${item.discountValue}`
-                                          : formatPrice(item.discountValue, rental.currencyCode)}
-                                      </span>
-                                    )}
-                                    {item.discountValue > 0 && item.applyRentalDiscount && " • "}
-                                    {item.applyRentalDiscount && rental.discountPercent > 0 && (
-                                      <span className="text-blue-600">
-                                        +Kiralama İnd. %{rental.discountPercent}
-                                      </span>
-                                    )}
+                                {item.discountValue > 0 && (
+                                  <div className="text-xs text-green-600 mt-1">
+                                    İndirim: {item.discountType === DiscountType.Percent
+                                      ? `%${item.discountValue}`
+                                      : formatPrice(item.discountValue, rental.currencyCode)}
                                   </div>
                                 )}
                               </div>
@@ -348,21 +343,11 @@ export function RentalDetailSheet({
                             <TableCell>
                               <div>
                                 <p className="font-medium">{service.extraServiceName}</p>
-                                {(service.discountValue > 0 || service.applyRentalDiscount) && (
-                                  <div className="text-xs text-muted-foreground mt-1">
-                                    {service.discountValue > 0 && (
-                                      <span className="text-green-600">
-                                        İndirim: {service.discountType === DiscountType.Percent
-                                          ? `%${service.discountValue}`
-                                          : formatPrice(service.discountValue, rental.currencyCode)}
-                                      </span>
-                                    )}
-                                    {service.discountValue > 0 && service.applyRentalDiscount && " • "}
-                                    {service.applyRentalDiscount && rental.discountPercent > 0 && (
-                                      <span className="text-blue-600">
-                                        +Kiralama İnd. %{rental.discountPercent}
-                                      </span>
-                                    )}
+                                {service.discountValue > 0 && (
+                                  <div className="text-xs text-green-600 mt-1">
+                                    İndirim: {service.discountType === DiscountType.Percent
+                                      ? `%${service.discountValue}`
+                                      : formatPrice(service.discountValue, rental.currencyCode)}
                                   </div>
                                 )}
                               </div>
@@ -431,10 +416,25 @@ export function RentalDetailSheet({
                     )}
                   </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Depozito</span>
-                  <span>{formatPrice(rental.depositAmount, rental.currencyCode)}</span>
-                </div>
+                {rental.depositAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Depozito (Talep)</span>
+                    <span>{formatPrice(rental.depositAmount, rental.currencyCode)}</span>
+                  </div>
+                )}
+                {rental.depositPaidAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Depozito (Ödenen)</span>
+                    <span className="text-green-600">{formatPrice(rental.depositPaidAmount, rental.currencyCode)}</span>
+                  </div>
+                )}
+                {rental.depositRefundedAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Depozito (İade)</span>
+                    <span className="text-orange-600">{formatPrice(rental.depositRefundedAmount, rental.currencyCode)}</span>
+                  </div>
+                )}
+                <Separator />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Ödenen</span>
                   <span className="text-green-600">{formatPrice(rental.paidAmount, rental.currencyCode)}</span>

@@ -343,6 +343,8 @@ export default function InventoryPage() {
             productId: inventory.productId,
             productName: inventory.productName,
             productCode: inventory.productCode,
+            productVariantId: inventory.productVariantId ?? null,
+            productVariantSku: inventory.productVariantSku ?? null,
             warehouseId: inventory.warehouseId,
             warehouseName: inventory.warehouseName,
             status: inventory.status,

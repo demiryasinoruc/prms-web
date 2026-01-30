@@ -28,6 +28,8 @@ export interface Inventory {
   productId: string
   productName: string
   productCode: string
+  productVariantId: string | null
+  productVariantSku: string | null
   warehouseId: string
   warehouseName: string
   status: InventoryStatus
@@ -48,6 +50,8 @@ export interface InventoryDetail {
   productName: string
   productCode: string
   productType: ProductType
+  productVariantId: string | null
+  productVariantSku: string | null
   warehouseId: string
   warehouseName: string
   status: InventoryStatus
@@ -75,6 +79,7 @@ export interface InventoryListParams {
 
 export interface InventoryCreateRequest {
   productId: string
+  productVariantId?: string | null
   warehouseId: string
   status: InventoryStatus
   serialNumber: string
@@ -89,6 +94,7 @@ export interface InventoryCreateRequest {
 export interface InventoryUpdateRequest {
   id: string
   productId: string
+  productVariantId?: string | null
   warehouseId: string
   status: InventoryStatus
   serialNumber: string
@@ -139,6 +145,7 @@ export const inventoryApi = {
   create: async (data: InventoryCreateRequest) => {
     const response = await api.post<{ id: string }>("/inventory", {
       ProductId: data.productId,
+      ProductVariantId: data.productVariantId || null,
       WarehouseId: data.warehouseId,
       Status: data.status,
       SerialNumber: data.serialNumber,
@@ -156,6 +163,7 @@ export const inventoryApi = {
     await api.put(`/inventory/${id}`, {
       Id: id,
       ProductId: data.productId,
+      ProductVariantId: data.productVariantId || null,
       WarehouseId: data.warehouseId,
       Status: data.status,
       SerialNumber: data.serialNumber,

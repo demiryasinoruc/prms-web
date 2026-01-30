@@ -49,6 +49,7 @@ const schema = z.object({
   showInFilter: z.boolean(),
   isSearchable: z.boolean(),
   inheritToChildren: z.boolean(),
+  isVariantAttribute: z.boolean(),
   isActive: z.boolean(),
 })
 
@@ -75,6 +76,7 @@ const defaultValues: FormData = {
   showInFilter: false,
   isSearchable: false,
   inheritToChildren: true,
+  isVariantAttribute: false,
   isActive: true,
 }
 
@@ -110,6 +112,7 @@ export function CategoryAttributeDialog({
           showInFilter: editData.showInFilter,
           isSearchable: editData.isSearchable,
           inheritToChildren: editData.inheritToChildren,
+          isVariantAttribute: editData.isVariantAttribute,
           isActive: editData.isActive,
         }
       : defaultValues
@@ -179,6 +182,7 @@ export function CategoryAttributeDialog({
             showInFilter: data.showInFilter,
             isSearchable: data.isSearchable,
             inheritToChildren: data.inheritToChildren,
+            isVariantAttribute: data.isVariantAttribute,
             isActive: data.isActive,
           },
         })
@@ -199,6 +203,7 @@ export function CategoryAttributeDialog({
           showInFilter: data.showInFilter,
           isSearchable: data.isSearchable,
           inheritToChildren: data.inheritToChildren,
+          isVariantAttribute: data.isVariantAttribute,
         })
       }
       onOpenChange(false)
@@ -235,6 +240,7 @@ export function CategoryAttributeDialog({
                 name="categoryId"
                 render={({ field }) => (
                   <Select
+                    key={`category-${field.value}`}
                     value={field.value || "none"}
                     onValueChange={(value) =>
                       field.onChange(value === "none" ? "" : value)
@@ -304,6 +310,7 @@ export function CategoryAttributeDialog({
                   name="dataType"
                   render={({ field }) => (
                     <Select
+                      key={`datatype-${field.value}`}
                       value={String(field.value)}
                       onValueChange={(value) => field.onChange(Number(value))}
                     >
@@ -445,6 +452,29 @@ export function CategoryAttributeDialog({
                 />
               </div>
             </div>
+
+            {/* Varyant Özelliği (sadece Select tipinde) */}
+            {watchedDataType === AttributeDataType.Select && (
+              <div className="flex items-center justify-between rounded-lg border p-3 border-primary/30 bg-primary/5">
+                <div>
+                  <Label htmlFor="isVariantAttribute">Varyant Özelliği</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Ürün varyantları oluşturmak için kullanılsın mı?
+                  </p>
+                </div>
+                <Controller
+                  control={control}
+                  name="isVariantAttribute"
+                  render={({ field }) => (
+                    <Switch
+                      id="isVariantAttribute"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center justify-between rounded-lg border p-3">

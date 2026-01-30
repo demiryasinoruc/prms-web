@@ -105,14 +105,6 @@ export function useDeleteProduct() {
 }
 
 // Lookup Hooks
-export function useBrandSelect() {
-  return useQuery({
-    queryKey: ["brands", "select"],
-    queryFn: () => lookupApi.getBrands(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
-
 export function useCategorySelect() {
   return useQuery({
     queryKey: ["categories", "select"],

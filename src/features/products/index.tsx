@@ -36,7 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useProducts, useDeleteProduct, useCategorySelect, useBrandSelect } from "./hooks"
+import { useProducts, useDeleteProduct, useCategorySelect } from "./hooks"
 import { ProductDialog } from "./product-dialog"
 import { ProductDetailSheet } from "./product-detail-sheet"
 import { ProductType, ProductTypeLabels, type Product } from "./api"
@@ -62,7 +62,6 @@ export default function ProductsPage() {
 
   // Filtreler
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
-  const [brandFilter, setBrandFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -72,7 +71,6 @@ export default function ProductsPage() {
 
   // Lookup data for filters
   const { data: categories } = useCategorySelect()
-  const { data: brands } = useBrandSelect()
 
   const { data, isLoading } = useProducts({
     pageNumber: page + 1, // API 1-indexed bekler
@@ -81,7 +79,6 @@ export default function ProductsPage() {
     sortBy: sorting.sortBy || undefined,
     sortDir: sorting.sortDir || undefined,
     categoryId: categoryFilter !== "all" ? categoryFilter : undefined,
-    brandId: brandFilter !== "all" ? brandFilter : undefined,
     isActive: statusFilter !== "all" ? statusFilter === "active" : undefined,
   })
 
@@ -164,12 +161,6 @@ export default function ProductsPage() {
       header: "Kategori",
       enableSorting: true,
       cell: ({ row }) => row.original.categoryName,
-    },
-    {
-      accessorKey: "brandName",
-      header: "Marka",
-      enableSorting: true,
-      cell: ({ row }) => row.original.brandName,
     },
     {
       accessorKey: "basePrice",
@@ -286,25 +277,6 @@ export default function ProductsPage() {
               </SelectContent>
             </Select>
             <Select
-              value={brandFilter}
-              onValueChange={(value) => {
-                setBrandFilter(value)
-                setPage(0)
-              }}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Marka" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Markalar</SelectItem>
-                {brands?.map((brand) => (
-                  <SelectItem key={brand.value} value={brand.value}>
-                    {brand.text}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
               value={statusFilter}
               onValueChange={(value) => {
                 setStatusFilter(value)
@@ -373,7 +345,7 @@ export default function ProductsPage() {
             pricePeriodName: product.pricePeriodName,
             currencyCode: product.currencyCode,
             categoryName: product.categoryName,
-            brandName: product.brandName,
+            variantCount: 0, // Detail'den bilinmez, edit modunda API'den çekilir
             isActive: product.isActive,
           })
           setDialogOpen(true)

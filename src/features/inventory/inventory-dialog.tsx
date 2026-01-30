@@ -29,10 +29,12 @@ import { InventoryStatus, InventoryStatusLabels, type Inventory } from "./api"
 import { useProductSelectWithType } from "@/features/products/hooks"
 import { ProductType, ProductTypeLabels } from "@/features/products/api"
 import { useWarehouseSelect } from "@/features/warehouses/hooks"
+import { useProductVariantSelect } from "@/features/product-variants/hooks"
 
 // Validation schema - tip bazlı validation backend'de yapılıyor
 const inventorySchema = z.object({
   productId: z.string().min(1, "Ürün seçiniz"),
+  productVariantId: z.string().nullable().optional(),
   warehouseId: z.string().min(1, "Depo seçiniz"),
   status: z.number().min(1, "Durum seçiniz"),
   serialNumber: z.string().default(""),
@@ -77,6 +79,7 @@ export function InventoryDialog({
 
   const defaultValues: InventoryFormData = {
     productId: "",
+    productVariantId: null,
     warehouseId: "",
     status: InventoryStatus.Available,
     serialNumber: "",
@@ -111,12 +114,23 @@ export function InventoryDialog({
     return products.find(p => p.id === watchedProductId) || null
   }, [watchedProductId, products])
 
+  // Ürünün varyantlarını yükle
+  const { data: productVariants } = useProductVariantSelect(watchedProductId || "")
+  const hasVariants = productVariants && productVariants.length > 0
+
   // Ürün tipi değiştiğinde quantity'yi ayarla (Tracked için 1)
   useEffect(() => {
     if (selectedProduct?.type === ProductType.Tracked) {
       setValue("quantity", 1)
     }
   }, [selectedProduct?.type, setValue])
+
+  // Ürün değiştiğinde varyant seçimini temizle
+  useEffect(() => {
+    if (!inventory) {
+      setValue("productVariantId", null)
+    }
+  }, [watchedProductId, setValue, inventory])
 
   // Ürün tipine göre alan görünürlükleri
   const showSerialNumber = selectedProduct?.type !== ProductType.Consumable
@@ -137,6 +151,7 @@ export function InventoryDialog({
     if (inventory) {
       reset({
         productId: inventory.productId,
+        productVariantId: inventory.productVariantId || null,
         warehouseId: inventory.warehouseId,
         status: inventory.status,
         serialNumber: inventory.serialNumber || "",
@@ -188,6 +203,7 @@ export function InventoryDialog({
           data: {
             id: inventory.id,
             productId: data.productId,
+            productVariantId: data.productVariantId || null,
             warehouseId: data.warehouseId,
             status: data.status,
             serialNumber: data.serialNumber,
@@ -203,6 +219,7 @@ export function InventoryDialog({
       } else {
         await createInventory.mutateAsync({
           productId: data.productId,
+          productVariantId: data.productVariantId || null,
           warehouseId: data.warehouseId,
           status: data.status,
           serialNumber: data.serialNumber,
@@ -279,6 +296,40 @@ export function InventoryDialog({
               <p className="text-sm text-destructive">{errors.productId.message}</p>
             )}
           </div>
+
+          {hasVariants && (
+            <div className="space-y-2">
+              <Label>Varyant *</Label>
+              <Controller
+                control={control}
+                name="productVariantId"
+                render={({ field }) => (
+                  <Select
+                    key={`variant-${field.value}`}
+                    value={field.value || "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Varyant seçiniz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" disabled>
+                        Varyant seçiniz
+                      </SelectItem>
+                      {productVariants?.map((variant) => (
+                        <SelectItem key={variant.value} value={variant.value}>
+                          {variant.text}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.productVariantId && (
+                <p className="text-sm text-destructive">{errors.productVariantId.message}</p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Depo *</Label>

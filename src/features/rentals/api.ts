@@ -90,6 +90,8 @@ export interface Rental {
   actualEndDate: string | null
   totalAmount: number
   depositAmount: number
+  depositPaidAmount: number
+  depositRefundedAmount: number
   paidAmount: number
   itemCount: number
   createdDate: string
@@ -124,6 +126,8 @@ export interface RentalDetail {
   taxAmount: number
   totalAmount: number
   depositAmount: number
+  depositPaidAmount: number
+  depositRefundedAmount: number
   paidAmount: number
   notes: string
   createdByUserName: string
@@ -144,6 +148,8 @@ export interface RentalItem {
   productId: string
   productName: string
   productType: ProductType
+  productVariantId: string | null
+  productVariantSku: string | null
   inventoryId: string | null
   inventorySerialNumber: string
   currentLifespan: number | null
@@ -157,7 +163,7 @@ export interface RentalItem {
   endDateTime: string | null
   discountType: DiscountType
   discountValue: number
-  applyRentalDiscount: boolean
+
   discountAmount: number
   discountPercent: number
   lineTotal: number
@@ -184,7 +190,7 @@ export interface RentalService {
   endDateTime: string | null
   discountType: DiscountType
   discountValue: number
-  applyRentalDiscount: boolean
+
   discountAmount: number
   discountPercent: number
   lineTotal: number
@@ -232,6 +238,7 @@ export interface PaginatedRentalResponse {
 
 export interface RentalItemRequest {
   productId: string
+  productVariantId?: string | null
   inventoryId?: string | null
   quantity: number
   unitPrice: number
@@ -240,7 +247,7 @@ export interface RentalItemRequest {
   endDateTime?: string | null
   discountType: DiscountType
   discountValue: number
-  applyRentalDiscount: boolean
+
 }
 
 export interface RentalServiceRequest {
@@ -253,7 +260,7 @@ export interface RentalServiceRequest {
   endDateTime?: string | null
   discountType: DiscountType
   discountValue: number
-  applyRentalDiscount: boolean
+
   notes: string
 }
 
@@ -305,6 +312,7 @@ export interface RentalForEdit {
 export interface RentalItemForEdit {
   id: string
   productId: string
+  productVariantId: string | null
   inventoryId: string | null
   quantity: number
   unitPrice: number
@@ -313,7 +321,7 @@ export interface RentalItemForEdit {
   endDateTime: string | null
   discountType: DiscountType
   discountValue: number
-  applyRentalDiscount: boolean
+
 }
 
 export interface RentalServiceForEdit {
@@ -327,7 +335,7 @@ export interface RentalServiceForEdit {
   endDateTime: string | null
   discountType: DiscountType
   discountValue: number
-  applyRentalDiscount: boolean
+
   notes: string
 }
 
@@ -435,6 +443,7 @@ export const rentalApi = {
       Notes: data.notes || "",
       Items: data.items.map((item) => ({
         ProductId: item.productId,
+        ProductVariantId: item.productVariantId || null,
         InventoryId: item.inventoryId || null,
         Quantity: item.quantity,
         UnitPrice: item.unitPrice,
@@ -443,7 +452,7 @@ export const rentalApi = {
         EndDateTime: item.endDateTime || null,
         DiscountType: item.discountType,
         DiscountValue: item.discountValue,
-        ApplyRentalDiscount: item.applyRentalDiscount,
+        ApplyRentalDiscount: true,
       })),
       Services: data.services.map((service) => ({
         ExtraServiceId: service.extraServiceId,
@@ -455,7 +464,7 @@ export const rentalApi = {
         EndDateTime: service.endDateTime || null,
         DiscountType: service.discountType,
         DiscountValue: service.discountValue,
-        ApplyRentalDiscount: service.applyRentalDiscount,
+        ApplyRentalDiscount: true,
         Notes: service.notes || "",
       })),
     })
@@ -480,6 +489,7 @@ export const rentalApi = {
       Notes: data.notes || "",
       Items: data.items.map((item) => ({
         ProductId: item.productId,
+        ProductVariantId: item.productVariantId || null,
         InventoryId: item.inventoryId || null,
         Quantity: item.quantity,
         UnitPrice: item.unitPrice,
@@ -488,7 +498,7 @@ export const rentalApi = {
         EndDateTime: item.endDateTime || null,
         DiscountType: item.discountType,
         DiscountValue: item.discountValue,
-        ApplyRentalDiscount: item.applyRentalDiscount,
+        ApplyRentalDiscount: true,
       })),
       Services: data.services.map((service) => ({
         ExtraServiceId: service.extraServiceId,
@@ -500,7 +510,7 @@ export const rentalApi = {
         EndDateTime: service.endDateTime || null,
         DiscountType: service.discountType,
         DiscountValue: service.discountValue,
-        ApplyRentalDiscount: service.applyRentalDiscount,
+        ApplyRentalDiscount: true,
         Notes: service.notes || "",
       })),
     })
