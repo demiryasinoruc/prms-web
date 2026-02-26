@@ -143,6 +143,14 @@ export const inventoryApi = {
     return response.data
   },
 
+  getSelect: async () => {
+    const response = await api.get<{ value: string; text: string }[]>("/inventory/select")
+    return response.data.map((item) => ({
+      id: item.value,
+      name: item.text,
+    }))
+  },
+
   getDetail: async (id: string) => {
     const response = await api.get<InventoryDetail>(`/inventory/detail/${id}`)
     return response.data

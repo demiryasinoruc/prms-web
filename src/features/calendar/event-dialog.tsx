@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -87,39 +86,26 @@ export function EventDialog({ open, onOpenChange, event }: EventDialogProps) {
     isActive: true,
   }
 
+  const formValues: EventFormData = (open && eventDetail) ? {
+    title: eventDetail.title,
+    description: eventDetail.description || "",
+    type: eventDetail.type,
+    startDate: eventDetail.startDate.split("T")[0],
+    endDate: eventDetail.endDate.split("T")[0],
+    isAllDay: eventDetail.isAllDay,
+    color: eventDetail.color || "#3b82f6",
+    isActive: eventDetail.isActive,
+  } : defaultValues
+
   const {
     register,
     handleSubmit,
     control,
-    reset,
     formState: { errors },
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
-    defaultValues,
+    values: open ? formValues : defaultValues,
   })
-
-  // KURAL: open MUTLAKA dependency'de olmalı
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
-
-    if (eventDetail) {
-      reset({
-        title: eventDetail.title,
-        description: eventDetail.description || "",
-        type: eventDetail.type,
-        startDate: eventDetail.startDate.split("T")[0],
-        endDate: eventDetail.endDate.split("T")[0],
-        isAllDay: eventDetail.isAllDay,
-        color: eventDetail.color || "#3b82f6",
-        isActive: eventDetail.isActive,
-      })
-    } else if (!event) {
-      reset(defaultValues)
-    }
-  }, [open, eventDetail, event, reset])
 
   const onSubmit = async (data: EventFormData) => {
     try {
@@ -192,6 +178,7 @@ export function EventDialog({ open, onOpenChange, event }: EventDialogProps) {
                   name="type"
                   render={({ field }) => (
                     <Select
+                      key={`type-${field.value}`}
                       value={String(field.value)}
                       onValueChange={(value) => field.onChange(Number(value))}
                     >
@@ -216,7 +203,7 @@ export function EventDialog({ open, onOpenChange, event }: EventDialogProps) {
                   control={control}
                   name="color"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select key={`color-${field.value}`} value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>
                         <SelectValue placeholder="Renk seçiniz" />
                       </SelectTrigger>

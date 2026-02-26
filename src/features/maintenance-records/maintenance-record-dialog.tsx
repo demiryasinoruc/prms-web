@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -39,7 +39,7 @@ import {
   MaintenanceStatusLabels,
   type MaintenanceRecord,
 } from "./api"
-import { useInventory } from "@/features/inventory/hooks"
+import { useInventorySelect, useInventoryDetail } from "@/features/inventory/hooks"
 import { useEmployeeSelect } from "@/features/employees/hooks"
 
 const maintenanceRecordSchema = z.object({
@@ -104,9 +104,7 @@ export function MaintenanceRecordDialog({
     open && record ? record.id : null
   )
 
-  // Edit modunda tüm envanterler, yeni kayıtta sadece aktifler
-  const { data: inventoryResponse, isLoading: isLoadingInventory } = useInventory(record ? { pageSize: 1000 } : { isActive: true, pageSize: 1000 })
-  const inventoryItems = inventoryResponse?.data
+  const { data: inventoryItems, isLoading: isLoadingInventory } = useInventorySelect()
   const { data: employees, isLoading: isLoadingEmployees } = useEmployeeSelect()
 
   // Verinin doğru kayda ait olup olmadığını kontrol et
@@ -154,11 +152,8 @@ export function MaintenanceRecordDialog({
   const status = watch("status")
   const inventoryId = watch("inventoryId")
 
-  // Seçili envanterin ömür takibi var mı?
-  const selectedInventory = useMemo(() => {
-    if (!inventoryId || !inventoryItems) return null
-    return inventoryItems.find(item => item.id.toLowerCase() === inventoryId.toLowerCase()) ?? null
-  }, [inventoryId, inventoryItems])
+  // Seçili envanterin detayını getir (ömür takibi kontrolü için)
+  const { data: selectedInventory } = useInventoryDetail(inventoryId || null)
 
   const hasLifespanTracking = selectedInventory?.lifespanUnitTypeName != null
 
@@ -297,7 +292,7 @@ export function MaintenanceRecordDialog({
                       <SelectItem value="none" disabled>Envanter seçiniz</SelectItem>
                       {inventoryItems?.map((item) => (
                         <SelectItem key={item.id} value={item.id.toLowerCase()}>
-                          {item.serialNumber} - {item.productName}
+                          {item.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
