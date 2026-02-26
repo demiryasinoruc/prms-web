@@ -49,6 +49,7 @@ export function useCreateEmployee() {
     mutationFn: (data: EmployeeCreateRequest) => employeeApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: employeeKeys.select() })
     },
   })
 }
@@ -62,6 +63,7 @@ export function useUpdateEmployee() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
       queryClient.invalidateQueries({ queryKey: employeeKeys.details() })
+      queryClient.invalidateQueries({ queryKey: employeeKeys.select() })
     },
   })
 }
@@ -73,6 +75,7 @@ export function useDeleteEmployee() {
     mutationFn: (id: string) => employeeApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: employeeKeys.select() })
     },
   })
 }

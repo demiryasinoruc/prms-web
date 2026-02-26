@@ -55,6 +55,8 @@ export function useCreateExtraService() {
     mutationFn: (data: ExtraServiceCreateRequest) => extraServiceApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: extraServiceKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.select() })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.selectForRental() })
     },
   })
 }
@@ -68,6 +70,8 @@ export function useUpdateExtraService() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: extraServiceKeys.lists() })
       queryClient.invalidateQueries({ queryKey: extraServiceKeys.details() })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.select() })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.selectForRental() })
     },
   })
 }
@@ -79,6 +83,8 @@ export function useDeleteExtraService() {
     mutationFn: (id: string) => extraServiceApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: extraServiceKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.select() })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.selectForRental() })
     },
   })
 }

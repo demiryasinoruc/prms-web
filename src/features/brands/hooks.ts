@@ -49,6 +49,7 @@ export function useCreateBrand() {
     mutationFn: (data: BrandCreateRequest) => brandApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brandKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: brandKeys.select() })
     },
   })
 }
@@ -62,6 +63,7 @@ export function useUpdateBrand() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brandKeys.lists() })
       queryClient.invalidateQueries({ queryKey: brandKeys.details() })
+      queryClient.invalidateQueries({ queryKey: brandKeys.select() })
     },
   })
 }
@@ -73,6 +75,7 @@ export function useDeleteBrand() {
     mutationFn: (id: string) => brandApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brandKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: brandKeys.select() })
     },
   })
 }

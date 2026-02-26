@@ -49,6 +49,7 @@ export function useCreateWarehouse() {
     mutationFn: (data: WarehouseCreateRequest) => warehouseApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: warehouseKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.select() })
     },
   })
 }
@@ -62,6 +63,7 @@ export function useUpdateWarehouse() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: warehouseKeys.lists() })
       queryClient.invalidateQueries({ queryKey: warehouseKeys.details() })
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.select() })
     },
   })
 }
@@ -73,6 +75,7 @@ export function useDeleteWarehouse() {
     mutationFn: (id: string) => warehouseApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: warehouseKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.select() })
     },
   })
 }

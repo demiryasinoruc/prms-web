@@ -49,6 +49,7 @@ export function useCreateVehicle() {
     mutationFn: (data: VehicleCreateRequest) => vehicleApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: vehicleKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: vehicleKeys.select() })
     },
   })
 }
@@ -62,6 +63,7 @@ export function useUpdateVehicle() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: vehicleKeys.lists() })
       queryClient.invalidateQueries({ queryKey: vehicleKeys.details() })
+      queryClient.invalidateQueries({ queryKey: vehicleKeys.select() })
     },
   })
 }
@@ -73,6 +75,7 @@ export function useDeleteVehicle() {
     mutationFn: (id: string) => vehicleApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: vehicleKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: vehicleKeys.select() })
     },
   })
 }

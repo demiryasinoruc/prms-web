@@ -49,6 +49,7 @@ export function useCreateCustomer() {
     mutationFn: (data: CustomerCreateRequest) => customerApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: customerKeys.select() })
     },
   })
 }
@@ -62,6 +63,7 @@ export function useUpdateCustomer() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
       queryClient.invalidateQueries({ queryKey: customerKeys.detail(id) })
+      queryClient.invalidateQueries({ queryKey: customerKeys.select() })
     },
   })
 }
@@ -73,6 +75,7 @@ export function useDeleteCustomer() {
     mutationFn: (id: string) => customerApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: customerKeys.select() })
     },
   })
 }
