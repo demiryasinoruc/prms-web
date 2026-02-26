@@ -1,9 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { categoryApi, type CategoryListParams, type CategoryCreateRequest, type CategoryUpdateRequest } from "./api"
 
+export const categoryKeys = {
+  all: ["categories"] as const,
+  lists: () => [...categoryKeys.all, "list"] as const,
+  list: (params: CategoryListParams) => [...categoryKeys.lists(), params] as const,
+  details: () => [...categoryKeys.all, "detail"] as const,
+  detail: (id: string) => [...categoryKeys.details(), id] as const,
+  select: () => [...categoryKeys.all, "select"] as const,
+  selectParent: () => [...categoryKeys.all, "select-parent"] as const,
+  selectByParent: (parentId: string | null | undefined) => [...categoryKeys.all, "select-by-parent", parentId ?? "root"] as const,
+}
+
 export function useCategories(params: CategoryListParams = {}) {
   return useQuery({
-    queryKey: ["categories", params],
+    queryKey: categoryKeys.list(params),
     queryFn: () => categoryApi.getAll(params),
     staleTime: 0,
     gcTime: 0,
@@ -12,7 +23,7 @@ export function useCategories(params: CategoryListParams = {}) {
 
 export function useCategory(id: string) {
   return useQuery({
-    queryKey: ["category", id],
+    queryKey: categoryKeys.detail(id),
     queryFn: () => categoryApi.getById(id),
     enabled: !!id,
   })
@@ -20,7 +31,7 @@ export function useCategory(id: string) {
 
 export function useCategoryForEdit(id: string) {
   return useQuery({
-    queryKey: ["category", "edit", id],
+    queryKey: [...categoryKeys.details(), "edit", id],
     queryFn: () => categoryApi.getForEdit(id),
     enabled: !!id,
   })
@@ -28,14 +39,14 @@ export function useCategoryForEdit(id: string) {
 
 export function useCategorySelectParent() {
   return useQuery({
-    queryKey: ["categories", "select-parent"],
+    queryKey: categoryKeys.selectParent(),
     queryFn: () => categoryApi.getSelectParent(),
   })
 }
 
 export function useCategorySelect() {
   return useQuery({
-    queryKey: ["categories", "select"],
+    queryKey: categoryKeys.select(),
     queryFn: () => categoryApi.getSelect(),
   })
 }
@@ -47,9 +58,9 @@ export function useCategorySelect() {
  */
 export function useCategorySelectByParent(parentId: string | null | undefined) {
   return useQuery({
-    queryKey: ["categories", "select-by-parent", parentId ?? "root"],
+    queryKey: categoryKeys.selectByParent(parentId),
     queryFn: () => categoryApi.getSelectByParent(parentId),
-    enabled: parentId !== "", // Boş string değilse sorgu yap (null veya undefined da dahil)
+    enabled: parentId !== "",
   })
 }
 
@@ -59,7 +70,9 @@ export function useCreateCategory() {
   return useMutation({
     mutationFn: (data: CategoryCreateRequest) => categoryApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.select() })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.selectParent() })
     },
   })
 }
@@ -71,8 +84,10 @@ export function useUpdateCategory() {
     mutationFn: ({ id, data }: { id: string; data: CategoryUpdateRequest }) =>
       categoryApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
-      queryClient.invalidateQueries({ queryKey: ["category"] })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.details() })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.select() })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.selectParent() })
     },
   })
 }
@@ -83,7 +98,9 @@ export function useDeleteCategory() {
   return useMutation({
     mutationFn: (id: string) => categoryApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.select() })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.selectParent() })
     },
   })
 }

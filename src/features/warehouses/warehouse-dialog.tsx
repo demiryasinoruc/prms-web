@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -45,25 +44,6 @@ export function WarehouseDialog({
   const { data: warehouseData } = useWarehouseForEdit(warehouse?.id || "")
   const editWarehouse = warehouse ? warehouseData : null
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<WarehouseFormData>({
-    resolver: zodResolver(warehouseSchema) as any,
-    defaultValues: {
-      name: "",
-      address: "",
-      contactInfo: "",
-      isActive: true,
-    },
-  })
-
-  const isActive = watch("isActive")
-
   const defaultValues = {
     name: "",
     address: "",
@@ -71,31 +51,30 @@ export function WarehouseDialog({
     isActive: true,
   }
 
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
+  const formValues = (open && editWarehouse) ? {
+    name: editWarehouse.name,
+    address: editWarehouse.address || "",
+    contactInfo: editWarehouse.contactInfo || "",
+    isActive: editWarehouse.isActive,
+  } : (open && warehouse) ? {
+    name: warehouse.name,
+    address: warehouse.address || "",
+    contactInfo: warehouse.contactInfo || "",
+    isActive: warehouse.isActive,
+  } : defaultValues
 
-    if (editWarehouse) {
-      reset({
-        name: editWarehouse.name,
-        address: editWarehouse.address || "",
-        contactInfo: editWarehouse.contactInfo || "",
-        isActive: editWarehouse.isActive,
-      })
-    } else if (warehouse) {
-      // warehouse var ama editWarehouse henüz yüklenmedi - liste verisini kullan
-      reset({
-        name: warehouse.name,
-        address: warehouse.address || "",
-        contactInfo: warehouse.contactInfo || "",
-        isActive: warehouse.isActive,
-      })
-    } else {
-      reset(defaultValues)
-    }
-  }, [open, editWarehouse, warehouse, reset])
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<WarehouseFormData>({
+    resolver: zodResolver(warehouseSchema) as any,
+    values: open ? formValues : defaultValues,
+  })
+
+  const isActive = watch("isActive")
 
   const onSubmit = async (data: WarehouseFormData) => {
     try {

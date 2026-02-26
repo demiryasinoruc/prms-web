@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
 import { productRuleApi } from "./api"
 import type { ProductRuleListParams, ProductRuleCreateRequest, ProductRuleUpdateRequest } from "./api"
 
@@ -15,6 +14,8 @@ export function useProductRules(params: ProductRuleListParams = {}) {
   return useQuery({
     queryKey: productRuleKeys.list(params),
     queryFn: () => productRuleApi.getAll(params),
+    staleTime: 0,
+    gcTime: 0,
   })
 }
 
@@ -42,10 +43,6 @@ export function useCreateProductRule() {
     mutationFn: (data: ProductRuleCreateRequest) => productRuleApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productRuleKeys.lists() })
-      toast.success("Ürün kuralı başarıyla oluşturuldu")
-    },
-    onError: () => {
-      toast.error("Ürün kuralı oluşturulurken bir hata oluştu")
     },
   })
 }
@@ -59,10 +56,6 @@ export function useUpdateProductRule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productRuleKeys.lists() })
       queryClient.invalidateQueries({ queryKey: productRuleKeys.details() })
-      toast.success("Ürün kuralı başarıyla güncellendi")
-    },
-    onError: () => {
-      toast.error("Ürün kuralı güncellenirken bir hata oluştu")
     },
   })
 }
@@ -74,10 +67,6 @@ export function useDeleteProductRule() {
     mutationFn: (id: string) => productRuleApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productRuleKeys.lists() })
-      toast.success("Ürün kuralı başarıyla silindi")
-    },
-    onError: () => {
-      toast.error("Ürün kuralı silinirken bir hata oluştu")
     },
   })
 }

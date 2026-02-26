@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -60,30 +59,7 @@ export function VehicleDialog({
   const { data: vehicleData } = useVehicleForEdit(vehicle?.id || "")
   const editVehicle = vehicle ? vehicleData : null
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    formState: { errors },
-  } = useForm<VehicleFormData>({
-    resolver: zodResolver(vehicleSchema) as any,
-    defaultValues: {
-      vehicleType: VehicleType.Truck,
-      status: VehicleStatus.Available,
-      brandName: "",
-      model: "",
-      year: new Date().getFullYear(),
-      plate: "",
-      color: "",
-      capacity: 0,
-      capacityUnit: "kg",
-      warehouseId: "",
-      notes: "",
-    },
-  })
-
-  const defaultValues = {
+  const defaultValues: VehicleFormData = {
     vehicleType: VehicleType.Truck,
     status: VehicleStatus.Available,
     brandName: "",
@@ -97,46 +73,42 @@ export function VehicleDialog({
     notes: "",
   }
 
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
+  const formValues: VehicleFormData = (open && editVehicle) ? {
+    vehicleType: editVehicle.vehicleType,
+    status: editVehicle.status || VehicleStatus.Available,
+    brandName: editVehicle.brandName,
+    model: editVehicle.model,
+    year: editVehicle.year || new Date().getFullYear(),
+    plate: editVehicle.plate,
+    color: editVehicle.color || "",
+    capacity: editVehicle.capacity || 0,
+    capacityUnit: editVehicle.capacityUnit || "kg",
+    warehouseId: editVehicle.warehouseId || "",
+    notes: editVehicle.notes || "",
+  } : (open && vehicle) ? {
+    vehicleType: vehicle.vehicleType,
+    status: vehicle.status || VehicleStatus.Available,
+    brandName: vehicle.brandName,
+    model: vehicle.model,
+    year: vehicle.year || new Date().getFullYear(),
+    plate: vehicle.plate,
+    color: vehicle.color || "",
+    capacity: vehicle.capacity || 0,
+    capacityUnit: vehicle.capacityUnit || "kg",
+    warehouseId: vehicle.warehouseId || "",
+    notes: vehicle.notes || "",
+  } : defaultValues
 
-    // editVehicle varsa (API'den detay geldi), onu kullan
-    if (editVehicle) {
-      reset({
-        vehicleType: editVehicle.vehicleType,
-        status: editVehicle.status || VehicleStatus.Available,
-        brandName: editVehicle.brandName,
-        model: editVehicle.model,
-        year: editVehicle.year || new Date().getFullYear(),
-        plate: editVehicle.plate,
-        color: editVehicle.color || "",
-        capacity: editVehicle.capacity || 0,
-        capacityUnit: editVehicle.capacityUnit || "kg",
-        warehouseId: editVehicle.warehouseId || "",
-        notes: editVehicle.notes || "",
-      })
-    } else if (vehicle) {
-      // editVehicle henüz yüklenmediyse, listeden gelen vehicle verisini kullan
-      reset({
-        vehicleType: vehicle.vehicleType,
-        status: vehicle.status || VehicleStatus.Available,
-        brandName: vehicle.brandName,
-        model: vehicle.model,
-        year: vehicle.year || new Date().getFullYear(),
-        plate: vehicle.plate,
-        color: vehicle.color || "",
-        capacity: vehicle.capacity || 0,
-        capacityUnit: vehicle.capacityUnit || "kg",
-        warehouseId: vehicle.warehouseId || "",
-        notes: vehicle.notes || "",
-      })
-    } else {
-      reset(defaultValues)
-    }
-  }, [open, editVehicle, vehicle, reset])
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<VehicleFormData>({
+    resolver: zodResolver(vehicleSchema) as any,
+    defaultValues,
+    values: open ? formValues : defaultValues,
+  })
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
@@ -177,8 +149,9 @@ export function VehicleDialog({
                 name="vehicleType"
                 render={({ field }) => (
                   <Select
-                    value={String(field.value)}
-                    onValueChange={(value) => field.onChange(Number(value))}
+                    key={`vehicleType-${field.value}`}
+                    value={field.value != null ? String(field.value) : "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -251,7 +224,11 @@ export function VehicleDialog({
                 control={control}
                 name="capacityUnit"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    key={`capacityUnit-${field.value}`}
+                    value={field.value || "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -271,7 +248,11 @@ export function VehicleDialog({
                 control={control}
                 name="warehouseId"
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    key={`warehouseId-${field.value}`}
+                    value={field.value || "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Depo seçin" />
                     </SelectTrigger>
@@ -302,8 +283,9 @@ export function VehicleDialog({
                 name="status"
                 render={({ field }) => (
                   <Select
-                    value={String(field.value)}
-                    onValueChange={(value) => field.onChange(Number(value))}
+                    key={`status-${field.value}`}
+                    value={field.value != null ? String(field.value) : "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
                   >
                     <SelectTrigger>
                       <SelectValue />

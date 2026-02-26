@@ -18,6 +18,8 @@ export function useCalendarEvents(params: CalendarEventListParams = {}) {
   return useQuery({
     queryKey: calendarKeys.list(params),
     queryFn: () => calendarApi.getAll(params),
+    staleTime: 0,
+    gcTime: 0,
   })
 }
 

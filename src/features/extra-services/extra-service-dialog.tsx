@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -54,6 +53,17 @@ type ExtraServiceFormData = {
   notes: string | null
 }
 
+const defaultValues: ExtraServiceFormData = {
+  name: "",
+  description: "",
+  price: 0,
+  pricePeriodId: "",
+  currencyId: "",
+  requiredCertificateId: null,
+  isActive: true,
+  notes: "",
+}
+
 interface ExtraServiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -73,60 +83,32 @@ export function ExtraServiceDialog({
   const { data: currencies } = useCurrencies()
   const { data: certificates } = useCertificates()
 
+  const formValues: ExtraServiceFormData = (open && serviceDetail && extraService) ? {
+    name: serviceDetail.name,
+    description: serviceDetail.description,
+    price: serviceDetail.price,
+    pricePeriodId: String(serviceDetail.pricePeriodId),
+    currencyId: String(serviceDetail.currencyId),
+    requiredCertificateId: serviceDetail.requiredCertificateId || null,
+    isActive: serviceDetail.isActive,
+    notes: serviceDetail.notes || "",
+  } : defaultValues
+
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
     watch,
     formState: { errors },
   } = useForm<ExtraServiceFormData>({
     resolver: zodResolver(extraServiceSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      pricePeriodId: "",
-      currencyId: "",
-      requiredCertificateId: null,
-      isActive: true,
-      notes: "",
-    },
+    values: open ? formValues : defaultValues,
   })
 
   const isActive = watch("isActive")
   const pricePeriodId = watch("pricePeriodId")
   const currencyId = watch("currencyId")
   const requiredCertificateId = watch("requiredCertificateId")
-
-  useEffect(() => {
-    if (!open) {
-      reset({
-        name: "",
-        description: "",
-        price: 0,
-        pricePeriodId: "",
-        currencyId: "",
-        requiredCertificateId: null,
-        isActive: true,
-        notes: "",
-      })
-      return
-    }
-
-    if (serviceDetail && extraService) {
-      reset({
-        name: serviceDetail.name,
-        description: serviceDetail.description,
-        price: serviceDetail.price,
-        pricePeriodId: String(serviceDetail.pricePeriodId),
-        currencyId: String(serviceDetail.currencyId),
-        requiredCertificateId: serviceDetail.requiredCertificateId || null,
-        isActive: serviceDetail.isActive,
-        notes: serviceDetail.notes || "",
-      })
-    }
-  }, [open, serviceDetail, extraService, reset])
 
   const onSubmit = async (data: ExtraServiceFormData) => {
     try {
@@ -218,8 +200,9 @@ export function ExtraServiceDialog({
             <div className="space-y-2">
               <Label>Para Birimi *</Label>
               <Select
-                value={currencyId || undefined}
-                onValueChange={(value) => setValue("currencyId", value)}
+                key={`currencyId-${currencyId}`}
+                value={currencyId != null ? String(currencyId) : "none"}
+                onValueChange={(value) => setValue("currencyId", value === "none" ? "" : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seçiniz" />
@@ -241,8 +224,9 @@ export function ExtraServiceDialog({
           <div className="space-y-2">
             <Label>Fiyat Periyodu *</Label>
             <Select
-              value={pricePeriodId || undefined}
-              onValueChange={(value) => setValue("pricePeriodId", value)}
+              key={`pricePeriodId-${pricePeriodId}`}
+              value={pricePeriodId != null ? String(pricePeriodId) : "none"}
+              onValueChange={(value) => setValue("pricePeriodId", value === "none" ? "" : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seçiniz" />
@@ -263,6 +247,7 @@ export function ExtraServiceDialog({
           <div className="space-y-2">
             <Label>Gerekli Sertifika (Opsiyonel)</Label>
             <Select
+              key={`certificateId-${requiredCertificateId}`}
               value={requiredCertificateId || "none"}
               onValueChange={(value) => setValue("requiredCertificateId", value === "none" ? null : value)}
             >

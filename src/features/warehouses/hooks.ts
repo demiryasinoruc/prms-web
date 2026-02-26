@@ -1,9 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { warehouseApi, type WarehouseListParams, type WarehouseCreateRequest, type WarehouseUpdateRequest } from "./api"
 
+export const warehouseKeys = {
+  all: ["warehouses"] as const,
+  lists: () => [...warehouseKeys.all, "list"] as const,
+  list: (params: WarehouseListParams) => [...warehouseKeys.lists(), params] as const,
+  details: () => [...warehouseKeys.all, "detail"] as const,
+  detail: (id: string) => [...warehouseKeys.details(), id] as const,
+  select: () => [...warehouseKeys.all, "select"] as const,
+}
+
 export function useWarehouses(params: WarehouseListParams = {}) {
   return useQuery({
-    queryKey: ["warehouses", params],
+    queryKey: warehouseKeys.list(params),
     queryFn: () => warehouseApi.getAll(params),
     staleTime: 0,
     gcTime: 0,
@@ -12,7 +21,7 @@ export function useWarehouses(params: WarehouseListParams = {}) {
 
 export function useWarehouse(id: string) {
   return useQuery({
-    queryKey: ["warehouse", id],
+    queryKey: warehouseKeys.detail(id),
     queryFn: () => warehouseApi.getById(id),
     enabled: !!id,
   })
@@ -20,7 +29,7 @@ export function useWarehouse(id: string) {
 
 export function useWarehouseForEdit(id: string) {
   return useQuery({
-    queryKey: ["warehouse", "edit", id],
+    queryKey: [...warehouseKeys.details(), "edit", id],
     queryFn: () => warehouseApi.getForEdit(id),
     enabled: !!id,
   })
@@ -28,7 +37,7 @@ export function useWarehouseForEdit(id: string) {
 
 export function useWarehouseSelect() {
   return useQuery({
-    queryKey: ["warehouses", "select"],
+    queryKey: warehouseKeys.select(),
     queryFn: () => warehouseApi.getSelect(),
   })
 }
@@ -39,7 +48,7 @@ export function useCreateWarehouse() {
   return useMutation({
     mutationFn: (data: WarehouseCreateRequest) => warehouseApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["warehouses"] })
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.lists() })
     },
   })
 }
@@ -51,8 +60,8 @@ export function useUpdateWarehouse() {
     mutationFn: ({ id, data }: { id: string; data: WarehouseUpdateRequest }) =>
       warehouseApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["warehouses"] })
-      queryClient.invalidateQueries({ queryKey: ["warehouse"] })
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.details() })
     },
   })
 }
@@ -63,7 +72,7 @@ export function useDeleteWarehouse() {
   return useMutation({
     mutationFn: (id: string) => warehouseApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["warehouses"] })
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.lists() })
     },
   })
 }

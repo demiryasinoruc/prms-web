@@ -19,6 +19,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
 import {
   AlertDialog,
@@ -31,13 +38,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useInventory, useDeleteInventory } from "./hooks"
+import { useWarehouseSelect } from "@/features/warehouses/hooks"
 import { InventoryDialog } from "./inventory-dialog"
 import { InventoryDetailSheet } from "./inventory-detail-sheet"
 import {
   InventoryStatus,
   InventoryStatusLabels,
   type Inventory,
-  type InventoryListParams,
 } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
@@ -49,24 +56,32 @@ export default function InventoryPage() {
 
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 400)
-  const [statusFilter, setStatusFilter] = useState<InventoryStatus | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [warehouseFilter, setWarehouseFilter] = useState<string>("all")
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
+  const [sorting, setSorting] = useState<{
+    sortBy: string | null
+    sortDir: "asc" | "desc" | null
+  }>({ sortBy: null, sortDir: null })
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [detailInventoryId, setDetailInventoryId] = useState<string | null>(null)
 
-  // Status filtresi olmadan tüm veriyi çek (sayılar için)
-  const params: InventoryListParams = {
+  const { data: warehouses } = useWarehouseSelect()
+
+  const { data, isLoading } = useInventory({
+    pageNumber: page + 1,
+    pageSize,
     searchTerm: debouncedSearch || undefined,
-  }
+    status: statusFilter !== "all" ? Number(statusFilter) as InventoryStatus : undefined,
+    warehouseId: warehouseFilter !== "all" ? warehouseFilter : undefined,
+    sortBy: sorting.sortBy || undefined,
+    sortDir: sorting.sortDir || undefined,
+  })
 
-  const { data: allInventoryList, isLoading } = useInventory(params)
-
-  // Client-side status filtreleme
-  const inventoryList = statusFilter
-    ? allInventoryList?.filter((i) => i.status === statusFilter)
-    : allInventoryList
   const deleteInventory = useDeleteInventory()
 
   const handleEdit = (inventory: Inventory) => {
@@ -115,24 +130,11 @@ export default function InventoryPage() {
     }
   }
 
-  // Durum sayıları (tüm veriden hesaplanır)
-  const statusCounts = {
-    all: allInventoryList?.length || 0,
-    [InventoryStatus.Available]:
-      allInventoryList?.filter((i) => i.status === InventoryStatus.Available).length || 0,
-    [InventoryStatus.Rented]:
-      allInventoryList?.filter((i) => i.status === InventoryStatus.Rented).length || 0,
-    [InventoryStatus.Maintenance]:
-      allInventoryList?.filter((i) => i.status === InventoryStatus.Maintenance).length || 0,
-    [InventoryStatus.Broken]:
-      allInventoryList?.filter((i) => i.status === InventoryStatus.Broken).length || 0,
-  }
-
   const columns: ColumnDef<Inventory>[] = [
     {
       accessorKey: "productName",
       header: "Ürün",
-      enableSorting: false,
+      enableSorting: true,
       cell: ({ row }) => (
         <button
           onClick={() => setDetailInventoryId(row.original.id)}
@@ -153,7 +155,7 @@ export default function InventoryPage() {
     {
       accessorKey: "warehouseName",
       header: "Depo",
-      enableSorting: false,
+      enableSorting: true,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Warehouse className="h-4 w-4 text-muted-foreground" />
@@ -164,7 +166,7 @@ export default function InventoryPage() {
     {
       accessorKey: "status",
       header: "Durum",
-      enableSorting: false,
+      enableSorting: true,
       cell: ({ row }) => (
         <Badge variant={getStatusVariant(row.original.status)}>
           {InventoryStatusLabels[row.original.status]}
@@ -174,13 +176,13 @@ export default function InventoryPage() {
     {
       accessorKey: "quantity",
       header: "Miktar",
-      enableSorting: false,
+      enableSorting: true,
       cell: ({ row }) => formatNumber(row.original.quantity),
     },
     {
       accessorKey: "currentUnitValue",
       header: "Birim Değer",
-      enableSorting: false,
+      enableSorting: true,
       cell: ({ row }) => `${formatNumber(row.original.currentUnitValue)} ₺`,
     },
     {
@@ -258,50 +260,11 @@ export default function InventoryPage() {
         )}
       </div>
 
-      {/* Durum Filtreleri */}
-      <div className="flex gap-2 flex-wrap">
-        <Badge
-          variant={statusFilter === null ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => setStatusFilter(null)}
-        >
-          Tümü ({statusCounts.all})
-        </Badge>
-        <Badge
-          variant={statusFilter === InventoryStatus.Available ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => setStatusFilter(InventoryStatus.Available)}
-        >
-          Müsait ({statusCounts[InventoryStatus.Available]})
-        </Badge>
-        <Badge
-          variant={statusFilter === InventoryStatus.Rented ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => setStatusFilter(InventoryStatus.Rented)}
-        >
-          Kiralamada ({statusCounts[InventoryStatus.Rented]})
-        </Badge>
-        <Badge
-          variant={statusFilter === InventoryStatus.Maintenance ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => setStatusFilter(InventoryStatus.Maintenance)}
-        >
-          Bakımda ({statusCounts[InventoryStatus.Maintenance]})
-        </Badge>
-        <Badge
-          variant={statusFilter === InventoryStatus.Broken ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => setStatusFilter(InventoryStatus.Broken)}
-        >
-          Arızalı ({statusCounts[InventoryStatus.Broken]})
-        </Badge>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Stok Listesi</CardTitle>
           <CardDescription>
-            Toplam {inventoryList?.length || 0} envanter kaydı
+            Toplam {data?.totalCount || 0} envanter kaydı
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -312,16 +275,59 @@ export default function InventoryPage() {
                 placeholder="Envanter ara..."
                 className="pl-9"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setPage(0)
+                }}
               />
             </div>
+            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(0) }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Durum" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Durumlar</SelectItem>
+                {Object.entries(InventoryStatusLabels).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={warehouseFilter} onValueChange={(value) => { setWarehouseFilter(value); setPage(0) }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Depo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Depolar</SelectItem>
+                {warehouses?.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <DataTable
             columns={columns}
-            data={inventoryList || []}
+            data={data?.data || []}
             isLoading={isLoading}
             emptyMessage="Henüz envanter kaydı yok"
+            pagination={{
+              pageIndex: page,
+              pageSize,
+              pageCount: Math.ceil((data?.totalCount || 0) / pageSize),
+              onPageChange: setPage,
+              onPageSizeChange: (size) => {
+                setPageSize(size)
+                setPage(0)
+              },
+            }}
+            sorting={{
+              sortBy: sorting.sortBy,
+              sortDir: sorting.sortDir,
+              onSortChange: (newSortBy, newSortDir) => {
+                setSorting({ sortBy: newSortBy, sortDir: newSortDir })
+                setPage(0)
+              },
+            }}
           />
         </CardContent>
       </Card>

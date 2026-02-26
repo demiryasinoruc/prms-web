@@ -70,11 +70,15 @@ export interface InventoryDetail {
 
 // Request Types
 export interface InventoryListParams {
+  pageNumber?: number
+  pageSize?: number
   productId?: string
   warehouseId?: string
   status?: InventoryStatus
   searchTerm?: string
   isActive?: boolean
+  sortBy?: string
+  sortDir?: "asc" | "desc"
 }
 
 export interface InventoryCreateRequest {
@@ -130,11 +134,13 @@ export const inventoryApi = {
         "Filters.Status": params.status || undefined,
         "Filters.IsActive": params.isActive,
         "Searching.Search": params.searchTerm || undefined,
-        "Pagination.Page": 1,
-        "Pagination.PageSize": 1000, // Tüm veriyi çekmek için büyük sayfa
+        "Pagination.Page": params.pageNumber || 1,
+        "Pagination.PageSize": params.pageSize || 10,
+        "Sorting.SortBy": params.sortBy || undefined,
+        "Sorting.SortDir": params.sortDir || undefined,
       },
     })
-    return response.data.data
+    return response.data
   },
 
   getDetail: async (id: string) => {

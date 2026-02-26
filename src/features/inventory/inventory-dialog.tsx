@@ -92,17 +92,36 @@ export function InventoryDialog({
     isActive: true,
   }
 
+  const formValues: InventoryFormData = (open && inventory) ? {
+    productId: inventory.productId,
+    productVariantId: inventory.productVariantId || null,
+    warehouseId: inventory.warehouseId,
+    status: inventory.status,
+    serialNumber: inventory.serialNumber || "",
+    quantity: inventory.quantity,
+    currentUnitValue: inventory.currentUnitValue,
+    currentLifespan: inventory.currentLifespan,
+    lastMaintenanceDate: inventory.lastMaintenanceDate
+      ? inventory.lastMaintenanceDate.split("T")[0]
+      : null,
+    expiryDate: inventory.expiryDate
+      ? inventory.expiryDate.split("T")[0]
+      : null,
+    notes: "",
+    isActive: inventory.isActive,
+  } : defaultValues
+
   const {
     register,
     handleSubmit,
     control,
-    reset,
     setValue,
     setError,
     formState: { errors },
   } = useForm<InventoryFormData>({
     resolver: zodResolver(inventorySchema) as any,
     defaultValues,
+    values: open ? formValues : defaultValues,
   })
 
   // Seçili ürünü izle
@@ -140,37 +159,6 @@ export function InventoryDialog({
   const showLifespanFields = selectedProduct?.type === ProductType.Tracked &&
     selectedProduct?.totalLifespan != null && selectedProduct.totalLifespan > 0
   const showExpiryDate = selectedProduct?.trackExpiryDate === true
-
-  // KURAL: open MUTLAKA dependency'de olmalı
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
-
-    if (inventory) {
-      reset({
-        productId: inventory.productId,
-        productVariantId: inventory.productVariantId || null,
-        warehouseId: inventory.warehouseId,
-        status: inventory.status,
-        serialNumber: inventory.serialNumber || "",
-        quantity: inventory.quantity,
-        currentUnitValue: inventory.currentUnitValue,
-        currentLifespan: inventory.currentLifespan,
-        lastMaintenanceDate: inventory.lastMaintenanceDate
-          ? inventory.lastMaintenanceDate.split("T")[0]
-          : null,
-        expiryDate: inventory.expiryDate
-          ? inventory.expiryDate.split("T")[0]
-          : null,
-        notes: "",
-        isActive: inventory.isActive,
-      })
-    } else {
-      reset(defaultValues)
-    }
-  }, [open, inventory, reset])
 
   const onSubmit = async (data: InventoryFormData) => {
     // Client-side validation based on selected product
@@ -265,6 +253,7 @@ export function InventoryDialog({
               name="productId"
               render={({ field }) => (
                 <Select
+                  key={`productId-${field.value}`}
                   value={field.value || "none"}
                   onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
                 >
@@ -305,7 +294,7 @@ export function InventoryDialog({
                 name="productVariantId"
                 render={({ field }) => (
                   <Select
-                    key={`variant-${field.value}`}
+                    key={`variantId-${field.value}`}
                     value={field.value || "none"}
                     onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                   >
@@ -338,6 +327,7 @@ export function InventoryDialog({
               name="warehouseId"
               render={({ field }) => (
                 <Select
+                  key={`warehouseId-${field.value}`}
                   value={field.value || "none"}
                   onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
                 >
@@ -370,7 +360,8 @@ export function InventoryDialog({
                 name="status"
                 render={({ field }) => (
                   <Select
-                    value={String(field.value)}
+                    key={`status-${field.value}`}
+                    value={field.value != null ? String(field.value) : "none"}
                     onValueChange={(value) => field.onChange(Number(value))}
                   >
                     <SelectTrigger>

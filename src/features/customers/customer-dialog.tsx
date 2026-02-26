@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -74,37 +73,7 @@ export function CustomerDialog({
   const { data: customerData } = useCustomerForEdit(customer?.id || "")
   const editCustomer = customer ? customerData : null
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<CustomerFormData>({
-    resolver: zodResolver(customerSchema) as any,
-    defaultValues: {
-      name: "",
-      customerType: CustomerType.Individual,
-      identityNumber: "",
-      taxNumber: "",
-      taxOffice: "",
-      contactNumber: "",
-      email: "",
-      notes: "",
-      isActive: true,
-      addresses: [],
-    },
-  })
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "addresses",
-  })
-
-  const customerType = watch("customerType")
-
-  const defaultValues = {
+  const defaultValues: CustomerFormData = {
     name: "",
     customerType: CustomerType.Individual,
     identityNumber: "",
@@ -114,58 +83,62 @@ export function CustomerDialog({
     email: "",
     notes: "",
     isActive: true,
-    addresses: [] as any[],
+    addresses: [],
   }
 
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
+  const formValues: CustomerFormData = (open && editCustomer) ? {
+    name: editCustomer.name,
+    customerType: editCustomer.customerType,
+    identityNumber: editCustomer.identityNumber || "",
+    taxNumber: editCustomer.taxNumber || "",
+    taxOffice: editCustomer.taxOffice || "",
+    contactNumber: editCustomer.contactNumber || "",
+    email: editCustomer.email || "",
+    notes: editCustomer.notes || "",
+    isActive: editCustomer.isActive ?? true,
+    addresses:
+      editCustomer.addresses?.map((addr) => ({
+        id: addr.id,
+        title: addr.title,
+        addressType: addr.addressType,
+        addressLine1: addr.addressLine1,
+        addressLine2: addr.addressLine2 || "",
+        city: addr.city,
+        state: addr.state || "",
+        postalCode: addr.postalCode || "",
+        country: addr.country,
+        isDefault: addr.isDefault,
+      })) || [],
+  } : (open && customer) ? {
+    name: customer.name,
+    customerType: customer.customerType,
+    identityNumber: customer.identityNumber || "",
+    taxNumber: customer.taxNumber || "",
+    taxOffice: customer.taxOffice || "",
+    contactNumber: customer.contactNumber || "",
+    email: customer.email || "",
+    notes: customer.notes || "",
+    isActive: customer.isActive ?? true,
+    addresses: [],
+  } : defaultValues
 
-    if (editCustomer) {
-      reset({
-        name: editCustomer.name,
-        customerType: editCustomer.customerType,
-        identityNumber: editCustomer.identityNumber || "",
-        taxNumber: editCustomer.taxNumber || "",
-        taxOffice: editCustomer.taxOffice || "",
-        contactNumber: editCustomer.contactNumber || "",
-        email: editCustomer.email || "",
-        notes: editCustomer.notes || "",
-        isActive: editCustomer.isActive ?? true,
-        addresses:
-          editCustomer.addresses?.map((addr) => ({
-            id: addr.id,
-            title: addr.title,
-            addressType: addr.addressType,
-            addressLine1: addr.addressLine1,
-            addressLine2: addr.addressLine2 || "",
-            city: addr.city,
-            state: addr.state || "",
-            postalCode: addr.postalCode || "",
-            country: addr.country,
-            isDefault: addr.isDefault,
-          })) || [],
-      })
-    } else if (customer) {
-      // customer var ama editCustomer henüz yüklenmedi
-      reset({
-        name: customer.name,
-        customerType: customer.customerType,
-        identityNumber: customer.identityNumber || "",
-        taxNumber: customer.taxNumber || "",
-        taxOffice: customer.taxOffice || "",
-        contactNumber: customer.contactNumber || "",
-        email: customer.email || "",
-        notes: customer.notes || "",
-        isActive: customer.isActive ?? true,
-        addresses: [],
-      })
-    } else {
-      reset(defaultValues)
-    }
-  }, [open, editCustomer, customer, reset])
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm<CustomerFormData>({
+    resolver: zodResolver(customerSchema) as any,
+    values: open ? formValues : defaultValues,
+  })
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "addresses",
+  })
+
+  const customerType = watch("customerType")
 
   const onSubmit = async (data: CustomerFormData) => {
     try {
@@ -237,8 +210,9 @@ export function CustomerDialog({
                     name="customerType"
                     render={({ field }) => (
                       <Select
-                        value={String(field.value)}
-                        onValueChange={(value) => field.onChange(Number(value))}
+                        key={`customerType-${field.value}`}
+                        value={field.value != null ? String(field.value) : "none"}
+                        onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -378,6 +352,7 @@ export function CustomerDialog({
                             name={`addresses.${index}.addressType`}
                             render={({ field }) => (
                               <Select
+                                key={`addressType-${index}-${field.value}`}
                                 value={String(field.value)}
                                 onValueChange={(value) => field.onChange(Number(value))}
                               >

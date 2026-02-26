@@ -17,8 +17,16 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
 import { useUsers } from "./hooks"
+import { useRoleSelect } from "@/features/roles/hooks"
 import { UserDialog } from "./user-dialog"
 import type { User as UserType } from "./api"
 import { usePermission } from "@/hooks/use-permission"
@@ -28,6 +36,7 @@ export default function UsersPage() {
   const canManage = usePermission(Permissions.User.Manage)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 400)
+  const [roleFilter, setRoleFilter] = useState<string>("all")
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(10)
   const [sorting, setSorting] = useState<{ sortBy: string | null; sortDir: "asc" | "desc" | null }>({
@@ -37,10 +46,13 @@ export default function UsersPage() {
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
 
+  const { data: roles } = useRoleSelect()
+
   const { data, isLoading } = useUsers({
     pageNumber: page + 1,
     pageSize,
     searchTerm: debouncedSearch || undefined,
+    roleId: roleFilter !== "all" ? roleFilter : undefined,
     sortBy: sorting.sortBy || undefined,
     sortDir: sorting.sortDir || undefined,
   })
@@ -150,6 +162,17 @@ export default function UsersPage() {
                 }}
               />
             </div>
+            <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setPage(0) }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Roller</SelectItem>
+                {roles?.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <DataTable

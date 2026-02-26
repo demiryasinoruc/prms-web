@@ -105,7 +105,8 @@ export function MaintenanceRecordDialog({
   )
 
   // Edit modunda tüm envanterler, yeni kayıtta sadece aktifler
-  const { data: inventoryItems, isLoading: isLoadingInventory } = useInventory(record ? {} : { isActive: true })
+  const { data: inventoryResponse, isLoading: isLoadingInventory } = useInventory(record ? { pageSize: 1000 } : { isActive: true, pageSize: 1000 })
+  const inventoryItems = inventoryResponse?.data
   const { data: employees, isLoading: isLoadingEmployees } = useEmployeeSelect()
 
   // Verinin doğru kayda ait olup olmadığını kontrol et

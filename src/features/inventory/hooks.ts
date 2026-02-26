@@ -21,6 +21,8 @@ export function useInventory(params: InventoryListParams = {}) {
   return useQuery({
     queryKey: inventoryKeys.list(params),
     queryFn: () => inventoryApi.getAll(params),
+    staleTime: 0,
+    gcTime: 0,
   })
 }
 

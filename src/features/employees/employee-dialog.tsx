@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -56,26 +55,6 @@ export function EmployeeDialog({
   const { data: employeeData } = useEmployeeForEdit(employee?.id || "")
   const editEmployee = employee ? employeeData : null
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    formState: { errors },
-  } = useForm<EmployeeFormData>({
-    resolver: zodResolver(employeeSchema) as any,
-    defaultValues: {
-      name: "",
-      surname: "",
-      gender: Gender.Male,
-      birthDate: "",
-      email: "",
-      contactNumber: "",
-      isActive: true,
-      notes: "",
-    },
-  })
-
   const defaultValues = {
     name: "",
     surname: "",
@@ -87,39 +66,26 @@ export function EmployeeDialog({
     notes: "",
   }
 
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
+  const formValues = (open && employee) ? {
+    name: editEmployee?.name ?? employee.name,
+    surname: editEmployee?.surname ?? employee.surname,
+    gender: editEmployee?.gender ?? employee.gender,
+    birthDate: editEmployee?.birthDate ? editEmployee.birthDate.split("T")[0] : "",
+    email: editEmployee?.email ?? employee.email ?? "",
+    contactNumber: editEmployee?.contactNumber ?? employee.contactNumber ?? "",
+    isActive: editEmployee?.isActive ?? employee.isActive,
+    notes: editEmployee?.notes ?? "",
+  } : defaultValues
 
-    if (editEmployee) {
-      reset({
-        name: editEmployee.name,
-        surname: editEmployee.surname,
-        gender: editEmployee.gender,
-        birthDate: editEmployee.birthDate ? editEmployee.birthDate.split("T")[0] : "",
-        email: editEmployee.email || "",
-        contactNumber: editEmployee.contactNumber || "",
-        isActive: editEmployee.isActive,
-        notes: editEmployee.notes || "",
-      })
-    } else if (employee) {
-      // employee var ama editEmployee henüz yüklenmedi - liste verisini kullan
-      reset({
-        name: employee.name,
-        surname: employee.surname,
-        gender: employee.gender,
-        birthDate: "",
-        email: employee.email || "",
-        contactNumber: employee.contactNumber || "",
-        isActive: employee.isActive,
-        notes: "",
-      })
-    } else {
-      reset(defaultValues)
-    }
-  }, [open, editEmployee, employee, reset])
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<EmployeeFormData>({
+    resolver: zodResolver(employeeSchema) as any,
+    values: open ? formValues : defaultValues,
+  })
 
   const onSubmit = async (data: EmployeeFormData) => {
     try {
@@ -176,8 +142,9 @@ export function EmployeeDialog({
                 name="gender"
                 render={({ field }) => (
                   <Select
-                    value={String(field.value)}
-                    onValueChange={(value) => field.onChange(Number(value))}
+                    key={`gender-${field.value}`}
+                    value={field.value != null ? String(field.value) : "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
                   >
                     <SelectTrigger>
                       <SelectValue />

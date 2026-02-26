@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -36,6 +35,11 @@ interface CategoryDialogProps {
   category: Category | null
 }
 
+const defaultValues: CategoryFormData = {
+  name: "",
+  parentId: null,
+}
+
 export function CategoryDialog({
   open,
   onOpenChange,
@@ -48,48 +52,27 @@ export function CategoryDialog({
   const { data: parentCategories } = useCategorySelectParent()
   const editCategory = category ? categoryData : null
 
+  const formValues: CategoryFormData = (open && editCategory) ? {
+    name: editCategory.name,
+    parentId: editCategory.parentCategoryId || null,
+  } : (open && category) ? {
+    name: category.name,
+    parentId: category.parentCategoryId || null,
+  } : defaultValues
+
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
     watch,
     formState: { errors },
   } = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
-    defaultValues: {
-      name: "",
-      parentId: null,
-    },
+    defaultValues,
+    values: open ? formValues : defaultValues,
   })
 
   const parentId = watch("parentId")
-
-  const defaultValues = {
-    name: "",
-    parentId: null,
-  }
-
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
-
-    if (editCategory) {
-      reset({
-        name: editCategory.name,
-        parentId: editCategory.parentCategoryId || null,
-      })
-    } else if (category) {
-      reset({
-        name: category.name,
-        parentId: category.parentCategoryId || null,
-      })
-    } else {
-      reset(defaultValues)
-    }
-  }, [open, editCategory, category, reset])
 
   const onSubmit = async (data: CategoryFormData) => {
     try {
@@ -148,6 +131,7 @@ export function CategoryDialog({
           <div className="space-y-2">
             <Label>Üst Kategori</Label>
             <Select
+              key={`parentId-${parentId}`}
               value={parentId || "none"}
               onValueChange={(value) => setValue("parentId", value === "none" ? null : value)}
             >

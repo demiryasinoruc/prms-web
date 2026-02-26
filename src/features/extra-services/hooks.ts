@@ -7,9 +7,19 @@ import {
   type ExtraServiceParams,
 } from "./api"
 
+export const extraServiceKeys = {
+  all: ["extra-services"] as const,
+  lists: () => [...extraServiceKeys.all, "list"] as const,
+  list: (params?: ExtraServiceParams) => [...extraServiceKeys.lists(), params] as const,
+  details: () => [...extraServiceKeys.all, "detail"] as const,
+  detail: (id: string) => [...extraServiceKeys.details(), id] as const,
+  select: () => [...extraServiceKeys.all, "select"] as const,
+  selectForRental: () => [...extraServiceKeys.all, "select-for-rental"] as const,
+}
+
 export function useExtraServices(params?: ExtraServiceParams) {
   return useQuery({
-    queryKey: ["extra-services", params],
+    queryKey: extraServiceKeys.list(params),
     queryFn: () => extraServiceApi.getAll(params),
     staleTime: 0,
     gcTime: 0,
@@ -18,7 +28,7 @@ export function useExtraServices(params?: ExtraServiceParams) {
 
 export function useExtraService(id: string | null) {
   return useQuery({
-    queryKey: ["extra-service", id],
+    queryKey: extraServiceKeys.detail(id!),
     queryFn: () => extraServiceApi.getById(id!),
     enabled: !!id,
   })
@@ -26,14 +36,14 @@ export function useExtraService(id: string | null) {
 
 export function useExtraServiceSelect() {
   return useQuery({
-    queryKey: ["extra-services", "select"],
+    queryKey: extraServiceKeys.select(),
     queryFn: () => extraServiceApi.getSelect(),
   })
 }
 
 export function useExtraServiceSelectForRental() {
   return useQuery({
-    queryKey: ["extra-services", "select-for-rental"],
+    queryKey: extraServiceKeys.selectForRental(),
     queryFn: () => extraServiceApi.getSelectForRental(),
   })
 }
@@ -44,7 +54,7 @@ export function useCreateExtraService() {
   return useMutation({
     mutationFn: (data: ExtraServiceCreateRequest) => extraServiceApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["extra-services"] })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.lists() })
     },
   })
 }
@@ -56,8 +66,8 @@ export function useUpdateExtraService() {
     mutationFn: ({ id, data }: { id: string; data: ExtraServiceUpdateRequest }) =>
       extraServiceApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["extra-services"] })
-      queryClient.invalidateQueries({ queryKey: ["extra-service"] })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.details() })
     },
   })
 }
@@ -68,7 +78,7 @@ export function useDeleteExtraService() {
   return useMutation({
     mutationFn: (id: string) => extraServiceApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["extra-services"] })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.lists() })
     },
   })
 }

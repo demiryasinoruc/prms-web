@@ -56,7 +56,7 @@ export function DataTable<TData, TValue>({
   isLoading,
   pagination,
   sorting,
-  emptyMessage = "Kayit bulunamadi",
+  emptyMessage = "Kayıt bulunamadı",
 }: DataTableProps<TData, TValue>) {
   // TanStack Table - sorting tamamen dışarıdan kontrol ediliyor (manualSorting)
   // State'i table'a VERMIYORUZ çünkü kendi handleSort fonksiyonumuzu kullanıyoruz
@@ -199,7 +199,7 @@ export function DataTable<TData, TValue>({
       {pagination && (
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Sayfa basina</span>
+            <span>Sayfa başına</span>
             <Select
               value={String(pagination.pageSize)}
               onValueChange={(value) => pagination.onPageSizeChange(Number(value))}
@@ -215,7 +215,7 @@ export function DataTable<TData, TValue>({
                 ))}
               </SelectContent>
             </Select>
-            <span>kayit</span>
+            <span>kayıt</span>
           </div>
 
           <div className="flex items-center gap-2">

@@ -20,6 +20,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
 import {
   AlertDialog,
@@ -50,7 +57,7 @@ export default function RentalsPage() {
 
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 400)
-  const [statusFilter, setStatusFilter] = useState<RentalStatus | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(10)
   const [sorting, setSorting] = useState<{ sortBy: string | null; sortDir: "asc" | "desc" | null }>({
@@ -67,7 +74,7 @@ export default function RentalsPage() {
     pageNumber: page + 1,
     pageSize,
     searchTerm: debouncedSearch || undefined,
-    status: statusFilter || undefined,
+    status: statusFilter !== "all" ? Number(statusFilter) as RentalStatus : undefined,
     sortBy: sorting.sortBy || undefined,
     sortDir: sorting.sortDir || undefined,
   })
@@ -294,60 +301,6 @@ export default function RentalsPage() {
         )}
       </div>
 
-      {/* Durum Filtreleri */}
-      <div className="flex gap-2 flex-wrap">
-        <Badge
-          variant={statusFilter === null ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => {
-            setStatusFilter(null)
-            setPage(0)
-          }}
-        >
-          Tümü
-        </Badge>
-        <Badge
-          variant={statusFilter === RentalStatus.Draft ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => {
-            setStatusFilter(RentalStatus.Draft)
-            setPage(0)
-          }}
-        >
-          Taslak
-        </Badge>
-        <Badge
-          variant={statusFilter === RentalStatus.Reservation ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => {
-            setStatusFilter(RentalStatus.Reservation)
-            setPage(0)
-          }}
-        >
-          Rezervasyon
-        </Badge>
-        <Badge
-          variant={statusFilter === RentalStatus.Active ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => {
-            setStatusFilter(RentalStatus.Active)
-            setPage(0)
-          }}
-        >
-          Aktif
-        </Badge>
-        <Badge
-          variant={statusFilter === RentalStatus.Completed ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => {
-            setStatusFilter(RentalStatus.Completed)
-            setPage(0)
-          }}
-        >
-          Tamamlandı
-        </Badge>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Kiralama Listesi</CardTitle>
@@ -369,6 +322,17 @@ export default function RentalsPage() {
                 }}
               />
             </div>
+            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(0) }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Durum" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Durumlar</SelectItem>
+                {Object.entries(RentalStatusLabels).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <DataTable

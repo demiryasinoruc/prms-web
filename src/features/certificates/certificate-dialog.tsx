@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -40,42 +39,30 @@ export function CertificateDialog({
   const createCertificate = useCreateCertificate()
   const updateCertificate = useUpdateCertificate()
 
+  const defaultValues: CertificateFormData = {
+    name: "",
+    description: "",
+    isActive: true,
+  }
+
+  const formValues: CertificateFormData = (open && certificate) ? {
+    name: certificate.name,
+    description: certificate.description,
+    isActive: certificate.isActive,
+  } : defaultValues
+
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
     watch,
     formState: { errors },
   } = useForm<CertificateFormData>({
     resolver: zodResolver(certificateSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      isActive: true,
-    },
+    values: open ? formValues : defaultValues,
   })
 
   const isActive = watch("isActive")
-
-  useEffect(() => {
-    if (!open) {
-      reset({
-        name: "",
-        description: "",
-        isActive: true,
-      })
-      return
-    }
-
-    if (certificate) {
-      reset({
-        name: certificate.name,
-        description: certificate.description,
-        isActive: certificate.isActive,
-      })
-    }
-  }, [open, certificate, reset])
 
   const onSubmit = async (data: CertificateFormData) => {
     try {

@@ -132,17 +132,73 @@ export function ProductDialog({
     notes: "",
   }
 
+  // values prop pattern: formValues hesapla
+  const adetUnit = unitTypes?.find(u => u.text.toLowerCase() === "adet")
+
+  const formValues: ProductFormData = useMemo(() => {
+    if (!open) return defaultValues
+
+    if (editProduct) {
+      return {
+        type: editProduct.type,
+        name: editProduct.name,
+        description: editProduct.description || "",
+        productCode: editProduct.productCode,
+        minimumStockLevel: editProduct.minimumStockLevel,
+        basePrice: editProduct.basePrice,
+        pricePeriodId: editProduct.pricePeriodId,
+        currencyId: editProduct.currencyId,
+        totalLifespan: editProduct.totalLifespan,
+        lifespanUnitTypeId: editProduct.lifespanUnitTypeId,
+        categoryId: editProduct.categoryId,
+        unitTypeId: editProduct.unitTypeId,
+        trackExpiryDate: editProduct.trackExpiryDate,
+        isActive: editProduct.isActive,
+        notes: editProduct.notes || "",
+      }
+    }
+
+    if (product) {
+      // product var ama editProduct henüz yüklenmedi - liste verisini kullan
+      return {
+        type: product.type,
+        name: product.name,
+        description: "",
+        productCode: product.productCode,
+        minimumStockLevel: 0,
+        basePrice: product.basePrice,
+        pricePeriodId: 0,
+        currencyId: 0,
+        totalLifespan: null,
+        lifespanUnitTypeId: null,
+        categoryId: "",
+        unitTypeId: 0,
+        trackExpiryDate: false,
+        isActive: product.isActive,
+        notes: "",
+      }
+    }
+
+    // Yeni ürün - şirket varsayılan ayarlarını kullan
+    return {
+      ...defaultValues,
+      currencyId: companySettings?.defaultCurrencyId || 0,
+      pricePeriodId: companySettings?.defaultPricePeriodId || 0,
+      unitTypeId: adetUnit?.value || 0, // Takipli ürün varsayılanı: Adet
+    }
+  }, [open, editProduct, product, companySettings, adetUnit])
+
   const {
     register,
     handleSubmit,
     control,
-    reset,
     watch,
     setValue,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as any,
     defaultValues,
+    values: open ? formValues : defaultValues,
   })
 
   const productType = watch("type")
@@ -169,9 +225,9 @@ export function ProductDialog({
   // Takipli ürünler için birim tipini otomatik "Adet" yap
   useEffect(() => {
     if (productType === ProductType.Tracked && unitTypes) {
-      const adetUnit = unitTypes.find(u => u.text.toLowerCase() === "adet")
-      if (adetUnit) {
-        setValue("unitTypeId", adetUnit.value)
+      const adetUnitItem = unitTypes.find(u => u.text.toLowerCase() === "adet")
+      if (adetUnitItem) {
+        setValue("unitTypeId", adetUnitItem.value)
       }
     }
   }, [productType, unitTypes, setValue])
@@ -199,10 +255,9 @@ export function ProductDialog({
     }
   }
 
-  // KURAL: open MUTLAKA dependency'de olmalı
+  // Dialog kapandığında state temizleme + edit modda cascading kategori ve özellik değerlerini ayarla
   useEffect(() => {
     if (!open) {
-      reset(defaultValues)
       setAttributeValues([])
       setLevel1CategoryId(null)
       setLevel2CategoryId(null)
@@ -210,23 +265,6 @@ export function ProductDialog({
     }
 
     if (editProduct) {
-      reset({
-        type: editProduct.type,
-        name: editProduct.name,
-        description: editProduct.description || "",
-        productCode: editProduct.productCode,
-        minimumStockLevel: editProduct.minimumStockLevel,
-        basePrice: editProduct.basePrice,
-        pricePeriodId: editProduct.pricePeriodId,
-        currencyId: editProduct.currencyId,
-        totalLifespan: editProduct.totalLifespan,
-        lifespanUnitTypeId: editProduct.lifespanUnitTypeId,
-        categoryId: editProduct.categoryId,
-        unitTypeId: editProduct.unitTypeId,
-        trackExpiryDate: editProduct.trackExpiryDate,
-        isActive: editProduct.isActive,
-        notes: editProduct.notes || "",
-      })
       // Düzenleme modunda mevcut özellik değerlerini yükle
       setAttributeValues(editProduct.attributeValues || [])
 
@@ -248,40 +286,13 @@ export function ProductDialog({
         setLevel1CategoryId(editProduct.categoryId)
         setLevel2CategoryId(null)
       }
-    } else if (product) {
-      // product var ama editProduct henüz yüklenmedi - liste verisini kullan
-      reset({
-        type: product.type,
-        name: product.name,
-        description: "",
-        productCode: product.productCode,
-        minimumStockLevel: 0,
-        basePrice: product.basePrice,
-        pricePeriodId: 0,
-        currencyId: 0,
-        totalLifespan: null,
-        lifespanUnitTypeId: null,
-        categoryId: "",
-        unitTypeId: 0,
-        isActive: product.isActive,
-        notes: "",
-      })
-      setLevel1CategoryId(null)
-      setLevel2CategoryId(null)
-    } else {
-      // Yeni ürün - şirket varsayılan ayarlarını kullan
-      const adetUnit = unitTypes?.find(u => u.text.toLowerCase() === "adet")
-      reset({
-        ...defaultValues,
-        currencyId: companySettings?.defaultCurrencyId || 0,
-        pricePeriodId: companySettings?.defaultPricePeriodId || 0,
-        unitTypeId: adetUnit?.value || 0, // Takipli ürün varsayılanı: Adet
-      })
+    } else if (!product) {
+      // Yeni ürün
       setAttributeValues([])
       setLevel1CategoryId(null)
       setLevel2CategoryId(null)
     }
-  }, [open, editProduct, product, reset, companySettings, unitTypes])
+  }, [open, editProduct, product])
 
   // Özellik değeri değiştiğinde
   const handleAttributeChange = (newValue: ProductAttributeValue) => {
@@ -396,6 +407,7 @@ export function ProductDialog({
                     name="type"
                     render={({ field }) => (
                       <Select
+                        key={`type-${field.value}`}
                         value={String(field.value)}
                         onValueChange={(value) => field.onChange(Number(value))}
                       >
@@ -479,6 +491,7 @@ export function ProductDialog({
                         name="categoryId"
                         render={({ field }) => (
                           <Select
+                            key={`categoryId-${field.value}`}
                             value={(level3Categories?.length && field.value && field.value !== level2CategoryId) ? field.value : "none"}
                             onValueChange={(value) => {
                               if (value === "none") {

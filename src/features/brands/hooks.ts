@@ -1,9 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { brandApi, type BrandListParams, type BrandCreateRequest, type BrandUpdateRequest } from "./api"
 
+export const brandKeys = {
+  all: ["brands"] as const,
+  lists: () => [...brandKeys.all, "list"] as const,
+  list: (params: BrandListParams) => [...brandKeys.lists(), params] as const,
+  details: () => [...brandKeys.all, "detail"] as const,
+  detail: (id: string) => [...brandKeys.details(), id] as const,
+  select: () => [...brandKeys.all, "select"] as const,
+}
+
 export function useBrands(params: BrandListParams = {}) {
   return useQuery({
-    queryKey: ["brands", params],
+    queryKey: brandKeys.list(params),
     queryFn: () => brandApi.getAll(params),
     staleTime: 0,
     gcTime: 0,
@@ -12,7 +21,7 @@ export function useBrands(params: BrandListParams = {}) {
 
 export function useBrand(id: string) {
   return useQuery({
-    queryKey: ["brand", id],
+    queryKey: brandKeys.detail(id),
     queryFn: () => brandApi.getById(id),
     enabled: !!id,
   })
@@ -20,7 +29,7 @@ export function useBrand(id: string) {
 
 export function useBrandForEdit(id: string) {
   return useQuery({
-    queryKey: ["brand", "edit", id],
+    queryKey: [...brandKeys.details(), "edit", id],
     queryFn: () => brandApi.getForEdit(id),
     enabled: !!id,
   })
@@ -28,7 +37,7 @@ export function useBrandForEdit(id: string) {
 
 export function useBrandSelect() {
   return useQuery({
-    queryKey: ["brands", "select"],
+    queryKey: brandKeys.select(),
     queryFn: () => brandApi.getSelect(),
   })
 }
@@ -39,7 +48,7 @@ export function useCreateBrand() {
   return useMutation({
     mutationFn: (data: BrandCreateRequest) => brandApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] })
+      queryClient.invalidateQueries({ queryKey: brandKeys.lists() })
     },
   })
 }
@@ -51,8 +60,8 @@ export function useUpdateBrand() {
     mutationFn: ({ id, data }: { id: string; data: BrandUpdateRequest }) =>
       brandApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] })
-      queryClient.invalidateQueries({ queryKey: ["brand"] })
+      queryClient.invalidateQueries({ queryKey: brandKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: brandKeys.details() })
     },
   })
 }
@@ -63,7 +72,7 @@ export function useDeleteBrand() {
   return useMutation({
     mutationFn: (id: string) => brandApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] })
+      queryClient.invalidateQueries({ queryKey: brandKeys.lists() })
     },
   })
 }

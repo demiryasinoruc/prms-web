@@ -38,6 +38,7 @@ export interface UserListParams {
   pageNumber?: number
   pageSize?: number
   searchTerm?: string
+  roleId?: string
   sortBy?: string
   sortDir?: "asc" | "desc"
 }
@@ -64,6 +65,7 @@ export const userApi = {
         "Pagination.Page": params.pageNumber || 1,
         "Pagination.PageSize": params.pageSize || 10,
         "Searching.Search": params.searchTerm || undefined,
+        "Filters.RoleId": params.roleId || undefined,
         "Sorting.SortBy": params.sortBy || undefined,
         "Sorting.SortDir": params.sortDir || undefined,
       },

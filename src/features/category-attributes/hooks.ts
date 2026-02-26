@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from "sonner"
 import {
   categoryAttributeApi,
   type CategoryAttributeListParams,
@@ -53,10 +52,6 @@ export function useCreateCategoryAttribute() {
       categoryAttributeApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryAttributeKeys.all })
-      toast.success("Özellik başarıyla oluşturuldu")
-    },
-    onError: () => {
-      toast.error("Özellik oluşturulurken bir hata oluştu")
     },
   })
 }
@@ -74,10 +69,6 @@ export function useUpdateCategoryAttribute() {
     }) => categoryAttributeApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryAttributeKeys.all })
-      toast.success("Özellik başarıyla güncellendi")
-    },
-    onError: () => {
-      toast.error("Özellik güncellenirken bir hata oluştu")
     },
   })
 }
@@ -89,10 +80,6 @@ export function useDeleteCategoryAttribute() {
     mutationFn: (id: string) => categoryAttributeApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryAttributeKeys.all })
-      toast.success("Özellik başarıyla silindi")
-    },
-    onError: () => {
-      toast.error("Özellik silinirken bir hata oluştu")
     },
   })
 }

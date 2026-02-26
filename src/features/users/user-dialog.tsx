@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -51,35 +50,23 @@ export function UserDialog({ open, onOpenChange, userId }: UserDialogProps) {
     roleId: "",
   }
 
+  const formValues: UserFormData = (open && userForEdit) ? {
+    name: userForEdit.name,
+    surname: userForEdit.surname,
+    email: userForEdit.email,
+    roleId: userForEdit.roleId || "",
+  } : defaultValues
+
   const {
     register,
     handleSubmit,
     control,
-    reset,
     formState: { errors },
   } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues,
+    values: open ? formValues : defaultValues,
   })
-
-  // KURAL: open MUTLAKA dependency'de olmalı
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
-
-    if (userForEdit) {
-      reset({
-        name: userForEdit.name,
-        surname: userForEdit.surname,
-        email: userForEdit.email,
-        roleId: userForEdit.roleId || "",
-      })
-    } else {
-      reset(defaultValues)
-    }
-  }, [open, userForEdit, reset])
 
   const onSubmit = async (data: UserFormData) => {
     if (!userId) return
@@ -149,6 +136,7 @@ export function UserDialog({ open, onOpenChange, userId }: UserDialogProps) {
                 name="roleId"
                 render={({ field }) => (
                   <Select
+                    key={`roleId-${field.value}`}
                     value={field.value || "none"}
                     onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
                   >

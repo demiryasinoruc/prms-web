@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -28,6 +27,10 @@ interface BrandDialogProps {
   brand: Brand | null
 }
 
+const defaultValues: BrandFormData = {
+  name: "",
+}
+
 export function BrandDialog({
   open,
   onOpenChange,
@@ -39,40 +42,20 @@ export function BrandDialog({
   const { data: brandData } = useBrandForEdit(brand?.id || "")
   const editBrand = brand ? brandData : null
 
+  const formValues: BrandFormData = (open && editBrand) ? {
+    name: editBrand.name,
+  } : (open && brand) ? {
+    name: brand.name,
+  } : defaultValues
+
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm<BrandFormData>({
     resolver: zodResolver(brandSchema),
-    defaultValues: {
-      name: "",
-    },
+    values: open ? formValues : defaultValues,
   })
-
-  const defaultValues = {
-    name: "",
-  }
-
-  useEffect(() => {
-    if (!open) {
-      reset(defaultValues)
-      return
-    }
-
-    if (editBrand) {
-      reset({
-        name: editBrand.name,
-      })
-    } else if (brand) {
-      reset({
-        name: brand.name,
-      })
-    } else {
-      reset(defaultValues)
-    }
-  }, [open, editBrand, brand, reset])
 
   const onSubmit = async (data: BrandFormData) => {
     try {

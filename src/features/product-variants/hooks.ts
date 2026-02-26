@@ -5,8 +5,6 @@ import type {
   ProductVariantUpdateRequest,
   ProductVariantBulkGenerateRequest,
 } from "./api"
-import { toast } from "sonner"
-
 export const productVariantKeys = {
   all: ["product-variants"] as const,
   byProduct: (productId: string) => [...productVariantKeys.all, "by-product", productId] as const,
@@ -47,10 +45,6 @@ export function useCreateProductVariant() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: productVariantKeys.byProduct(variables.productId) })
       queryClient.invalidateQueries({ queryKey: productVariantKeys.select(variables.productId) })
-      toast.success("Varyant oluşturuldu.")
-    },
-    onError: () => {
-      toast.error("Varyant oluşturulurken bir hata oluştu.")
     },
   })
 }
@@ -62,10 +56,6 @@ export function useUpdateProductVariant() {
       productVariantApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productVariantKeys.all })
-      toast.success("Varyant güncellendi.")
-    },
-    onError: () => {
-      toast.error("Varyant güncellenirken bir hata oluştu.")
     },
   })
 }
@@ -74,13 +64,9 @@ export function useBulkGenerateProductVariants() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: ProductVariantBulkGenerateRequest) => productVariantApi.bulkGenerate(data),
-    onSuccess: (result, variables) => {
+    onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: productVariantKeys.byProduct(variables.productId) })
       queryClient.invalidateQueries({ queryKey: productVariantKeys.select(variables.productId) })
-      toast.success(`${result.count} varyant oluşturuldu.`)
-    },
-    onError: () => {
-      toast.error("Varyantlar oluşturulurken bir hata oluştu.")
     },
   })
 }
@@ -91,10 +77,6 @@ export function useDeleteProductVariant() {
     mutationFn: (id: string) => productVariantApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productVariantKeys.all })
-      toast.success("Varyant silindi.")
-    },
-    onError: () => {
-      toast.error("Varyant silinirken bir hata oluştu.")
     },
   })
 }
