@@ -44,6 +44,17 @@ interface EmployeeDialogProps {
   employee: Employee | null
 }
 
+const defaultValues: EmployeeFormData = {
+  name: "",
+  surname: "",
+  gender: Gender.Male,
+  birthDate: "",
+  email: "",
+  contactNumber: "",
+  isActive: true,
+  notes: "",
+}
+
 export function EmployeeDialog({
   open,
   onOpenChange,
@@ -54,17 +65,6 @@ export function EmployeeDialog({
 
   const { data: employeeData } = useEmployeeForEdit(employee?.id || "")
   const editEmployee = employee ? employeeData : null
-
-  const defaultValues = {
-    name: "",
-    surname: "",
-    gender: Gender.Male,
-    birthDate: "",
-    email: "",
-    contactNumber: "",
-    isActive: true,
-    notes: "",
-  }
 
   const formValues = (open && employee) ? {
     name: editEmployee?.name ?? employee.name,

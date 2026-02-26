@@ -33,6 +33,13 @@ interface WarehouseDialogProps {
   warehouse: Warehouse | null
 }
 
+const defaultValues: WarehouseFormData = {
+  name: "",
+  address: "",
+  contactInfo: "",
+  isActive: true,
+}
+
 export function WarehouseDialog({
   open,
   onOpenChange,
@@ -43,13 +50,6 @@ export function WarehouseDialog({
 
   const { data: warehouseData } = useWarehouseForEdit(warehouse?.id || "")
   const editWarehouse = warehouse ? warehouseData : null
-
-  const defaultValues = {
-    name: "",
-    address: "",
-    contactInfo: "",
-    isActive: true,
-  }
 
   const formValues = (open && editWarehouse) ? {
     name: editWarehouse.name,

@@ -31,6 +31,12 @@ interface CertificateDialogProps {
   certificate: Certificate | null
 }
 
+const defaultValues: CertificateFormData = {
+  name: "",
+  description: "",
+  isActive: true,
+}
+
 export function CertificateDialog({
   open,
   onOpenChange,
@@ -38,12 +44,6 @@ export function CertificateDialog({
 }: CertificateDialogProps) {
   const createCertificate = useCreateCertificate()
   const updateCertificate = useUpdateCertificate()
-
-  const defaultValues: CertificateFormData = {
-    name: "",
-    description: "",
-    isActive: true,
-  }
 
   const formValues: CertificateFormData = (open && certificate) ? {
     name: certificate.name,

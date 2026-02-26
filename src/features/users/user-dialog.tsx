@@ -38,17 +38,17 @@ interface UserDialogProps {
   userId: string | null
 }
 
+const defaultValues: UserFormData = {
+  name: "",
+  surname: "",
+  email: "",
+  roleId: "",
+}
+
 export function UserDialog({ open, onOpenChange, userId }: UserDialogProps) {
   const { data: userForEdit, isLoading: isLoadingUser } = useUserForEdit(userId)
   const { data: roles } = useRoleSelect()
   const updateUser = useUpdateUser()
-
-  const defaultValues: UserFormData = {
-    name: "",
-    surname: "",
-    email: "",
-    roleId: "",
-  }
 
   const formValues: UserFormData = (open && userForEdit) ? {
     name: userForEdit.name,
