@@ -8,6 +8,7 @@ export const customerKeys = {
   details: () => [...customerKeys.all, "detail"] as const,
   detail: (id: string) => [...customerKeys.details(), id] as const,
   select: () => [...customerKeys.all, "select"] as const,
+  forEdit: (id: string) => [...customerKeys.all, "forEdit", id] as const,
 }
 
 export function useCustomers(params: CustomerListParams = {}) {
@@ -29,7 +30,7 @@ export function useCustomer(id: string) {
 
 export function useCustomerForEdit(id: string) {
   return useQuery({
-    queryKey: [...customerKeys.detail(id), "edit"],
+    queryKey: customerKeys.forEdit(id),
     queryFn: () => customerApi.getForEdit(id),
     enabled: !!id,
   })

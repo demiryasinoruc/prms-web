@@ -10,6 +10,7 @@ export const categoryKeys = {
   select: () => [...categoryKeys.all, "select"] as const,
   selectParent: () => [...categoryKeys.all, "select-parent"] as const,
   selectByParent: (parentId: string | null | undefined) => [...categoryKeys.all, "select-by-parent", parentId ?? "root"] as const,
+  forEdit: (id: string) => [...categoryKeys.all, "forEdit", id] as const,
 }
 
 export function useCategories(params: CategoryListParams = {}) {
@@ -31,7 +32,7 @@ export function useCategory(id: string) {
 
 export function useCategoryForEdit(id: string) {
   return useQuery({
-    queryKey: [...categoryKeys.details(), "edit", id],
+    queryKey: categoryKeys.forEdit(id),
     queryFn: () => categoryApi.getForEdit(id),
     enabled: !!id,
   })

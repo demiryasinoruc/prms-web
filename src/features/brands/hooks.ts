@@ -8,6 +8,7 @@ export const brandKeys = {
   details: () => [...brandKeys.all, "detail"] as const,
   detail: (id: string) => [...brandKeys.details(), id] as const,
   select: () => [...brandKeys.all, "select"] as const,
+  forEdit: (id: string) => [...brandKeys.all, "forEdit", id] as const,
 }
 
 export function useBrands(params: BrandListParams = {}) {
@@ -29,7 +30,7 @@ export function useBrand(id: string) {
 
 export function useBrandForEdit(id: string) {
   return useQuery({
-    queryKey: [...brandKeys.details(), "edit", id],
+    queryKey: brandKeys.forEdit(id),
     queryFn: () => brandApi.getForEdit(id),
     enabled: !!id,
   })

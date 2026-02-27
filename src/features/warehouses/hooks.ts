@@ -8,6 +8,7 @@ export const warehouseKeys = {
   details: () => [...warehouseKeys.all, "detail"] as const,
   detail: (id: string) => [...warehouseKeys.details(), id] as const,
   select: () => [...warehouseKeys.all, "select"] as const,
+  forEdit: (id: string) => [...warehouseKeys.all, "forEdit", id] as const,
 }
 
 export function useWarehouses(params: WarehouseListParams = {}) {
@@ -29,7 +30,7 @@ export function useWarehouse(id: string) {
 
 export function useWarehouseForEdit(id: string) {
   return useQuery({
-    queryKey: [...warehouseKeys.details(), "edit", id],
+    queryKey: warehouseKeys.forEdit(id),
     queryFn: () => warehouseApi.getForEdit(id),
     enabled: !!id,
   })

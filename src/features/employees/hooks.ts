@@ -8,6 +8,7 @@ export const employeeKeys = {
   details: () => [...employeeKeys.all, "detail"] as const,
   detail: (id: string) => [...employeeKeys.details(), id] as const,
   select: () => [...employeeKeys.all, "select"] as const,
+  forEdit: (id: string) => [...employeeKeys.all, "forEdit", id] as const,
 }
 
 export function useEmployees(params: EmployeeListParams = {}) {
@@ -29,7 +30,7 @@ export function useEmployee(id: string) {
 
 export function useEmployeeForEdit(id: string) {
   return useQuery({
-    queryKey: [...employeeKeys.details(), "edit", id],
+    queryKey: employeeKeys.forEdit(id),
     queryFn: () => employeeApi.getForEdit(id),
     enabled: !!id,
   })

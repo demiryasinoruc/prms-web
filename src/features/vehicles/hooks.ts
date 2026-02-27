@@ -8,6 +8,7 @@ export const vehicleKeys = {
   details: () => [...vehicleKeys.all, "detail"] as const,
   detail: (id: string) => [...vehicleKeys.details(), id] as const,
   select: () => [...vehicleKeys.all, "select"] as const,
+  forEdit: (id: string) => [...vehicleKeys.all, "forEdit", id] as const,
 }
 
 export function useVehicles(params: VehicleListParams = {}) {
@@ -29,7 +30,7 @@ export function useVehicle(id: string) {
 
 export function useVehicleForEdit(id: string) {
   return useQuery({
-    queryKey: [...vehicleKeys.details(), "edit", id],
+    queryKey: vehicleKeys.forEdit(id),
     queryFn: () => vehicleApi.getForEdit(id),
     enabled: !!id,
   })
