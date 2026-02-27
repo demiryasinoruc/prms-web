@@ -27,6 +27,7 @@ const CompanySettingsPage = lazy(() => import("@/features/company"))
 const CalendarPage = lazy(() => import("@/features/calendar"))
 const MaintenanceSchedulesPage = lazy(() => import("@/features/maintenance-schedules"))
 const MaintenanceRecordsPage = lazy(() => import("@/features/maintenance-records"))
+const ProfilePage = lazy(() => import("@/features/profile"))
 
 function PageLoader() {
   return (
@@ -251,6 +252,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <RolesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "settings/profile",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProfilePage />
           </Suspense>
         ),
       },

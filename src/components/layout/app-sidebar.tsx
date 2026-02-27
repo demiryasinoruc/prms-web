@@ -251,7 +251,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link to="/profile" className="text-muted-foreground">
+              <Link to="/settings/profile" className="text-muted-foreground">
                 <UserCog className="size-4" />
                 <span>Hesap Ayarları</span>
               </Link>
