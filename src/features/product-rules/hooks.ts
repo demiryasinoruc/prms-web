@@ -8,6 +8,7 @@ export const productRuleKeys = {
   list: (params: ProductRuleListParams) => [...productRuleKeys.lists(), params] as const,
   details: () => [...productRuleKeys.all, "detail"] as const,
   detail: (id: string) => [...productRuleKeys.details(), id] as const,
+  forEdit: (id: string) => [...productRuleKeys.all, "forEdit", id] as const,
 }
 
 export function useProductRules(params: ProductRuleListParams = {}) {
@@ -53,9 +54,10 @@ export function useUpdateProductRule() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: ProductRuleUpdateRequest }) =>
       productRuleApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: productRuleKeys.lists() })
       queryClient.invalidateQueries({ queryKey: productRuleKeys.details() })
+      queryClient.invalidateQueries({ queryKey: productRuleKeys.forEdit(variables.id) })
     },
   })
 }

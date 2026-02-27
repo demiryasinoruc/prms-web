@@ -15,6 +15,7 @@ export const extraServiceKeys = {
   list: (params?: ExtraServiceParams) => [...extraServiceKeys.lists(), params] as const,
   details: () => [...extraServiceKeys.all, "detail"] as const,
   detail: (id: string) => [...extraServiceKeys.details(), id] as const,
+  forEdit: (id: string) => [...extraServiceKeys.all, "forEdit", id] as const,
   select: () => [...extraServiceKeys.all, "select"] as const,
   selectForRental: () => [...extraServiceKeys.all, "select-for-rental"] as const,
 }
@@ -69,9 +70,10 @@ export function useUpdateExtraService() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: ExtraServiceUpdateRequest }) =>
       extraServiceApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: extraServiceKeys.lists() })
       queryClient.invalidateQueries({ queryKey: extraServiceKeys.details() })
+      queryClient.invalidateQueries({ queryKey: extraServiceKeys.forEdit(variables.id) })
       queryClient.invalidateQueries({ queryKey: extraServiceKeys.select() })
       queryClient.invalidateQueries({ queryKey: extraServiceKeys.selectForRental() })
     },

@@ -12,6 +12,7 @@ export const calendarKeys = {
   list: (params: CalendarEventListParams) => [...calendarKeys.lists(), params] as const,
   details: () => [...calendarKeys.all, "detail"] as const,
   detail: (id: string) => [...calendarKeys.details(), id] as const,
+  forEdit: (id: string) => [...calendarKeys.all, "forEdit", id] as const,
 }
 
 export function useCalendarEvents(params: CalendarEventListParams = {}) {
@@ -51,6 +52,7 @@ export function useUpdateCalendarEvent() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: calendarKeys.lists() })
       queryClient.invalidateQueries({ queryKey: calendarKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: calendarKeys.forEdit(variables.id) })
     },
   })
 }

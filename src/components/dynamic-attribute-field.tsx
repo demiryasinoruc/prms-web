@@ -147,7 +147,7 @@ export function DynamicAttributeField({
           </Select>
         )
 
-      case AttributeDataType.MultiSelect:
+      case AttributeDataType.MultiSelect: {
         const selectedValues = value?.stringValue
           ? JSON.parse(value.stringValue)
           : []
@@ -174,6 +174,7 @@ export function DynamicAttributeField({
             ))}
           </div>
         )
+      }
 
       default:
         return (

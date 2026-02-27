@@ -47,8 +47,9 @@ export function useUpdateMaintenanceSchedule() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: MaintenanceScheduleUpdateRequest }) =>
       maintenanceScheduleApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: maintenanceScheduleKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: maintenanceScheduleKeys.forEdit(variables.id) })
     },
   })
 }

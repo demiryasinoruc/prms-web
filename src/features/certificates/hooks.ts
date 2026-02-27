@@ -10,6 +10,7 @@ export const certificateKeys = {
   all: ["certificates"] as const,
   lists: () => [...certificateKeys.all, "list"] as const,
   list: (params: CertificateListParams) => [...certificateKeys.lists(), params] as const,
+  forEdit: (id: string) => [...certificateKeys.all, "forEdit", id] as const,
   select: () => [...certificateKeys.all, "select"] as const,
 }
 
