@@ -61,9 +61,10 @@ export function useUpdateBrand() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: BrandUpdateRequest }) =>
       brandApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: brandKeys.lists() })
       queryClient.invalidateQueries({ queryKey: brandKeys.details() })
+      queryClient.invalidateQueries({ queryKey: brandKeys.forEdit(variables.id) })
       queryClient.invalidateQueries({ queryKey: brandKeys.select() })
     },
   })

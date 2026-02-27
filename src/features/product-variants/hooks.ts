@@ -8,7 +8,7 @@ import type {
 export const productVariantKeys = {
   all: ["product-variants"] as const,
   byProduct: (productId: string) => [...productVariantKeys.all, "by-product", productId] as const,
-  forEdit: (id: string) => [...productVariantKeys.all, "for-edit", id] as const,
+  forEdit: (id: string) => [...productVariantKeys.all, "forEdit", id] as const,
   select: (productId: string) => [...productVariantKeys.all, "select", productId] as const,
 }
 

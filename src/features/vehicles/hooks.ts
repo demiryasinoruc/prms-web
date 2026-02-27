@@ -61,9 +61,10 @@ export function useUpdateVehicle() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: VehicleUpdateRequest }) =>
       vehicleApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: vehicleKeys.lists() })
       queryClient.invalidateQueries({ queryKey: vehicleKeys.details() })
+      queryClient.invalidateQueries({ queryKey: vehicleKeys.forEdit(variables.id) })
       queryClient.invalidateQueries({ queryKey: vehicleKeys.select() })
     },
   })

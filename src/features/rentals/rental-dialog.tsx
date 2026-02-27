@@ -438,7 +438,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   }, [warehouses, vehicles, employees, setValue, isEditMode, open])
 
   // Ürün kuralına göre hedef ürün ekleme fonksiyonu
-  const addProductByRule = (targetProductId: string, quantity: number, _sourceProductName: string) => {
+  const addProductByRule = (targetProductId: string, quantity: number) => {
     const targetProduct = products?.find((p) => p.id === targetProductId)
     if (!targetProduct) return
 
@@ -494,7 +494,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       }
 
       // Hedef ürün zaten ekliyse miktar güncelle veya yeni ekle
-      addProductByRule(rule.targetProductId!, quantityToAdd, rule.sourceProductName)
+      addProductByRule(rule.targetProductId!, quantityToAdd)
       toast.success(
         `"${rule.targetProductName}" otomatik olarak eklendi (${quantityToAdd} adet)`,
         { duration: 3000 }
@@ -507,7 +507,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     if (suggestion.targetProductId) {
       // Kullanıcının belirlediği miktar veya varsayılan miktar
       const quantityToAdd = customQuantity ?? suggestionQuantities[suggestion.id] ?? suggestion.quantity
-      addProductByRule(suggestion.targetProductId, quantityToAdd, suggestion.sourceProductName)
+      addProductByRule(suggestion.targetProductId, quantityToAdd)
     }
     // Öneriyi listeden kaldır
     setRuleSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id))

@@ -49,8 +49,9 @@ export function useUpdateMaintenanceRecord() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: MaintenanceRecordUpdateRequest }) =>
       maintenanceRecordApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: maintenanceRecordKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: maintenanceRecordKeys.forEdit(variables.id) })
     },
   })
 }

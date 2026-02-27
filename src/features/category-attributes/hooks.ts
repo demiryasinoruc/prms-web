@@ -13,6 +13,7 @@ export const categoryAttributeKeys = {
     [...categoryAttributeKeys.lists(), params] as const,
   details: () => [...categoryAttributeKeys.all, "detail"] as const,
   detail: (id: string) => [...categoryAttributeKeys.details(), id] as const,
+  forEdit: (id: string) => [...categoryAttributeKeys.all, "forEdit", id] as const,
   byCategory: (categoryId: string) =>
     [...categoryAttributeKeys.all, "byCategory", categoryId] as const,
 }
@@ -30,7 +31,7 @@ export function useCategoryAttributes(
 
 export function useCategoryAttributeForEdit(id: string | null) {
   return useQuery({
-    queryKey: categoryAttributeKeys.detail(id || ""),
+    queryKey: categoryAttributeKeys.forEdit(id || ""),
     queryFn: () => categoryAttributeApi.getForEdit(id!),
     enabled: !!id,
   })

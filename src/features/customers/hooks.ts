@@ -64,6 +64,7 @@ export function useUpdateCustomer() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
       queryClient.invalidateQueries({ queryKey: customerKeys.detail(id) })
+      queryClient.invalidateQueries({ queryKey: customerKeys.forEdit(id) })
       queryClient.invalidateQueries({ queryKey: customerKeys.select() })
     },
   })

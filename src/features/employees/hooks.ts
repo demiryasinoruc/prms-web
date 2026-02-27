@@ -61,9 +61,10 @@ export function useUpdateEmployee() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: EmployeeUpdateRequest }) =>
       employeeApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.lists() })
       queryClient.invalidateQueries({ queryKey: employeeKeys.details() })
+      queryClient.invalidateQueries({ queryKey: employeeKeys.forEdit(variables.id) })
       queryClient.invalidateQueries({ queryKey: employeeKeys.select() })
     },
   })

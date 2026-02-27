@@ -84,9 +84,10 @@ export function useUpdateCategory() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: CategoryUpdateRequest }) =>
       categoryApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.lists() })
       queryClient.invalidateQueries({ queryKey: categoryKeys.details() })
+      queryClient.invalidateQueries({ queryKey: categoryKeys.forEdit(variables.id) })
       queryClient.invalidateQueries({ queryKey: categoryKeys.select() })
       queryClient.invalidateQueries({ queryKey: categoryKeys.selectParent() })
     },

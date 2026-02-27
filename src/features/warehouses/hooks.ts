@@ -61,9 +61,10 @@ export function useUpdateWarehouse() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: WarehouseUpdateRequest }) =>
       warehouseApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: warehouseKeys.lists() })
       queryClient.invalidateQueries({ queryKey: warehouseKeys.details() })
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.forEdit(variables.id) })
       queryClient.invalidateQueries({ queryKey: warehouseKeys.select() })
     },
   })

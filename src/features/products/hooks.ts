@@ -18,6 +18,8 @@ export const productKeys = {
   detail: (id: string) => [...productKeys.details(), id] as const,
   forEdit: (id: string) => [...productKeys.all, "forEdit", id] as const,
   select: () => [...productKeys.all, "select"] as const,
+  selectForRental: () => [...productKeys.all, "select", "forRental"] as const,
+  selectWithType: () => [...productKeys.all, "select", "withType"] as const,
 }
 
 // Product Hooks
@@ -55,14 +57,14 @@ export function useProductSelect() {
 
 export function useProductSelectForRental() {
   return useQuery({
-    queryKey: [...productKeys.select(), "forRental"],
+    queryKey: productKeys.selectForRental(),
     queryFn: () => productApi.getSelectForRental(),
   })
 }
 
 export function useProductSelectWithType() {
   return useQuery({
-    queryKey: [...productKeys.select(), "withType"],
+    queryKey: productKeys.selectWithType(),
     queryFn: () => productApi.getSelectWithType(),
   })
 }
