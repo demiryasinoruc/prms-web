@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -40,16 +40,18 @@ export function RoleSheet({ open, onOpenChange, role }: RoleSheetProps) {
 
   const [permissions, setPermissions] = useState<Record<number, boolean>>({})
 
+  const defaultValues = { name: "" }
+  const formValues = (open && role && editData)
+    ? { name: editData.name }
+    : defaultValues
+
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
-    defaultValues: {
-      name: "",
-    },
+    values: open ? formValues : defaultValues,
   })
 
   // Get modules based on mode
@@ -87,14 +89,11 @@ export function RoleSheet({ open, onOpenChange, role }: RoleSheetProps) {
 
   useEffect(() => {
     if (!open) {
-      reset({ name: "" })
       setPermissions({})
       return
     }
 
     if (role && editData) {
-      reset({ name: editData.name })
-      // Set permissions from edit data
       const permMap: Record<number, boolean> = {}
       editData.modules.forEach((module) => {
         module.permissions.forEach((perm) => {
@@ -103,8 +102,6 @@ export function RoleSheet({ open, onOpenChange, role }: RoleSheetProps) {
       })
       setPermissions(permMap)
     } else if (!role && createData) {
-      reset({ name: "" })
-      // Set default permissions from create data
       const permMap: Record<number, boolean> = {}
       createData.forEach((module) => {
         module.permissions.forEach((perm) => {
@@ -113,7 +110,7 @@ export function RoleSheet({ open, onOpenChange, role }: RoleSheetProps) {
       })
       setPermissions(permMap)
     }
-  }, [open, role, editData, createData, reset])
+  }, [open, role, editData, createData])
 
   const handlePermissionChange = (permissionId: number, checked: boolean, relatedPermissions: number[]) => {
     setPermissions((prev) => {

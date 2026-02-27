@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -48,39 +47,35 @@ export default function CompanySettingsPage() {
   const { data: pricePeriods, isLoading: isLoadingPricePeriods } = usePricePeriodSelect()
   const updateCompany = useUpdateCompany()
 
+  const defaultValues: CompanyFormData = {
+    name: "",
+    email: "",
+    phone: "",
+    requireDeliveryAddressForRental: true,
+    defaultDeliveryType: DeliveryType.CompanyDelivery,
+    defaultCurrencyId: null,
+    defaultPricePeriodId: null,
+  }
+
+  const formValues: CompanyFormData = companyForEdit ? {
+    name: companyForEdit.name,
+    email: companyForEdit.email,
+    phone: companyForEdit.phone,
+    requireDeliveryAddressForRental: companyForEdit.requireDeliveryAddressForRental,
+    defaultDeliveryType: companyForEdit.defaultDeliveryType,
+    defaultCurrencyId: companyForEdit.defaultCurrencyId,
+    defaultPricePeriodId: companyForEdit.defaultPricePeriodId,
+  } : defaultValues
+
   const {
     register,
     handleSubmit,
     control,
-    reset,
     formState: { errors, isDirty },
   } = useForm<CompanyFormData>({
     resolver: zodResolver(companySchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      requireDeliveryAddressForRental: true,
-      defaultDeliveryType: DeliveryType.CompanyDelivery,
-      defaultCurrencyId: null,
-      defaultPricePeriodId: null,
-    },
+    values: formValues,
   })
-
-  // Tüm veriler yüklendiğinde formu resetle
-  useEffect(() => {
-    if (companyForEdit && currencies && pricePeriods) {
-      reset({
-        name: companyForEdit.name,
-        email: companyForEdit.email,
-        phone: companyForEdit.phone,
-        requireDeliveryAddressForRental: companyForEdit.requireDeliveryAddressForRental,
-        defaultDeliveryType: companyForEdit.defaultDeliveryType,
-        defaultCurrencyId: companyForEdit.defaultCurrencyId,
-        defaultPricePeriodId: companyForEdit.defaultPricePeriodId,
-      })
-    }
-  }, [companyForEdit, currencies, pricePeriods, reset])
 
   const onSubmit = async (data: CompanyFormData) => {
     if (!company?.id) return

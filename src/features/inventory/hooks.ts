@@ -14,6 +14,7 @@ export const inventoryKeys = {
   list: (params: InventoryListParams) => [...inventoryKeys.lists(), params] as const,
   details: () => [...inventoryKeys.all, "detail"] as const,
   detail: (id: string) => [...inventoryKeys.details(), id] as const,
+  forEdit: (id: string) => [...inventoryKeys.all, "forEdit", id] as const,
   select: () => [...inventoryKeys.all, "select"] as const,
 }
 
@@ -64,6 +65,7 @@ export function useUpdateInventory() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.forEdit(variables.id) })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.select() })
     },
   })
