@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useCreateRole, useUpdateRole, useRoleForEdit, useRoleForCreate } from "./hooks"
-import type { Role, RoleModule, RolePermission } from "./api"
+import type { Role, RoleModule } from "./api"
 
 const roleSchema = z.object({
   name: z.string().min(1, "Rol adı zorunlu"),
@@ -162,11 +162,6 @@ export function RoleSheet({ open, onOpenChange, role }: RoleSheetProps) {
 
   const isModuleAllSelected = (module: RoleModule) => {
     return module.permissions.every((perm) => permissions[perm.id])
-  }
-
-  const isModuleSomeSelected = (module: RoleModule) => {
-    const selected = module.permissions.filter((perm) => permissions[perm.id]).length
-    return selected > 0 && selected < module.permissions.length
   }
 
   const getSelectedCount = (module: RoleModule) => {

@@ -78,6 +78,24 @@ interface ProductDialogProps {
   product: Product | null
 }
 
+const defaultValues: ProductFormData = {
+  type: ProductType.Tracked,
+  name: "",
+  description: "",
+  productCode: "",
+  minimumStockLevel: 0,
+  basePrice: 0,
+  pricePeriodId: 0,
+  currencyId: 0,
+  totalLifespan: null,
+  lifespanUnitTypeId: null,
+  categoryId: "",
+  unitTypeId: 0,
+  trackExpiryDate: false,
+  isActive: true,
+  notes: "",
+}
+
 export function ProductDialog({
   open,
   onOpenChange,
@@ -112,24 +130,6 @@ export function ProductDialog({
   const [showUnitTypeInfo, setShowUnitTypeInfo] = useState(false)
   const [showLifespanInfo, setShowLifespanInfo] = useState(false)
   const [showBasePriceInfo, setShowBasePriceInfo] = useState(false)
-
-  const defaultValues: ProductFormData = {
-    type: ProductType.Tracked,
-    name: "",
-    description: "",
-    productCode: "",
-    minimumStockLevel: 0,
-    basePrice: 0,
-    pricePeriodId: 0,
-    currencyId: 0,
-    totalLifespan: null,
-    lifespanUnitTypeId: null,
-    categoryId: "",
-    unitTypeId: 0,
-    trackExpiryDate: false,
-    isActive: true,
-    notes: "",
-  }
 
   // values prop pattern: formValues hesapla
   const adetUnit = unitTypes?.find(u => u.text.toLowerCase() === "adet")

@@ -65,6 +65,18 @@ interface ProductRuleDialogProps {
   editId?: string | null
 }
 
+const defaultValues: ProductRuleFormData = {
+  sourceProductId: "",
+  type: ProductRuleType.Direct,
+  behavior: ProductRuleBehavior.Suggested,
+  targetProductId: null,
+  targetCategoryId: null,
+  quantity: 1,
+  description: "",
+  isActive: true,
+  ruleGroupId: null,
+}
+
 export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDialogProps) {
   const isEditMode = !!editId
   const createRule = useCreateProductRule()
@@ -76,18 +88,6 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
   const { data: categories, isLoading: isLoadingCategories } = useCategorySelect()
 
   const isLoadingLookups = isLoadingProducts || isLoadingCategories
-
-  const defaultValues: ProductRuleFormData = {
-    sourceProductId: "",
-    type: ProductRuleType.Direct,
-    behavior: ProductRuleBehavior.Suggested,
-    targetProductId: null,
-    targetCategoryId: null,
-    quantity: 1,
-    description: "",
-    isActive: true,
-    ruleGroupId: null,
-  }
 
   const formValues: ProductRuleFormData = (open && isEditMode && editData) ? {
     sourceProductId: editData.sourceProductId,

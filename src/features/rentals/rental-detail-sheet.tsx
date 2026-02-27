@@ -40,8 +40,6 @@ import {
   PaymentTypeLabels,
   ReturnConditionLabels,
   DiscountType,
-  DiscountTypeLabels,
-  type RentalDetail,
 } from "./api"
 
 interface RentalDetailSheetProps {

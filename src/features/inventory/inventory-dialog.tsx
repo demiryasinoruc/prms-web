@@ -62,6 +62,21 @@ interface InventoryDialogProps {
   inventory: Inventory | null
 }
 
+const defaultValues: InventoryFormData = {
+  productId: "",
+  productVariantId: null,
+  warehouseId: "",
+  status: InventoryStatus.Available,
+  serialNumber: "",
+  quantity: 1,
+  currentUnitValue: 0,
+  currentLifespan: null,
+  lastMaintenanceDate: null,
+  expiryDate: null,
+  notes: "",
+  isActive: true,
+}
+
 export function InventoryDialog({
   open,
   onOpenChange,
@@ -76,21 +91,6 @@ export function InventoryDialog({
 
   // Info dialog state
   const [showUnitCostInfo, setShowUnitCostInfo] = useState(false)
-
-  const defaultValues: InventoryFormData = {
-    productId: "",
-    productVariantId: null,
-    warehouseId: "",
-    status: InventoryStatus.Available,
-    serialNumber: "",
-    quantity: 1,
-    currentUnitValue: 0,
-    currentLifespan: null,
-    lastMaintenanceDate: null,
-    expiryDate: null,
-    notes: "",
-    isActive: true,
-  }
 
   const formValues: InventoryFormData = (open && inventory) ? {
     productId: inventory.productId,

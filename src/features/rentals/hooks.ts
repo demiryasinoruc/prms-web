@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   rentalApi,
   type RentalListParams,
-  type PaginatedRentalResponse,
   type RentalCreateRequest,
   type RentalUpdateRequest,
   type RentalUpdateStatusRequest,

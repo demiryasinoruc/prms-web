@@ -29,7 +29,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { useCreateRental, useUpdateRental, useRentalForEdit } from "./hooks"
-import { RentalStatus } from "./api"
+import { RentalStatus, DiscountType } from "./api"
 import { useCustomerSelect, useCustomerAddresses } from "@/features/customers/hooks"
 import { useWarehouseSelect } from "@/features/warehouses/hooks"
 import { useVehicleSelect } from "@/features/vehicles/hooks"
@@ -42,12 +42,6 @@ import { DeliveryType } from "@/features/company/api"
 import { useAllProductRules } from "@/features/product-rules/hooks"
 import { ProductRuleType, ProductRuleBehavior } from "@/features/product-rules/api"
 import { toast } from "sonner"
-
-// İndirim tipi enum
-export enum DiscountType {
-  Percent = 1,
-  Amount = 2
-}
 
 const rentalItemSchema = z.object({
   productId: z.string().min(1, "Ürün seçiniz"),
@@ -444,7 +438,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   }, [warehouses, vehicles, employees, setValue, isEditMode, open])
 
   // Ürün kuralına göre hedef ürün ekleme fonksiyonu
-  const addProductByRule = (targetProductId: string, quantity: number, sourceProductName: string) => {
+  const addProductByRule = (targetProductId: string, quantity: number, _sourceProductName: string) => {
     const targetProduct = products?.find((p) => p.id === targetProductId)
     if (!targetProduct) return
 
