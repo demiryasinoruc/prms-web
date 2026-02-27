@@ -70,21 +70,21 @@ const colorOptions = [
   { value: "#6b7280", label: "Gri" },
 ]
 
+const defaultValues: EventFormData = {
+  title: "",
+  description: "",
+  type: CalendarEventType.Custom,
+  startDate: "",
+  endDate: "",
+  isAllDay: false,
+  color: "#3b82f6",
+  isActive: true,
+}
+
 export function EventDialog({ open, onOpenChange, event }: EventDialogProps) {
   const { data: eventDetail, isLoading: isLoadingDetail } = useCalendarEventDetail(event?.id || null)
   const createEvent = useCreateCalendarEvent()
   const updateEvent = useUpdateCalendarEvent()
-
-  const defaultValues: EventFormData = {
-    title: "",
-    description: "",
-    type: CalendarEventType.Custom,
-    startDate: "",
-    endDate: "",
-    isAllDay: false,
-    color: "#3b82f6",
-    isActive: true,
-  }
 
   const formValues: EventFormData = (open && eventDetail) ? {
     title: eventDetail.title,

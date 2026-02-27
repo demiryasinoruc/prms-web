@@ -6,6 +6,8 @@ import {
   type ExtraServiceUpdateRequest,
   type ExtraServiceParams,
 } from "./api"
+import { lookupKeys } from "@/lib/lookup-keys"
+import { certificateKeys } from "@/features/certificates/hooks"
 
 export const extraServiceKeys = {
   all: ["extra-services"] as const,
@@ -92,7 +94,7 @@ export function useDeleteExtraService() {
 // Lookup hooks
 export function usePricePeriods() {
   return useQuery({
-    queryKey: ["price-periods", "select"],
+    queryKey: lookupKeys.pricePeriods(),
     queryFn: () => lookupApi.getPricePeriods(),
     staleTime: Infinity,
   })
@@ -100,7 +102,7 @@ export function usePricePeriods() {
 
 export function useCurrencies() {
   return useQuery({
-    queryKey: ["currencies", "select"],
+    queryKey: lookupKeys.currencies(),
     queryFn: () => lookupApi.getCurrencies(),
     staleTime: Infinity,
   })
@@ -108,7 +110,7 @@ export function useCurrencies() {
 
 export function useCertificates() {
   return useQuery({
-    queryKey: ["certificates", "select"],
+    queryKey: certificateKeys.select(),
     queryFn: () => lookupApi.getCertificates(),
   })
 }

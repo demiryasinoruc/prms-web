@@ -6,6 +6,8 @@ import {
   type ProductCreateRequest,
   type ProductUpdateRequest,
 } from "./api"
+import { lookupKeys } from "@/lib/lookup-keys"
+import { categoryKeys } from "@/features/categories/hooks"
 
 // Query Keys
 export const productKeys = {
@@ -107,7 +109,7 @@ export function useDeleteProduct() {
 // Lookup Hooks
 export function useCategorySelect() {
   return useQuery({
-    queryKey: ["categories", "select"],
+    queryKey: categoryKeys.select(),
     queryFn: () => lookupApi.getCategories(),
     staleTime: 5 * 60 * 1000,
   })
@@ -115,7 +117,7 @@ export function useCategorySelect() {
 
 export function useUnitTypeSelect() {
   return useQuery({
-    queryKey: ["unitTypes", "select"],
+    queryKey: lookupKeys.unitTypes(),
     queryFn: () => lookupApi.getUnitTypes(),
     staleTime: Infinity, // Static data
   })
@@ -123,7 +125,7 @@ export function useUnitTypeSelect() {
 
 export function usePricePeriodSelect() {
   return useQuery({
-    queryKey: ["pricePeriods", "select"],
+    queryKey: lookupKeys.pricePeriods(),
     queryFn: () => lookupApi.getPricePeriods(),
     staleTime: Infinity,
   })
@@ -131,7 +133,7 @@ export function usePricePeriodSelect() {
 
 export function useCurrencySelect() {
   return useQuery({
-    queryKey: ["currencies", "select"],
+    queryKey: lookupKeys.currencies(),
     queryFn: () => lookupApi.getCurrencies(),
     staleTime: Infinity,
   })
@@ -139,7 +141,7 @@ export function useCurrencySelect() {
 
 export function useLifespanUnitTypeSelect() {
   return useQuery({
-    queryKey: ["lifespanUnitTypes", "select"],
+    queryKey: lookupKeys.lifespanUnitTypes(),
     queryFn: () => lookupApi.getLifespanUnitTypes(),
     staleTime: Infinity,
   })

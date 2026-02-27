@@ -47,6 +47,20 @@ interface VehicleDialogProps {
   vehicle: Vehicle | null
 }
 
+const defaultValues: VehicleFormData = {
+  vehicleType: VehicleType.Truck,
+  status: VehicleStatus.Available,
+  brandName: "",
+  model: "",
+  year: new Date().getFullYear(),
+  plate: "",
+  color: "",
+  capacity: 0,
+  capacityUnit: "kg",
+  warehouseId: "",
+  notes: "",
+}
+
 export function VehicleDialog({
   open,
   onOpenChange,
@@ -58,20 +72,6 @@ export function VehicleDialog({
 
   const { data: vehicleData } = useVehicleForEdit(vehicle?.id || "")
   const editVehicle = vehicle ? vehicleData : null
-
-  const defaultValues: VehicleFormData = {
-    vehicleType: VehicleType.Truck,
-    status: VehicleStatus.Available,
-    brandName: "",
-    model: "",
-    year: new Date().getFullYear(),
-    plate: "",
-    color: "",
-    capacity: 0,
-    capacityUnit: "kg",
-    warehouseId: "",
-    notes: "",
-  }
 
   const formValues: VehicleFormData = (open && editVehicle) ? {
     vehicleType: editVehicle.vehicleType,

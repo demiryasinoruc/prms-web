@@ -1,7 +1,7 @@
 import { useForm, useFieldArray, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Loader2, Plus, Trash2, MapPin, Check, X } from "lucide-react"
+import { Loader2, Plus, Trash2, MapPin } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -61,6 +61,19 @@ interface CustomerDialogProps {
   customer: Customer | null
 }
 
+const defaultValues: CustomerFormData = {
+  name: "",
+  customerType: CustomerType.Individual,
+  identityNumber: "",
+  taxNumber: "",
+  taxOffice: "",
+  contactNumber: "",
+  email: "",
+  notes: "",
+  isActive: true,
+  addresses: [],
+}
+
 export function CustomerDialog({
   open,
   onOpenChange,
@@ -72,19 +85,6 @@ export function CustomerDialog({
   // Fetch full customer data for editing (includes notes and all fields)
   const { data: customerData } = useCustomerForEdit(customer?.id || "")
   const editCustomer = customer ? customerData : null
-
-  const defaultValues: CustomerFormData = {
-    name: "",
-    customerType: CustomerType.Individual,
-    identityNumber: "",
-    taxNumber: "",
-    taxOffice: "",
-    contactNumber: "",
-    email: "",
-    notes: "",
-    isActive: true,
-    addresses: [],
-  }
 
   const formValues: CustomerFormData = (open && editCustomer) ? {
     name: editCustomer.name,
