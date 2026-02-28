@@ -22,7 +22,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { Badge } from "@/components/ui/badge"
 import { useCreateInventory, useUpdateInventory } from "./hooks"
 import { InventoryStatus, InventoryStatusLabels, type Inventory } from "./api"
@@ -467,28 +467,19 @@ export function InventoryDialog({
           </div>
 
           {inventory && (
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-0.5">
-                <Label>Kayıt Durumu</Label>
-                <p className="text-sm text-muted-foreground">
-                  Envanter kaydının aktif/pasif durumu
-                </p>
-              </div>
-              <Controller
-                control={control}
-                name="isActive"
-                render={({ field }) => (
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-sm ${field.value ? "text-green-600" : "text-muted-foreground"}`}
-                    >
-                      {field.value ? "Aktif" : "Pasif"}
-                    </span>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </div>
-                )}
-              />
-            </div>
+            <Controller
+              control={control}
+              name="isActive"
+              render={({ field }) => (
+                <StatusSwitchField
+                  value={field.value}
+                  onChange={field.onChange}
+                  label="Kayıt Durumu"
+                  description="Envanter kaydının aktif/pasif durumu"
+                  coloredLabel
+                />
+              )}
+            />
           )}
 
           <Separator />

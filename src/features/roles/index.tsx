@@ -3,14 +3,12 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
   Plus,
-  Search,
   Pencil,
   Trash2,
   Shield,
   Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
@@ -20,16 +18,7 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { SearchInput } from "@/components/shared/search-input"
 import { useRoles, useDeleteRole } from "./hooks"
 import { RoleSheet } from "./role-sheet"
 import type { Role } from "./api"
@@ -50,8 +39,6 @@ export default function RolesPage() {
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingRole, setEditingRole] = useState<Role | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null)
 
   const { data, isLoading } = useRoles({
     pageNumber: page + 1,
@@ -66,19 +53,6 @@ export default function RolesPage() {
   const handleEdit = (role: Role) => {
     setEditingRole(role)
     setSheetOpen(true)
-  }
-
-  const handleDelete = (role: Role) => {
-    setRoleToDelete(role)
-    setDeleteId(role.id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteRole.mutateAsync(deleteId)
-      setDeleteId(null)
-      setRoleToDelete(null)
-    }
   }
 
   const handleSheetClose = () => {
@@ -157,7 +131,7 @@ export default function RolesPage() {
                 size="icon"
                 className="h-8 w-8 text-destructive hover:text-destructive"
                 title="Sil"
-                onClick={() => handleDelete(row.original)}
+                onClick={() => deleteRole.mutateAsync(row.original.id)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -194,18 +168,11 @@ export default function RolesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rol ara..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={(value) => { setSearch(value); setPage(0) }}
+              placeholder="Rol ara..."
+            />
           </div>
 
           <DataTable
@@ -241,25 +208,6 @@ export default function RolesPage() {
         role={editingRole}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => { setDeleteId(null); setRoleToDelete(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Rolü silmek istediğinize emin misiniz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              "{roleToDelete?.name}" rolü kalıcı olarak silinecektir. Bu işlem geri alınamaz.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

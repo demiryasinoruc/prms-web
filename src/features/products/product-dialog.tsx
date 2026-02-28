@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   useCreateProduct,
@@ -768,26 +769,17 @@ export function ProductDialog({
                 </div>
 
                 {product && (
-                  <div className="col-span-2 flex items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <Label>Durum</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Ürünün aktif/pasif durumu
-                      </p>
-                    </div>
+                  <div className="col-span-2">
                     <Controller
                       control={control}
                       name="isActive"
                       render={({ field }) => (
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm ${field.value ? "text-green-600" : "text-muted-foreground"}`}>
-                            {field.value ? "Aktif" : "Pasif"}
-                          </span>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </div>
+                        <StatusSwitchField
+                          value={field.value}
+                          onChange={field.onChange}
+                          description="Ürünün aktif/pasif durumu"
+                          coloredLabel
+                        />
                       )}
                     />
                   </div>

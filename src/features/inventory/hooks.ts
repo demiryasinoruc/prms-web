@@ -43,6 +43,18 @@ export function useInventorySelect() {
   })
 }
 
+export function useInventorySelectByProduct(
+  productId: string,
+  productVariantId?: string | null,
+  warehouseId?: string | null,
+) {
+  return useQuery({
+    queryKey: [...inventoryKeys.all, "selectByProduct", productId, productVariantId, warehouseId] as const,
+    queryFn: () => inventoryApi.getSelectByProduct(productId, productVariantId || undefined, warehouseId || undefined),
+    enabled: !!productId,
+  })
+}
+
 // Mutation Hooks
 export function useCreateInventory() {
   const queryClient = useQueryClient()

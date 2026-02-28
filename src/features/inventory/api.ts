@@ -151,6 +151,20 @@ export const inventoryApi = {
     }))
   },
 
+  getSelectByProduct: async (productId: string, productVariantId?: string, warehouseId?: string) => {
+    const response = await api.get<{ value: string; text: string }[]>("/inventory/select-by-product", {
+      params: {
+        productId,
+        productVariantId: productVariantId || undefined,
+        warehouseId: warehouseId || undefined,
+      },
+    })
+    return response.data.map((item) => ({
+      id: item.value,
+      name: item.text,
+    }))
+  },
+
   getDetail: async (id: string) => {
     const response = await api.get<InventoryDetail>(`/inventory/detail/${id}`)
     return response.data

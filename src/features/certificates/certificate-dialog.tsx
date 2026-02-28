@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { useCreateCertificate, useUpdateCertificate } from "./hooks"
 import type { Certificate } from "./api"
 
@@ -127,18 +127,12 @@ export function CertificateDialog({
           </div>
 
           {certificate && (
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-0.5">
-                <Label>Aktif</Label>
-                <p className="text-sm text-muted-foreground">
-                  Sertifika seçimlerde görünsün
-                </p>
-              </div>
-              <Switch
-                checked={isActive}
-                onCheckedChange={(checked) => setValue("isActive", checked)}
-              />
-            </div>
+            <StatusSwitchField
+              value={isActive}
+              onChange={(checked) => setValue("isActive", checked)}
+              label="Aktif"
+              description="Sertifika seçimlerde görünsün"
+            />
           )}
 
           <div className="flex justify-end gap-3 pt-4">

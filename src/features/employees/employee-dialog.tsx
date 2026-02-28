@@ -21,7 +21,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { useCreateEmployee, useUpdateEmployee, useEmployeeForEdit } from "./hooks"
 import { Gender, type Employee } from "@/types/api"
 
@@ -196,26 +196,17 @@ export function EmployeeDialog({
             </div>
 
             {employee && (
-              <div className="col-span-2 flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label>Durum</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Çalışanın aktif veya pasif durumu
-                  </p>
-                </div>
+              <div className="col-span-2">
                 <Controller
                   control={control}
                   name="isActive"
                   render={({ field }) => (
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm ${field.value ? "text-green-600" : "text-muted-foreground"}`}>
-                        {field.value ? "Aktif" : "Pasif"}
-                      </span>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </div>
+                    <StatusSwitchField
+                      value={field.value}
+                      onChange={field.onChange}
+                      description="Çalışanın aktif veya pasif durumu"
+                      coloredLabel
+                    />
                   )}
                 />
               </div>

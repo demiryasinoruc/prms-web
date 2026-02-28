@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import {
   Select,
   SelectContent,
@@ -526,18 +527,12 @@ export function MaintenanceScheduleDialog({
             )}
 
             {schedule && (
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label>Aktif</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Plan aktif ve uygulanabilir durumda
-                  </p>
-                </div>
-                <Switch
-                  checked={isActive}
-                  onCheckedChange={(checked) => setValue("isActive", checked)}
-                />
-              </div>
+              <StatusSwitchField
+                value={isActive}
+                onChange={(checked) => setValue("isActive", checked)}
+                label="Aktif"
+                description="Plan aktif ve uygulanabilir durumda"
+              />
             )}
           </div>
 

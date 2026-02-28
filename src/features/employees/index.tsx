@@ -3,13 +3,11 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
   Plus,
-  Search,
   Pencil,
   Trash2,
   User,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
@@ -26,20 +24,12 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
+import { SearchInput } from "@/components/shared/search-input"
+import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import { useEmployees, useDeleteEmployee } from "./hooks"
 import { EmployeeDialog } from "./employee-dialog"
 import { EmployeeDetailSheet } from "./employee-detail-sheet"
 import { Gender, type Employee } from "@/types/api"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 
@@ -62,11 +52,10 @@ export default function EmployeesPage() {
     sortDir: null,
   })
   const [genderFilter, setGenderFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<boolean | undefined>(undefined)
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [detailEmployeeId, setDetailEmployeeId] = useState<string | null>(null)
 
   const { data, isLoading } = useEmployees({
@@ -74,7 +63,7 @@ export default function EmployeesPage() {
     pageSize,
     searchTerm: debouncedSearch || undefined,
     gender: genderFilter !== "all" ? Number(genderFilter) : undefined,
-    isActive: statusFilter !== "all" ? statusFilter === "active" : undefined,
+    isActive: statusFilter,
     sortBy: sorting.sortBy || undefined,
     sortDir: sorting.sortDir || undefined,
   })
@@ -84,17 +73,6 @@ export default function EmployeesPage() {
   const handleEdit = (employee: Employee) => {
     setEditingEmployee(employee)
     setDialogOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteEmployee.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
   }
 
   const handleDialogClose = () => {
@@ -175,7 +153,7 @@ export default function EmployeesPage() {
               size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive"
               title="Sil"
-              onClick={() => handleDelete(row.original.id)}
+              onClick={() => deleteEmployee.mutateAsync(row.original.id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -211,18 +189,11 @@ export default function EmployeesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Ad, soyad veya e-posta ile ara..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={(value) => { setSearch(value); setPage(0) }}
+              placeholder="Ad, soyad veya e-posta ile ara..."
+            />
             <Select
               value={genderFilter}
               onValueChange={(value) => {
@@ -239,22 +210,10 @@ export default function EmployeesPage() {
                 <SelectItem value="2">Kadın</SelectItem>
               </SelectContent>
             </Select>
-            <Select
+            <StatusFilterSelect
               value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value)
-                setPage(0)
-              }}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Durum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Durumlar</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Pasif</SelectItem>
-              </SelectContent>
-            </Select>
+              onChange={(v) => { setStatusFilter(v); setPage(0) }}
+            />
           </div>
 
           <DataTable
@@ -299,26 +258,6 @@ export default function EmployeesPage() {
           setDialogOpen(true)
         }}
       />
-
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Çalışanı silmek istediğinize emin misiniz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Çalışan ve ilişkili tüm veriler kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

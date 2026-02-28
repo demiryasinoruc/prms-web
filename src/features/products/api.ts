@@ -142,6 +142,7 @@ export interface ProductSelectItemForRental {
   name: string
   basePrice: number
   pricePeriodId: number
+  type: ProductType
 }
 
 // Tip bilgisi içeren ürün seçimi (Inventory formu için)

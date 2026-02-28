@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from "axios"
 import { toast } from "sonner"
+import { confirmDelete } from "./confirm"
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -51,7 +52,7 @@ function getSuccessMessage(method: string, entityName: string | null): string | 
 }
 
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const token = localStorage.getItem("token")
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -60,6 +61,15 @@ api.interceptors.request.use(
     const companyId = localStorage.getItem("companyId")
     if (companyId) {
       config.headers["X-Company-ID"] = companyId
+    }
+
+    // DELETE isteklerinde kullanıcı onayı al
+    if (config.method?.toUpperCase() === "DELETE") {
+      const entityName = getEntityName(config.url || "")
+      const confirmed = await confirmDelete(entityName)
+      if (!confirmed) {
+        throw new axios.Cancel("User cancelled delete")
+      }
     }
 
     return config
@@ -91,6 +101,11 @@ api.interceptors.response.use(
     return response
   },
   async (error) => {
+    // Kullanıcı iptal ettiğinde sessizce geç
+    if (axios.isCancel(error)) {
+      return Promise.reject(error)
+    }
+
     const originalRequest = error.config
 
     if (error.response?.status === 401 && !originalRequest._retry) {

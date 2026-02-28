@@ -3,13 +3,11 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
   Plus,
-  Search,
   Pencil,
   Trash2,
   Tag,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
@@ -18,19 +16,10 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { DataTable } from "@/components/data-table"
+import { SearchInput } from "@/components/shared/search-input"
 import { useBrands, useDeleteBrand } from "./hooks"
 import { BrandDialog } from "./brand-dialog"
 import type { Brand } from "./api"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 
@@ -47,7 +36,6 @@ export default function BrandsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data, isLoading } = useBrands({
     pageNumber: page + 1,
@@ -62,17 +50,6 @@ export default function BrandsPage() {
   const handleEdit = (brand: Brand) => {
     setEditingBrand(brand)
     setDialogOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteBrand.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
   }
 
   const handleDialogClose = () => {
@@ -115,7 +92,7 @@ export default function BrandsPage() {
                 size="icon"
                 className="h-8 w-8 text-destructive hover:text-destructive"
                 title="Sil"
-                onClick={() => handleDelete(row.original.id)}
+                onClick={() => deleteBrand.mutateAsync(row.original.id)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -152,18 +129,11 @@ export default function BrandsPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Marka ara..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={(value) => { setSearch(value); setPage(0) }}
+              placeholder="Marka ara..."
+            />
           </div>
 
           <DataTable
@@ -198,26 +168,6 @@ export default function BrandsPage() {
         onOpenChange={handleDialogClose}
         brand={editingBrand}
       />
-
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Markayı silmek istediğinize emin misiniz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Marka kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

@@ -3,13 +3,11 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
   Plus,
-  Search,
   Pencil,
   Trash2,
   Package,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
@@ -17,26 +15,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { useProducts, useDeleteProduct, useCategorySelect } from "./hooks"
+import { SearchInput } from "@/components/shared/search-input"
+import { StatusFilterSelect } from "@/components/shared/status-filter-select"
+import { CategoryFilterSelect } from "@/components/shared/category-filter-select"
+import { useProducts, useDeleteProduct } from "./hooks"
 import { ProductDialog } from "./product-dialog"
 import { ProductDetailSheet } from "./product-detail-sheet"
 import { ProductType, ProductTypeLabels, type Product } from "./api"
@@ -62,15 +46,11 @@ export default function ProductsPage() {
 
   // Filtreler
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<boolean | undefined>(undefined)
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [detailProductId, setDetailProductId] = useState<string | null>(null)
-
-  // Lookup data for filters
-  const { data: categories } = useCategorySelect()
 
   const { data, isLoading } = useProducts({
     pageNumber: page + 1, // API 1-indexed bekler
@@ -79,7 +59,7 @@ export default function ProductsPage() {
     sortBy: sorting.sortBy || undefined,
     sortDir: sorting.sortDir || undefined,
     categoryId: categoryFilter !== "all" ? categoryFilter : undefined,
-    isActive: statusFilter !== "all" ? statusFilter === "active" : undefined,
+    isActive: statusFilter,
   })
 
   const deleteProduct = useDeleteProduct()
@@ -87,17 +67,6 @@ export default function ProductsPage() {
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
     setDialogOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteProduct.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
   }
 
   const handleDialogClose = () => {
@@ -207,7 +176,7 @@ export default function ProductsPage() {
               size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive"
               title="Sil"
-              onClick={() => handleDelete(row.original.id)}
+              onClick={() => deleteProduct.mutateAsync(row.original.id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -245,53 +214,24 @@ export default function ProductsPage() {
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-4">
             {/* KURAL: useDebounce kullan */}
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Ürün ara..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
-            <Select
-              value={categoryFilter}
-              onValueChange={(value) => {
-                setCategoryFilter(value)
+            <SearchInput
+              value={search}
+              onChange={(value) => { setSearch(value); setPage(0) }}
+              placeholder="Ürün ara..."
+            />
+            <CategoryFilterSelect
+              value={categoryFilter === "all" ? null : categoryFilter}
+              onChange={(v) => {
+                setCategoryFilter(v || "all")
                 setPage(0)
               }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Kategori" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Kategoriler</SelectItem>
-                {categories?.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.text}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
+              filterMode
+              triggerClassName="w-[180px]"
+            />
+            <StatusFilterSelect
               value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value)
-                setPage(0)
-              }}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Durum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Durumlar</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Pasif</SelectItem>
-              </SelectContent>
-            </Select>
+              onChange={(v) => { setStatusFilter(v); setPage(0) }}
+            />
           </div>
 
           {/* KURAL: DataTable kullan */}
@@ -352,25 +292,6 @@ export default function ProductsPage() {
         }}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ürünü silmek istediğinize emin misiniz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Ürün kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

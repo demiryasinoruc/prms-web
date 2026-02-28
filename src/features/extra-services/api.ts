@@ -8,6 +8,7 @@ export interface ExtraService {
   pricePeriodName: string
   currencyCode: string
   requiredCertificateName: string | null
+  requiresEmployee: boolean
   isActive: boolean
 }
 
@@ -47,6 +48,7 @@ export interface ExtraServiceDetail {
   currencyCode: string
   requiredCertificateId: string | null
   requiredCertificateName: string | null
+  requiresEmployee: boolean
   isActive: boolean
   notes: string | null
   createdDate: string
@@ -59,6 +61,7 @@ export interface ExtraServiceCreateRequest {
   pricePeriodId: string
   currencyId: string
   requiredCertificateId?: string | null
+  requiresEmployee: boolean
   notes?: string | null
 }
 
@@ -69,6 +72,7 @@ export interface ExtraServiceUpdateRequest {
   pricePeriodId: string
   currencyId: string
   requiredCertificateId?: string | null
+  requiresEmployee: boolean
   isActive: boolean
   notes?: string | null
 }
@@ -89,6 +93,7 @@ export interface ExtraServiceSelectForRental {
   price: number
   pricePeriodId: number
   currencyCode: string
+  requiresEmployee: boolean
 }
 
 export const extraServiceApi = {
@@ -146,6 +151,7 @@ export const extraServiceApi = {
       PricePeriodId: data.pricePeriodId,
       CurrencyId: data.currencyId,
       RequiredCertificateId: data.requiredCertificateId || null,
+      RequiresEmployee: data.requiresEmployee,
       Notes: data.notes || null,
     })
     return response.data
@@ -159,6 +165,7 @@ export const extraServiceApi = {
       PricePeriodId: data.pricePeriodId,
       CurrencyId: data.currencyId,
       RequiredCertificateId: data.requiredCertificateId || null,
+      RequiresEmployee: data.requiresEmployee,
       IsActive: data.isActive,
       Notes: data.notes || null,
     })

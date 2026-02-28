@@ -6,7 +6,6 @@ import {
   Pencil,
   Trash2,
   Sparkles,
-  Search,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,17 +17,8 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input"
+import { SearchInput } from "@/components/shared/search-input"
+import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import {
   Select,
   SelectContent,
@@ -49,7 +39,6 @@ export default function ExtraServicesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<ExtraService | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   // Search, filter, sort, pagination state
   const [search, setSearch] = useState("")
@@ -88,17 +77,6 @@ export default function ExtraServicesPage() {
   const handleEdit = (service: ExtraService) => {
     setEditingService(service)
     setDialogOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteService.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
   }
 
   const handleDialogClose = () => {
@@ -194,7 +172,7 @@ export default function ExtraServicesPage() {
               size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive"
               title="Sil"
-              onClick={() => handleDelete(row.original.id)}
+              onClick={() => deleteService.mutateAsync(row.original.id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -230,18 +208,11 @@ export default function ExtraServicesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Ek hizmet ara..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={(value) => { setSearch(value); setPage(0) }}
+              placeholder="Ek hizmet ara..."
+            />
             <Select
               value={filters.pricePeriodId ?? "all"}
               onValueChange={(value) => updateFilter("pricePeriodId", value === "all" ? undefined : value)}
@@ -274,19 +245,10 @@ export default function ExtraServicesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select
-              value={filters.isActive === undefined ? "all" : filters.isActive ? "active" : "inactive"}
-              onValueChange={(value) => updateFilter("isActive", value === "all" ? undefined : value === "active")}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Durum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Durumlar</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Pasif</SelectItem>
-              </SelectContent>
-            </Select>
+            <StatusFilterSelect
+              value={filters.isActive}
+              onChange={(v) => updateFilter("isActive", v)}
+            />
           </div>
 
           <DataTable
@@ -322,25 +284,6 @@ export default function ExtraServicesPage() {
         extraService={editingService}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ek hizmeti silmek istediğinize emin misiniz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Ek hizmet kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

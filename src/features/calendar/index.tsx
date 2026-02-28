@@ -16,16 +16,6 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { useCalendarEvents, useDeleteCalendarEvent } from "./hooks"
 import { EventDialog } from "./event-dialog"
 import {
@@ -42,7 +32,6 @@ export default function CalendarPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data: events, isLoading } = useCalendarEvents({
     type: typeFilter || undefined,
@@ -52,17 +41,6 @@ export default function CalendarPage() {
   const handleEdit = (event: CalendarEvent) => {
     setEditingEvent(event)
     setDialogOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteEvent.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
   }
 
   const handleDialogClose = () => {
@@ -173,7 +151,7 @@ export default function CalendarPage() {
                 size="icon"
                 className="h-8 w-8 text-destructive hover:text-destructive"
                 title="Sil"
-                onClick={() => handleDelete(row.original.id)}
+                onClick={() => deleteEvent.mutateAsync(row.original.id)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -252,25 +230,6 @@ export default function CalendarPage() {
         event={editingEvent}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Etkinliği silmek istediğinize emin misiniz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Etkinlik kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

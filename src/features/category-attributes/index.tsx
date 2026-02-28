@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Plus, Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -19,19 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { useDebounce } from "@/hooks/use-debounce"
+import { CategoryFilterSelect } from "@/components/shared/category-filter-select"
 import { useCategoryAttributes, useDeleteCategoryAttribute } from "./hooks"
-import { useCategorySelect } from "@/features/categories/hooks"
 import { CategoryAttributeDialog } from "./category-attribute-dialog"
 import type { CategoryAttribute } from "./api"
 
@@ -44,7 +35,7 @@ export default function CategoryAttributesPage() {
     sortDir: "asc" | "desc" | null
   }>({ sortBy: null, sortDir: null })
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<boolean | undefined>(undefined)
   const [variantFilter, setVariantFilter] = useState<string>("all")
 
   const debouncedSearch = useDebounce(searchTerm, 300)
@@ -53,9 +44,7 @@ export default function CategoryAttributesPage() {
   const [editAttribute, setEditAttribute] = useState<CategoryAttribute | null>(
     null
   )
-  const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const { data: categories } = useCategorySelect()
   const { data, isLoading } = useCategoryAttributes({
     pageNumber: page + 1,
     pageSize,
@@ -63,7 +52,7 @@ export default function CategoryAttributesPage() {
     sortBy: sorting.sortBy || undefined,
     sortDir: sorting.sortDir || undefined,
     categoryId: categoryFilter !== "all" ? categoryFilter : undefined,
-    isActive: statusFilter === "all" ? undefined : statusFilter === "active",
+    isActive: statusFilter,
     isVariantAttribute: variantFilter === "all" ? undefined : variantFilter === "yes",
   })
   const deleteMutation = useDeleteCategoryAttribute()
@@ -91,13 +80,6 @@ export default function CategoryAttributesPage() {
   const handleEdit = (attribute: CategoryAttribute) => {
     setEditAttribute(attribute)
     setDialogOpen(true)
-  }
-
-  const handleDelete = async () => {
-    if (deleteId) {
-      await deleteMutation.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
   }
 
   const pageCount = data ? Math.ceil(data.totalCount / pageSize) : 0
@@ -131,25 +113,15 @@ export default function CategoryAttributesPage() {
               }}
               className="max-w-xs"
             />
-            <Select
-              value={categoryFilter}
-              onValueChange={(value) => {
-                setCategoryFilter(value)
+            <CategoryFilterSelect
+              value={categoryFilter === "all" ? null : categoryFilter}
+              onChange={(v) => {
+                setCategoryFilter(v || "all")
                 setPage(0)
               }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Kategori" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Kategoriler</SelectItem>
-                {categories?.map((cat, index) => (
-                  <SelectItem key={cat.id || `cat-${index}`} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              filterMode
+              triggerClassName="w-[180px]"
+            />
             <Select
               value={variantFilter}
               onValueChange={(value) => {
@@ -166,22 +138,7 @@ export default function CategoryAttributesPage() {
                 <SelectItem value="no">Varyant Değil</SelectItem>
               </SelectContent>
             </Select>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value)
-                setPage(0)
-              }}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Durum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Durumlar</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Pasif</SelectItem>
-              </SelectContent>
-            </Select>
+            <StatusFilterSelect value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(0) }} />
           </div>
 
           {/* Table */}
@@ -280,7 +237,7 @@ export default function CategoryAttributesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setDeleteId(attr.id)}
+                          onClick={() => deleteMutation.mutateAsync(attr.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -333,21 +290,6 @@ export default function CategoryAttributesPage() {
         attribute={editAttribute}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Özelliği Sil</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu özelliği silmek istediğinizden emin misiniz? Bu işlem geri
-              alınamaz.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Sil</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

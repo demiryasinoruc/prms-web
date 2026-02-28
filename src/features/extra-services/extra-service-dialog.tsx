@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import {
   Select,
   SelectContent,
@@ -30,6 +31,7 @@ import {
   useCertificates,
 } from "./hooks"
 import type { ExtraService } from "./api"
+import { useCompanySettings } from "@/features/settings/hooks"
 
 const extraServiceSchema = z.object({
   name: z.string().min(1, "Hizmet adı zorunlu"),
@@ -38,6 +40,7 @@ const extraServiceSchema = z.object({
   pricePeriodId: z.string().min(1, "Fiyat periyodu seçiniz"),
   currencyId: z.string().min(1, "Para birimi seçiniz"),
   requiredCertificateId: z.string().nullable(),
+  requiresEmployee: z.boolean(),
   isActive: z.boolean(),
   notes: z.string().nullable(),
 })
@@ -49,6 +52,7 @@ type ExtraServiceFormData = {
   pricePeriodId: string
   currencyId: string
   requiredCertificateId: string | null
+  requiresEmployee: boolean
   isActive: boolean
   notes: string | null
 }
@@ -60,6 +64,7 @@ const defaultValues: ExtraServiceFormData = {
   pricePeriodId: "",
   currencyId: "",
   requiredCertificateId: null,
+  requiresEmployee: false,
   isActive: true,
   notes: "",
 }
@@ -82,6 +87,7 @@ export function ExtraServiceDialog({
   const { data: pricePeriods } = usePricePeriods()
   const { data: currencies } = useCurrencies()
   const { data: certificates } = useCertificates()
+  const { data: companySettings } = useCompanySettings()
 
   const formValues: ExtraServiceFormData = (open && serviceDetail && extraService) ? {
     name: serviceDetail.name,
@@ -90,9 +96,13 @@ export function ExtraServiceDialog({
     pricePeriodId: String(serviceDetail.pricePeriodId),
     currencyId: String(serviceDetail.currencyId),
     requiredCertificateId: serviceDetail.requiredCertificateId || null,
+    requiresEmployee: serviceDetail.requiresEmployee,
     isActive: serviceDetail.isActive,
     notes: serviceDetail.notes || "",
-  } : defaultValues
+  } : {
+    ...defaultValues,
+    currencyId: companySettings?.defaultCurrencyId ? String(companySettings.defaultCurrencyId) : "",
+  }
 
   const {
     register,
@@ -106,6 +116,7 @@ export function ExtraServiceDialog({
   })
 
   const isActive = watch("isActive")
+  const requiresEmployee = watch("requiresEmployee")
   const pricePeriodId = watch("pricePeriodId")
   const currencyId = watch("currencyId")
   const requiredCertificateId = watch("requiredCertificateId")
@@ -122,6 +133,7 @@ export function ExtraServiceDialog({
             pricePeriodId: data.pricePeriodId,
             currencyId: data.currencyId,
             requiredCertificateId: data.requiredCertificateId || null,
+            requiresEmployee: data.requiresEmployee,
             isActive: data.isActive,
             notes: data.notes || null,
           },
@@ -134,6 +146,7 @@ export function ExtraServiceDialog({
           pricePeriodId: data.pricePeriodId,
           currencyId: data.currencyId,
           requiredCertificateId: data.requiredCertificateId || null,
+          requiresEmployee: data.requiresEmployee,
           notes: data.notes || null,
         })
       }
@@ -265,6 +278,19 @@ export function ExtraServiceDialog({
             </Select>
           </div>
 
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="space-y-0.5">
+              <Label>Personel Gerekli</Label>
+              <p className="text-sm text-muted-foreground">
+                Bu hizmet kiralamaya eklendiğinde personel ataması zorunlu olsun
+              </p>
+            </div>
+            <Switch
+              checked={requiresEmployee}
+              onCheckedChange={(checked) => setValue("requiresEmployee", checked)}
+            />
+          </div>
+
           <div className="space-y-2">
             <Label>Notlar</Label>
             <Textarea
@@ -275,23 +301,12 @@ export function ExtraServiceDialog({
           </div>
 
           {extraService && (
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-0.5">
-                <Label>Durum</Label>
-                <p className="text-sm text-muted-foreground">
-                  Hizmetin aktif/pasif durumu
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-sm ${isActive ? "text-green-600" : "text-muted-foreground"}`}>
-                  {isActive ? "Aktif" : "Pasif"}
-                </span>
-                <Switch
-                  checked={isActive}
-                  onCheckedChange={(checked) => setValue("isActive", checked)}
-                />
-              </div>
-            </div>
+            <StatusSwitchField
+              value={isActive}
+              onChange={(checked) => setValue("isActive", checked)}
+              description="Hizmetin aktif/pasif durumu"
+              coloredLabel
+            />
           )}
 
           <div className="flex justify-end gap-3 pt-4">

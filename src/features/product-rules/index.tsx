@@ -23,16 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -48,7 +38,6 @@ import { ProductRuleDialog } from "./product-rule-dialog"
 export default function ProductRulesPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [sourceProductFilter, setSourceProductFilter] = useState<string>("all")
 
   const { data: products } = useProductSelect()
@@ -71,13 +60,6 @@ export default function ProductRulesPage() {
     setDialogOpen(open)
     if (!open) {
       setEditingId(null)
-    }
-  }
-
-  const handleDelete = async () => {
-    if (deleteId) {
-      await deleteRule.mutateAsync(deleteId)
-      setDeleteId(null)
     }
   }
 
@@ -252,7 +234,7 @@ export default function ProductRulesPage() {
                             Düzenle
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => setDeleteId(rule.id)}
+                            onClick={() => deleteRule.mutateAsync(rule.id)}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -276,25 +258,6 @@ export default function ProductRulesPage() {
         editId={editingId}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Kuralı Sil</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu kuralı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

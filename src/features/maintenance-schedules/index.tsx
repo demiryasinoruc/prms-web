@@ -3,7 +3,6 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
   Plus,
-  Search,
   Pencil,
   Trash2,
   Wrench,
@@ -11,7 +10,8 @@ import {
   Gauge,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { SearchInput } from "@/components/shared/search-input"
+import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import {
   Card,
   CardContent,
@@ -21,30 +21,13 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { CategoryFilterSelect } from "@/components/shared/category-filter-select"
 import { useMaintenanceSchedules, useDeleteMaintenanceSchedule } from "./hooks"
 import { MaintenanceScheduleDialog } from "./maintenance-schedule-dialog"
 import type { MaintenanceSchedule } from "./api"
 import { MaintenanceTriggerType } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
-import { useCategorySelect } from "@/features/categories/hooks"
 
 export default function MaintenanceSchedulesPage() {
   const canCreate = usePermission(Permissions.MaintenanceSchedule.Create)
@@ -66,9 +49,6 @@ export default function MaintenanceSchedulesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<MaintenanceSchedule | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-
-  const { data: categories } = useCategorySelect()
 
   const { data, isLoading } = useMaintenanceSchedules({
     pageNumber: page + 1,
@@ -87,30 +67,9 @@ export default function MaintenanceSchedulesPage() {
     setDialogOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteSchedule.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
-  }
-
   const handleDialogClose = () => {
     setDialogOpen(false)
     setEditingSchedule(null)
-  }
-
-  const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value === "all" ? undefined : value === "active")
-    setPage(0)
-  }
-
-  const handleCategoryFilterChange = (value: string) => {
-    setCategoryFilter(value === "all" ? undefined : value)
-    setPage(0)
   }
 
   const getTriggerIcon = (triggerType: MaintenanceTriggerType) => {
@@ -241,7 +200,7 @@ export default function MaintenanceSchedulesPage() {
               size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive"
               title="Sil"
-              onClick={() => handleDelete(row.original.id)}
+              onClick={() => deleteSchedule.mutateAsync(row.original.id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -277,47 +236,21 @@ export default function MaintenanceSchedulesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Bakım planı ara..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
-            <Select
-              value={categoryFilter || "all"}
-              onValueChange={handleCategoryFilterChange}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Kategori" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Kategoriler</SelectItem>
-                {categories?.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={statusFilter === undefined ? "all" : statusFilter ? "active" : "inactive"}
-              onValueChange={handleStatusFilterChange}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Durum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Durumlar</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Pasif</SelectItem>
-              </SelectContent>
-            </Select>
+            <SearchInput
+              value={search}
+              onChange={(value) => { setSearch(value); setPage(0) }}
+              placeholder="Bakım planı ara..."
+            />
+            <CategoryFilterSelect
+              value={categoryFilter || null}
+              onChange={(v) => {
+                setCategoryFilter(v || undefined)
+                setPage(0)
+              }}
+              filterMode
+              triggerClassName="w-[180px]"
+            />
+            <StatusFilterSelect value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(0) }} />
           </div>
 
           <DataTable
@@ -353,27 +286,6 @@ export default function MaintenanceSchedulesPage() {
         schedule={editingSchedule}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Bakım planını silmek istediğinize emin misiniz?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Bakım planı kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

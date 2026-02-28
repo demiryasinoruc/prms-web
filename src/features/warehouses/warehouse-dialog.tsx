@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import {
   Dialog,
   DialogContent,
@@ -144,13 +144,10 @@ export function WarehouseDialog({
             </div>
 
             {warehouse && (
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <Label className="cursor-pointer">Durum</Label>
-                <Switch
-                  checked={isActive}
-                  onCheckedChange={(checked) => setValue("isActive", checked)}
-                />
-              </div>
+              <StatusSwitchField
+                value={isActive}
+                onChange={(checked) => setValue("isActive", checked)}
+              />
             )}
           </div>
 

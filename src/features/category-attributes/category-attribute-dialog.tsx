@@ -32,7 +32,7 @@ import {
   AttributeDataTypeLabels,
   type CategoryAttribute,
 } from "./api"
-import { useCategorySelect } from "@/features/categories/hooks"
+import { CategoryFilterSelect } from "@/components/shared/category-filter-select"
 
 const schema = z.object({
   categoryId: z.string().min(1, "Kategori seçiniz"),
@@ -86,7 +86,6 @@ export function CategoryAttributeDialog({
   attribute,
 }: CategoryAttributeDialogProps) {
   const isEditMode = !!attribute
-  const { data: categories } = useCategorySelect()
   const { data: editData, isLoading: isLoadingEdit } =
     useCategoryAttributeForEdit(attribute?.id || null)
   const createMutation = useCreateCategoryAttribute()
@@ -233,42 +232,20 @@ export function CategoryAttributeDialog({
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Kategori */}
-            <div className="space-y-2">
-              <Label htmlFor="categoryId">Kategori</Label>
-              <Controller
-                control={control}
-                name="categoryId"
-                render={({ field }) => (
-                  <Select
-                    key={`category-${field.value}-${categories?.length ?? 0}`}
-                    value={field.value || "none"}
-                    onValueChange={(value) =>
-                      field.onChange(value === "none" ? "" : value)
-                    }
-                    disabled={isEditMode}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Kategori seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem key="none" value="none" disabled>
-                        Kategori seçiniz
-                      </SelectItem>
-                      {categories?.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.categoryId && (
-                <p className="text-sm text-destructive">
-                  {errors.categoryId.message}
-                </p>
+            <Controller
+              control={control}
+              name="categoryId"
+              render={({ field }) => (
+                <CategoryFilterSelect
+                  value={field.value || null}
+                  onChange={(v) => field.onChange(v || "")}
+                  label="Kategori"
+                  required
+                  error={errors.categoryId?.message}
+                  disabled={isEditMode}
+                />
               )}
-            </div>
+            />
 
             {/* Özellik Adı ve Görünen Ad */}
             <div className="grid grid-cols-2 gap-4">

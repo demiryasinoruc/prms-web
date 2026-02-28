@@ -3,13 +3,11 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
   Plus,
-  Search,
   Pencil,
   Trash2,
   Warehouse,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
@@ -17,25 +15,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { SearchInput } from "@/components/shared/search-input"
+import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import { useWarehouses, useDeleteWarehouse } from "./hooks"
 import { WarehouseDialog } from "./warehouse-dialog"
 import { WarehouseDetailSheet } from "./warehouse-detail-sheet"
@@ -60,7 +43,6 @@ export default function WarehousesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingWarehouse, setEditingWarehouse] = useState<WarehouseType | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [detailWarehouseId, setDetailWarehouseId] = useState<string | null>(null)
 
   const { data, isLoading } = useWarehouses({
@@ -77,17 +59,6 @@ export default function WarehousesPage() {
   const handleEdit = (warehouse: WarehouseType) => {
     setEditingWarehouse(warehouse)
     setDialogOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteWarehouse.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
   }
 
   const handleDialogClose = () => {
@@ -160,7 +131,7 @@ export default function WarehousesPage() {
               size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive"
               title="Sil"
-              onClick={() => handleDelete(row.original.id)}
+              onClick={() => deleteWarehouse.mutateAsync(row.original.id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -196,34 +167,15 @@ export default function WarehousesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Depo ara..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
-            <Select
-              value={statusFilter === undefined ? "all" : statusFilter ? "active" : "inactive"}
-              onValueChange={(value) => {
-                setStatusFilter(value === "all" ? undefined : value === "active")
-                setPage(0)
-              }}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Durum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Durumlar</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Pasif</SelectItem>
-              </SelectContent>
-            </Select>
+            <SearchInput
+              value={search}
+              onChange={(value) => { setSearch(value); setPage(0) }}
+              placeholder="Depo ara..."
+            />
+            <StatusFilterSelect
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v); setPage(0) }}
+            />
           </div>
 
           <DataTable
@@ -268,26 +220,6 @@ export default function WarehousesPage() {
           setDialogOpen(true)
         }}
       />
-
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Depoyu silmek istediğinize emin misiniz?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Depo kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

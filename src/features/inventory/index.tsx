@@ -3,14 +3,12 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
   Plus,
-  Search,
   Package,
   Pencil,
   Trash2,
   Warehouse,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
@@ -27,16 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { SearchInput } from "@/components/shared/search-input"
 import { useInventory, useDeleteInventory } from "./hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
 import { InventoryDialog } from "./inventory-dialog"
@@ -67,7 +56,6 @@ export default function InventoryPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [detailInventoryId, setDetailInventoryId] = useState<string | null>(null)
 
   const { data, isLoading } = useInventory({
@@ -85,17 +73,6 @@ export default function InventoryPage() {
   const handleEdit = (inventory: Inventory) => {
     setEditingInventory(inventory)
     setDialogOpen(true)
-  }
-
-  const handleDelete = (id: string) => {
-    setDeleteId(id)
-  }
-
-  const confirmDelete = async () => {
-    if (deleteId) {
-      await deleteInventory.mutateAsync(deleteId)
-      setDeleteId(null)
-    }
   }
 
   const handleDialogClose = () => {
@@ -233,7 +210,7 @@ export default function InventoryPage() {
               size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive"
               title="Sil"
-              onClick={() => handleDelete(row.original.id)}
+              onClick={() => deleteInventory.mutateAsync(row.original.id)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -267,18 +244,11 @@ export default function InventoryPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Envanter ara..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={(value) => { setSearch(value); setPage(0) }}
+              placeholder="Envanter ara..."
+            />
             <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(0) }}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Durum" />
@@ -363,27 +333,6 @@ export default function InventoryPage() {
         }}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Envanter kaydını silmek istediğinize emin misiniz?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu işlem geri alınamaz. Envanter kaydı kalıcı olarak silinecektir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

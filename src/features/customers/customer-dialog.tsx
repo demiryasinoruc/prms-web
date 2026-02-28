@@ -22,8 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { useCreateCustomer, useUpdateCustomer, useCustomerForEdit } from "./hooks"
 import { CustomerType, AddressType, type Customer } from "@/types/api"
 
@@ -263,26 +263,17 @@ export function CustomerDialog({
                 </div>
 
                 {customer && (
-                  <div className="col-span-2 flex items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <Label>Durum</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Müşterinin aktif/pasif durumu
-                      </p>
-                    </div>
+                  <div className="col-span-2">
                     <Controller
                       control={control}
                       name="isActive"
                       render={({ field }) => (
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm ${field.value ? "text-green-600" : "text-muted-foreground"}`}>
-                            {field.value ? "Aktif" : "Pasif"}
-                          </span>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </div>
+                        <StatusSwitchField
+                          value={field.value}
+                          onChange={field.onChange}
+                          description="Müşterinin aktif/pasif durumu"
+                          coloredLabel
+                        />
                       )}
                     />
                   </div>
