@@ -4,11 +4,13 @@ import api from "@/lib/axios"
 export enum DeliveryType {
   CustomerPickup = 1,
   CompanyDelivery = 2,
+  PerRental = 3,
 }
 
 export const DeliveryTypeLabels: Record<DeliveryType, string> = {
-  [DeliveryType.CustomerPickup]: "Müşteri Teslim Alır",
-  [DeliveryType.CompanyDelivery]: "Teslimatı Biz Yapıyoruz",
+  [DeliveryType.CustomerPickup]: "Teslimat Yok (Müşteri Teslim Alır)",
+  [DeliveryType.CompanyDelivery]: "Teslimat Var (Biz Teslim Ederiz)",
+  [DeliveryType.PerRental]: "Kiralamaya Göre Değişir",
 }
 
 export interface CompanyProfile {

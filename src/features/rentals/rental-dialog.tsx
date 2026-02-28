@@ -72,6 +72,7 @@ const rentalServiceSchema = z.object({
 const rentalSchema = z.object({
   customerId: z.string().min(1, "Müşteri seçiniz"),
   deliveryAddressId: z.string().nullable().optional(),
+  deliveryType: z.number().default(2),
   plannedStartDate: z.string().min(1, "Başlangıç tarihi zorunlu"),
   plannedEndDate: z.string().min(1, "Bitiş tarihi zorunlu"),
   sourceWarehouseId: z.string().nullable().optional(),
@@ -198,6 +199,9 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const defaultValues: RentalFormData = {
     customerId: "",
     deliveryAddressId: null,
+    deliveryType: companySettings?.defaultDeliveryType === DeliveryType.PerRental
+      ? DeliveryType.CompanyDelivery
+      : (companySettings?.defaultDeliveryType || DeliveryType.CompanyDelivery),
     plannedStartDate: "",
     plannedEndDate: "",
     sourceWarehouseId: null,
@@ -217,6 +221,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const formValues: RentalFormData = (open && isEditMode && editData) ? {
     customerId: editData.customerId,
     deliveryAddressId: editData.deliveryAddressId,
+    deliveryType: editData.deliveryType,
     plannedStartDate: editData.plannedStartDate.split("T")[0],
     plannedEndDate: editData.plannedEndDate.split("T")[0],
     sourceWarehouseId: editData.sourceWarehouseId,
@@ -290,6 +295,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const watchedServices = watch("services")
   const watchedRentalDiscountType = watch("discountType")
   const watchedRentalDiscountValue = watch("discountValue")
+  const watchedDeliveryType = watch("deliveryType")
   const watchedCurrencyId = watch("currencyId")
   const watchedExchangeRate = watch("exchangeRate")
 
@@ -422,9 +428,9 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     }
   }, [customerAddresses, setValue, isEditMode])
 
-  // Tek depo, araç veya personel varsa otomatik ata
+  // Tek depo, araç veya personel varsa otomatik ata (sadece CompanyDelivery modunda)
   useEffect(() => {
-    if (!isEditMode && open) {
+    if (!isEditMode && open && watchedDeliveryType === DeliveryType.CompanyDelivery) {
       if (warehouses && warehouses.length === 1) {
         setValue("sourceWarehouseId", warehouses[0].id)
       }
@@ -435,7 +441,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
         setValue("deliveryEmployeeId", employees[0].id)
       }
     }
-  }, [warehouses, vehicles, employees, setValue, isEditMode, open])
+  }, [warehouses, vehicles, employees, setValue, isEditMode, open, watchedDeliveryType])
+
+  // Müşteri teslim alır seçildiğinde teslimat alanlarını temizle
+  useEffect(() => {
+    if (watchedDeliveryType === DeliveryType.CustomerPickup) {
+      setValue("deliveryVehicleId", null)
+      setValue("deliveryEmployeeId", null)
+      setValue("deliveryAddressId", null)
+    }
+  }, [watchedDeliveryType, setValue])
 
   // Ürün kuralına göre hedef ürün ekleme fonksiyonu
   const addProductByRule = (targetProductId: string, quantity: number) => {
@@ -927,33 +942,6 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Teslimat Adresi</Label>
-                  <Controller
-                    control={control}
-                    name="deliveryAddressId"
-                    render={({ field }) => (
-                      <Select
-                        value={field.value || "none"}
-                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                        disabled={!effectiveCustomerId}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Adres seçiniz" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Adres seçiniz</SelectItem>
-                          {customerAddresses?.map((address) => (
-                            <SelectItem key={address.id} value={address.id}>
-                              {address.title} - {address.addressLine1}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <Label>Başlangıç Tarihi *</Label>
                   <Input type="date" {...register("plannedStartDate")} />
                   {errors.plannedStartDate && (
@@ -1081,6 +1069,30 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
             {/* Teslimat Bilgileri */}
             <TabsContent value="delivery" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
+                {companySettings?.defaultDeliveryType === DeliveryType.PerRental && (
+                  <div className="space-y-2">
+                    <Label>Teslimat Tipi</Label>
+                    <Controller
+                      control={control}
+                      name="deliveryType"
+                      render={({ field }) => (
+                        <Select
+                          value={String(field.value)}
+                          onValueChange={(value) => field.onChange(Number(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Teslimat tipi seçiniz" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={String(DeliveryType.CustomerPickup)}>Müşteri Teslim Alır</SelectItem>
+                            <SelectItem value={String(DeliveryType.CompanyDelivery)}>Teslimatı Biz Yapıyoruz</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label>Kaynak Depo</Label>
                   <Controller
@@ -1107,8 +1119,35 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                   />
                 </div>
 
-                {companySettings?.defaultDeliveryType === DeliveryType.CompanyDelivery && (
+                {watchedDeliveryType === DeliveryType.CompanyDelivery && (
                   <>
+                    <div className="space-y-2">
+                      <Label>Teslimat Adresi</Label>
+                      <Controller
+                        control={control}
+                        name="deliveryAddressId"
+                        render={({ field }) => (
+                          <Select
+                            value={field.value || "none"}
+                            onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                            disabled={!effectiveCustomerId}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Adres seçiniz" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Adres seçiniz</SelectItem>
+                              {customerAddresses?.map((address) => (
+                                <SelectItem key={address.id} value={address.id}>
+                                  {address.title} - {address.addressLine1}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+
                     <div className="space-y-2">
                       <Label>Teslimat Aracı</Label>
                       <Controller

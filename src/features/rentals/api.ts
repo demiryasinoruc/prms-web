@@ -1,4 +1,5 @@
 import api from "@/lib/axios"
+import { DeliveryType } from "@/features/company/api"
 
 // Enums
 export enum RentalStatus {
@@ -83,6 +84,7 @@ export interface Rental {
   rentalNumber: string
   customerName: string
   status: RentalStatus
+  deliveryType: DeliveryType
   flags: RentalFlag
   plannedStartDate: string
   plannedEndDate: string
@@ -106,6 +108,7 @@ export interface RentalDetail {
   deliveryAddressId: string | null
   deliveryAddressLine: string
   status: RentalStatus
+  deliveryType: DeliveryType
   flags: RentalFlag
   plannedStartDate: string
   plannedEndDate: string
@@ -267,6 +270,7 @@ export interface RentalServiceRequest {
 export interface RentalCreateRequest {
   customerId: string
   deliveryAddressId?: string | null
+  deliveryType: DeliveryType
   plannedStartDate: string
   plannedEndDate: string
   sourceWarehouseId?: string | null
@@ -294,6 +298,7 @@ export interface RentalForEdit {
   customerId: string
   deliveryAddressId: string | null
   status: RentalStatus
+  deliveryType: DeliveryType
   plannedStartDate: string
   plannedEndDate: string
   sourceWarehouseId: string | null
@@ -342,6 +347,7 @@ export interface RentalServiceForEdit {
 export interface RentalUpdateRequest {
   customerId: string
   deliveryAddressId?: string | null
+  deliveryType: DeliveryType
   status: RentalStatus
   plannedStartDate: string
   plannedEndDate: string
@@ -430,6 +436,7 @@ export const rentalApi = {
     const response = await api.post<{ id: string }>("/rental", {
       CustomerId: data.customerId,
       DeliveryAddressId: data.deliveryAddressId || null,
+      DeliveryType: data.deliveryType,
       PlannedStartDate: data.plannedStartDate,
       PlannedEndDate: data.plannedEndDate,
       SourceWarehouseId: data.sourceWarehouseId || null,
@@ -475,6 +482,7 @@ export const rentalApi = {
     await api.put(`/rental/${id}`, {
       CustomerId: data.customerId,
       DeliveryAddressId: data.deliveryAddressId || null,
+      DeliveryType: data.deliveryType,
       Status: data.status,
       PlannedStartDate: data.plannedStartDate,
       PlannedEndDate: data.plannedEndDate,

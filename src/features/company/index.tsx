@@ -207,7 +207,7 @@ export default function CompanySettingsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Varsayılan Teslimat Türü</Label>
+                    <Label>Teslimat Politikası</Label>
                     <Controller
                       control={control}
                       name="defaultDeliveryType"
@@ -231,7 +231,7 @@ export default function CompanySettingsPage() {
                       )}
                     />
                     <p className="text-sm text-muted-foreground">
-                      Yeni kiralamalarda varsayılan teslimat yöntemi
+                      &quot;Teslimat Var&quot; seçilirse her kiralama teslimatlı olur. &quot;Teslimat Yok&quot; seçilirse müşteri kendisi alır. &quot;Kiralamaya Göre Değişir&quot; seçilirse her kiralamada ayrı seçim yapılır.
                     </p>
                   </div>
 
