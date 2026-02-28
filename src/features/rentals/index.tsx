@@ -47,6 +47,7 @@ import {
   RentalFlag,
   type Rental,
 } from "./api"
+import { DeliveryType } from "@/features/company/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 
@@ -172,6 +173,18 @@ export default function RentalsPage() {
               </Badge>
             )}
           </div>
+        ),
+      },
+      {
+        accessorKey: "deliveryType",
+        header: "Teslimat",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <Badge variant={row.original.deliveryType === DeliveryType.CompanyDelivery ? "default" : "secondary"}>
+            {row.original.deliveryType === DeliveryType.CompanyDelivery
+              ? "Teslimat Var"
+              : "Müşteri Alacak"}
+          </Badge>
         ),
       },
       {
