@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, Copy, Shuffle } from "lucide-react"
 import {
@@ -109,7 +109,7 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
     setValue,
     formState: { errors },
   } = useForm<ProductRuleFormData>({
-    resolver: zodResolver(productRuleSchema) as any,
+    resolver: formResolver<ProductRuleFormData>(productRuleSchema),
     values: open ? formValues : defaultValues,
   })
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, HelpCircle, Package, Layers, Droplets, Timer, AlertTriangle, RefreshCw, Tag, Calculator, Users, FolderTree, Boxes, Ruler, SquareStack } from "lucide-react"
 import {
@@ -195,7 +195,7 @@ export function ProductDialog({
     setValue,
     formState: { errors },
   } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema) as any,
+    resolver: formResolver<ProductFormData>(productSchema),
     defaultValues,
     values: open ? formValues : defaultValues,
   })

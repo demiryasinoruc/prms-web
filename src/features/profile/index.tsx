@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, User, Lock, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -58,7 +58,7 @@ export default function ProfilePage() {
     handleSubmit: handleProfileSubmit,
     formState: { errors: profileErrors, isDirty: isProfileDirty },
   } = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
+    resolver: formResolver<ProfileFormData>(profileSchema),
     values: profileFormValues,
   })
 
@@ -69,7 +69,7 @@ export default function ProfilePage() {
     formState: { errors: passwordErrors },
     reset: resetPassword,
   } = useForm<PasswordFormData>({
-    resolver: zodResolver(passwordSchema),
+    resolver: formResolver<PasswordFormData>(passwordSchema),
     defaultValues: {
       password: "",
       passwordConfirmation: "",

@@ -1,5 +1,5 @@
 import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, Building2, Save, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -73,7 +73,7 @@ export default function CompanySettingsPage() {
     control,
     formState: { errors, isDirty },
   } = useForm<CompanyFormData>({
-    resolver: zodResolver(companySchema),
+    resolver: formResolver<CompanyFormData>(companySchema),
     values: formValues,
   })
 

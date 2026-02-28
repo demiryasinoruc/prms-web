@@ -1,5 +1,5 @@
 import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
 import {
@@ -103,7 +103,7 @@ export function EventDialog({ open, onOpenChange, event }: EventDialogProps) {
     control,
     formState: { errors },
   } = useForm<EventFormData>({
-    resolver: zodResolver(eventSchema),
+    resolver: formResolver<EventFormData>(eventSchema),
     values: open ? formValues : defaultValues,
   })
 

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, Link } from "lucide-react"
 import { toast } from "sonner"
@@ -50,7 +50,7 @@ export function RoleSheet({ open, onOpenChange, role }: RoleSheetProps) {
     handleSubmit,
     formState: { errors },
   } = useForm<RoleFormData>({
-    resolver: zodResolver(roleSchema),
+    resolver: formResolver<RoleFormData>(roleSchema),
     values: open ? formValues : defaultValues,
   })
 

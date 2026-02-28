@@ -1,5 +1,5 @@
 import { useForm, useFieldArray, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, Plus, Trash2, MapPin } from "lucide-react"
 import {
@@ -129,7 +129,7 @@ export function CustomerDialog({
     watch,
     formState: { errors },
   } = useForm<CustomerFormData>({
-    resolver: zodResolver(customerSchema) as any,
+    resolver: formResolver<CustomerFormData>(customerSchema),
     values: open ? formValues : defaultValues,
   })
 

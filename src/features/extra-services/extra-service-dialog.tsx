@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
 import {
@@ -101,7 +101,7 @@ export function ExtraServiceDialog({
     watch,
     formState: { errors },
   } = useForm<ExtraServiceFormData>({
-    resolver: zodResolver(extraServiceSchema),
+    resolver: formResolver<ExtraServiceFormData>(extraServiceSchema),
     values: open ? formValues : defaultValues,
   })
 

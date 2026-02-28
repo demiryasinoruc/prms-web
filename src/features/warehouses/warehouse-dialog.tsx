@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -70,7 +70,7 @@ export function WarehouseDialog({
     setValue,
     formState: { errors },
   } = useForm<WarehouseFormData>({
-    resolver: zodResolver(warehouseSchema) as any,
+    resolver: formResolver<WarehouseFormData>(warehouseSchema),
     values: open ? formValues : defaultValues,
   })
 

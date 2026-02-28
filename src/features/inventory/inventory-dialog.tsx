@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useForm, Controller, useWatch } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, HelpCircle } from "lucide-react"
 import {
@@ -119,7 +119,7 @@ export function InventoryDialog({
     setError,
     formState: { errors },
   } = useForm<InventoryFormData>({
-    resolver: zodResolver(inventorySchema) as any,
+    resolver: formResolver<InventoryFormData>(inventorySchema),
     defaultValues,
     values: open ? formValues : defaultValues,
   })

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
 
@@ -50,7 +50,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
 
   const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+    resolver: formResolver<LoginFormData>(loginSchema),
     defaultValues: {
       email: "",
       password: "",

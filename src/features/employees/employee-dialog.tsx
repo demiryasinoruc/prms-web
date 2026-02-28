@@ -1,5 +1,5 @@
 import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
 import {
@@ -83,7 +83,7 @@ export function EmployeeDialog({
     control,
     formState: { errors },
   } = useForm<EmployeeFormData>({
-    resolver: zodResolver(employeeSchema) as any,
+    resolver: formResolver<EmployeeFormData>(employeeSchema),
     values: open ? formValues : defaultValues,
   })
 

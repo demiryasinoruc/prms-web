@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, Plus, Trash2, ChevronDown, ChevronRight, Settings2, ChevronUp, Receipt } from "lucide-react"
 import {
@@ -262,7 +262,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     setValue,
     formState: { errors },
   } = useForm<RentalFormData>({
-    resolver: zodResolver(rentalSchema) as any,
+    resolver: formResolver<RentalFormData>(rentalSchema),
     values: open ? formValues : defaultValues,
   })
 
