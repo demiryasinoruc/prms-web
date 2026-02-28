@@ -28,7 +28,7 @@ import { useCreateInventory, useUpdateInventory } from "./hooks"
 import { InventoryStatus, InventoryStatusLabels, type Inventory } from "./api"
 import { useProductSelectWithType } from "@/features/products/hooks"
 import { ProductType, ProductTypeLabels } from "@/features/products/api"
-import { useWarehouseSelect } from "@/features/warehouses/hooks"
+import { WarehouseSelect } from "@/components/shared/warehouse-select"
 import { useProductVariantSelect } from "@/features/product-variants/hooks"
 
 // Validation schema - tip bazlı validation backend'de yapılıyor
@@ -87,7 +87,6 @@ export function InventoryDialog({
 
   // Lookup data
   const { data: products } = useProductSelectWithType()
-  const { data: warehouses } = useWarehouseSelect()
 
   // Info dialog state
   const [showUnitCostInfo, setShowUnitCostInfo] = useState(false)
@@ -320,37 +319,19 @@ export function InventoryDialog({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Depo *</Label>
-            <Controller
-              control={control}
-              name="warehouseId"
-              render={({ field }) => (
-                <Select
-                  key={`warehouseId-${field.value}`}
-                  value={field.value || "none"}
-                  onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Depo seçiniz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none" disabled>
-                      Depo seçiniz
-                    </SelectItem>
-                    {warehouses?.map((warehouse) => (
-                      <SelectItem key={warehouse.id} value={warehouse.id}>
-                        {warehouse.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.warehouseId && (
-              <p className="text-sm text-destructive">{errors.warehouseId.message}</p>
+          <Controller
+            control={control}
+            name="warehouseId"
+            render={({ field }) => (
+              <WarehouseSelect
+                value={field.value}
+                onChange={(v) => field.onChange(v || "")}
+                label="Depo *"
+                required
+                error={errors.warehouseId?.message}
+              />
             )}
-          </div>
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

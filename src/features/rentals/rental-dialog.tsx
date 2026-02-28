@@ -31,10 +31,12 @@ import {
 import { useCreateRental, useUpdateRental, useRentalForEdit } from "./hooks"
 import { RentalStatus, DiscountType } from "./api"
 import { useCustomerSelect, useCustomerAddresses } from "@/features/customers/hooks"
-import { useWarehouseSelect } from "@/features/warehouses/hooks"
+import { WarehouseSelect } from "@/components/shared/warehouse-select"
 import { useVehicleSelect } from "@/features/vehicles/hooks"
 import { useEmployeeSelect } from "@/features/employees/hooks"
 import { useProductSelectForRental, useCurrencySelect, usePricePeriodSelect } from "@/features/products/hooks"
+import { ProductType } from "@/features/products/api"
+import { useInventorySelectByProduct } from "@/features/inventory/hooks"
 import { useProductVariantSelect } from "@/features/product-variants/hooks"
 import { useExtraServiceSelectForRental } from "@/features/extra-services/hooks"
 import { useCompanySettings } from "@/features/settings/hooks"
@@ -128,6 +130,53 @@ function RentalItemVariantSelect({
   )
 }
 
+// Envanter select bileşeni - tracked ürünler için seri numarası seçimi
+function RentalItemInventorySelect({
+  productId,
+  productVariantId,
+  warehouseId,
+  value,
+  onChange,
+}: {
+  productId: string
+  productVariantId: string | null | undefined
+  warehouseId: string | null | undefined
+  value: string | null | undefined
+  onChange: (value: string | null) => void
+}) {
+  const { data: inventories } = useInventorySelectByProduct(
+    productId,
+    productVariantId,
+    warehouseId,
+  )
+
+  return (
+    <div className="space-y-2">
+      <Label>Envanter (Seri No) *</Label>
+      <Select
+        key={`inventory-${value}`}
+        value={value || "none"}
+        onValueChange={(v) => onChange(v === "none" ? null : v)}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Envanter seçiniz" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none" disabled>Envanter seçiniz</SelectItem>
+          {inventories?.map((inv) => (
+            <SelectItem key={inv.id} value={inv.id}>
+              {inv.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {inventories && inventories.length === 0 && (
+        <p className="text-xs text-muted-foreground">Müsait envanter bulunamadı</p>
+      )}
+    </div>
+  )
+}
+
 interface RentalDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -142,7 +191,6 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
   // Lookup data
   const { data: customers, isLoading: isLoadingCustomers } = useCustomerSelect()
-  const { data: warehouses, isLoading: isLoadingWarehouses } = useWarehouseSelect()
   const { data: vehicles, isLoading: isLoadingVehicles } = useVehicleSelect()
   const { data: employees, isLoading: isLoadingEmployees } = useEmployeeSelect()
   const { data: products, isLoading: isLoadingProducts } = useProductSelectForRental()
@@ -153,7 +201,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const { data: productRules } = useAllProductRules()
 
   // Lookup veriler yüklenene kadar loading göster
-  const isLoadingLookups = isLoadingCustomers || isLoadingWarehouses || isLoadingVehicles ||
+  const isLoadingLookups = isLoadingCustomers || isLoadingVehicles ||
     isLoadingEmployees || isLoadingProducts || isLoadingCurrencies ||
     isLoadingPricePeriods || isLoadingExtraServices
 
@@ -296,6 +344,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const watchedRentalDiscountType = watch("discountType")
   const watchedRentalDiscountValue = watch("discountValue")
   const watchedDeliveryType = watch("deliveryType")
+  const watchedSourceWarehouseId = watch("sourceWarehouseId")
   const watchedCurrencyId = watch("currencyId")
   const watchedExchangeRate = watch("exchangeRate")
 
@@ -428,12 +477,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     }
   }, [customerAddresses, setValue, isEditMode])
 
-  // Tek depo, araç veya personel varsa otomatik ata (sadece CompanyDelivery modunda)
+  // Tek araç veya personel varsa otomatik ata (sadece CompanyDelivery modunda)
+  // Not: Depo otomatik ataması WarehouseSelect bileşeni tarafından yapılır
   useEffect(() => {
     if (!isEditMode && open && watchedDeliveryType === DeliveryType.CompanyDelivery) {
-      if (warehouses && warehouses.length === 1) {
-        setValue("sourceWarehouseId", warehouses[0].id)
-      }
       if (vehicles && vehicles.length === 1) {
         setValue("deliveryVehicleId", vehicles[0].id)
       }
@@ -441,7 +488,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
         setValue("deliveryEmployeeId", employees[0].id)
       }
     }
-  }, [warehouses, vehicles, employees, setValue, isEditMode, open, watchedDeliveryType])
+  }, [vehicles, employees, setValue, isEditMode, open, watchedDeliveryType])
 
   // Müşteri teslim alır seçildiğinde teslimat alanlarını temizle
   useEffect(() => {
@@ -451,6 +498,19 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       setValue("deliveryAddressId", null)
     }
   }, [watchedDeliveryType, setValue])
+
+  // Depo değiştiğinde tracked ürünlerin inventoryId'sini temizle
+  useEffect(() => {
+    if (!watchedItems || !products) return
+    watchedItems.forEach((item, index) => {
+      if (!item.productId || !item.inventoryId) return
+      const product = products.find((p) => p.id === item.productId)
+      if (product?.type === ProductType.Tracked) {
+        setValue(`items.${index}.inventoryId`, null)
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedSourceWarehouseId])
 
   // Ürün kuralına göre hedef ürün ekleme fonksiyonu
   const addProductByRule = (targetProductId: string, quantity: number) => {
@@ -699,12 +759,18 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
   // Ürün seçildiğinde fiyat ve periyodu otomatik doldur
   const handleProductChange = (index: number, productId: string) => {
-    // Ürün değiştiğinde varyantı temizle
+    // Ürün değiştiğinde varyantı ve envanteri temizle
     setValue(`items.${index}.productVariantId`, null)
+    setValue(`items.${index}.inventoryId`, null)
     const product = products?.find((p) => p.id === productId)
     if (product) {
       setValue(`items.${index}.unitPrice`, product.basePrice)
       setValue(`items.${index}.pricePeriodId`, product.pricePeriodId)
+
+      // Tracked ürünlerde miktar 1'e kilitlenir
+      if (product.type === ProductType.Tracked) {
+        setValue(`items.${index}.quantity`, 1)
+      }
 
       // Yeni ürün eklendiğinde kuralları kontrol et
       const currentQuantity = watchedItems?.[index]?.quantity || 1
@@ -721,9 +787,14 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     if (service) {
       setValue(`services.${index}.unitPrice`, service.price)
       setValue(`services.${index}.pricePeriodId`, service.pricePeriodId)
+      // Personel gerektirmiyorsa atanan personeli temizle
+      if (!service.requiresEmployee) {
+        setValue(`services.${index}.assignedEmployeeId`, null)
+      }
     } else {
       setValue(`services.${index}.unitPrice`, 0)
       setValue(`services.${index}.pricePeriodId`, null)
+      setValue(`services.${index}.assignedEmployeeId`, null)
     }
   }
 
@@ -1093,31 +1164,17 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label>Kaynak Depo</Label>
-                  <Controller
-                    control={control}
-                    name="sourceWarehouseId"
-                    render={({ field }) => (
-                      <Select
-                        value={field.value || "none"}
-                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Depo seçiniz" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Depo seçiniz</SelectItem>
-                          {warehouses?.map((warehouse) => (
-                            <SelectItem key={warehouse.id} value={warehouse.id}>
-                              {warehouse.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
+                <Controller
+                  control={control}
+                  name="sourceWarehouseId"
+                  render={({ field }) => (
+                    <WarehouseSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      label="Kaynak Depo"
+                    />
+                  )}
+                />
 
                 {watchedDeliveryType === DeliveryType.CompanyDelivery && (
                   <>
@@ -1157,6 +1214,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                           <Select
                             value={field.value || "none"}
                             onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                            disabled={vehicles?.length === 1}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Araç seçiniz" />
@@ -1183,6 +1241,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                           <Select
                             value={field.value || "none"}
                             onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                            disabled={employees?.length === 1}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Personel seçiniz" />
@@ -1370,11 +1429,33 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                 )}
                               />
 
+                              {/* Tracked ürünlerde envanter seçimi */}
+                              {(() => {
+                                const selectedProduct = products?.find(p => p.id === watchedItems?.[index]?.productId)
+                                if (selectedProduct?.type !== ProductType.Tracked) return null
+                                return (
+                                  <Controller
+                                    control={control}
+                                    name={`items.${index}.inventoryId`}
+                                    render={({ field: inventoryField }) => (
+                                      <RentalItemInventorySelect
+                                        productId={watchedItems?.[index]?.productId || ""}
+                                        productVariantId={watchedItems?.[index]?.productVariantId}
+                                        warehouseId={watchedSourceWarehouseId}
+                                        value={inventoryField.value}
+                                        onChange={inventoryField.onChange}
+                                      />
+                                    )}
+                                  />
+                                )
+                              })()}
+
                               <div className="space-y-2">
                                 <Label>Miktar *</Label>
                                 <Input
                                   type="number"
                                   step="1"
+                                  disabled={products?.find(p => p.id === watchedItems?.[index]?.productId)?.type === ProductType.Tracked}
                                   {...register(`items.${index}.quantity`, { valueAsNumber: true })}
                                 />
                               </div>
@@ -1679,7 +1760,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
                     appendService({
                       extraServiceId: singleService?.id || "",
-                      assignedEmployeeId: employees?.length === 1 ? employees[0].id : null,
+                      assignedEmployeeId: (singleService?.requiresEmployee && employees?.length === 1) ? employees[0].id : null,
                       quantity: 1,
                       unitPrice: singleService?.price || 0,
                       pricePeriodId: singleService?.pricePeriodId || companySettings?.defaultPricePeriodId || null,
@@ -1856,32 +1937,34 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                             </div>
 
                             {/* Personel ve Notlar */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Atanan Personel</Label>
-                                <Controller
-                                  control={control}
-                                  name={`services.${index}.assignedEmployeeId`}
-                                  render={({ field }) => (
-                                    <Select
-                                      value={field.value || "none"}
-                                      onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Personel seçiniz" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="none">Personel seçiniz</SelectItem>
-                                        {employees?.map((employee) => (
-                                          <SelectItem key={employee.id} value={employee.id}>
-                                            {employee.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  )}
-                                />
-                              </div>
+                            <div className={`grid gap-4 ${extraServices?.find(s => s.id === service?.extraServiceId)?.requiresEmployee ? "grid-cols-2" : "grid-cols-1"}`}>
+                              {extraServices?.find(s => s.id === service?.extraServiceId)?.requiresEmployee && (
+                                <div className="space-y-2">
+                                  <Label>Atanan Personel *</Label>
+                                  <Controller
+                                    control={control}
+                                    name={`services.${index}.assignedEmployeeId`}
+                                    render={({ field }) => (
+                                      <Select
+                                        value={field.value || "none"}
+                                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Personel seçiniz" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none" disabled>Personel seçiniz</SelectItem>
+                                          {employees?.map((employee) => (
+                                            <SelectItem key={employee.id} value={employee.id}>
+                                              {employee.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  />
+                                </div>
+                              )}
 
                               <div className="space-y-2">
                                 <Label>Notlar</Label>

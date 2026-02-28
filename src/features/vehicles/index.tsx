@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
 import { useVehicles, useDeleteVehicle } from "./hooks"
-import { useWarehouseSelect } from "../warehouses/hooks"
+import { WarehouseSelect } from "@/components/shared/warehouse-select"
 import { VehicleDialog } from "./vehicle-dialog"
 import { VehicleDetailSheet } from "./vehicle-detail-sheet"
 import { VehicleType, VehicleStatus, type Vehicle } from "@/types/api"
@@ -87,8 +87,6 @@ export default function VehiclesPage() {
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [detailVehicleId, setDetailVehicleId] = useState<string | null>(null)
-
-  const { data: warehouses } = useWarehouseSelect()
 
   const { data, isLoading } = useVehicles({
     pageNumber: page + 1,
@@ -292,25 +290,15 @@ export default function VehiclesPage() {
                 <SelectItem value="4">Arızalı</SelectItem>
               </SelectContent>
             </Select>
-            <Select
-              value={warehouseFilter ?? "all"}
-              onValueChange={(value) => {
-                setWarehouseFilter(value === "all" ? undefined : value)
+            <WarehouseSelect
+              value={warehouseFilter || null}
+              onChange={(v) => {
+                setWarehouseFilter(v || undefined)
                 setPage(0)
               }}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Depo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Depolar</SelectItem>
-                {warehouses?.map((wh) => (
-                  <SelectItem key={wh.id} value={wh.id}>
-                    {wh.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              filterMode
+              triggerClassName="w-[180px]"
+            />
           </div>
 
           <DataTable

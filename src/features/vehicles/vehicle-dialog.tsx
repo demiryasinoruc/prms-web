@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useCreateVehicle, useUpdateVehicle, useVehicleForEdit } from "./hooks"
-import { useWarehouseSelect } from "@/features/warehouses/hooks"
+import { WarehouseSelect } from "@/components/shared/warehouse-select"
 import { VehicleType, VehicleStatus, type Vehicle } from "@/types/api"
 
 const vehicleSchema = z.object({
@@ -68,7 +68,6 @@ export function VehicleDialog({
 }: VehicleDialogProps) {
   const createVehicle = useCreateVehicle()
   const updateVehicle = useUpdateVehicle()
-  const { data: warehouses } = useWarehouseSelect()
 
   const { data: vehicleData } = useVehicleForEdit(vehicle?.id || "")
   const editVehicle = vehicle ? vehicleData : null
@@ -242,33 +241,20 @@ export function VehicleDialog({
               />
             </div>
 
-            <div className="col-span-2 space-y-2">
-              <Label>Depo *</Label>
+            <div className="col-span-2">
               <Controller
                 control={control}
                 name="warehouseId"
                 render={({ field }) => (
-                  <Select
-                    key={`warehouseId-${field.value}`}
-                    value={field.value || "none"}
-                    onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Depo seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {warehouses?.map((warehouse) => (
-                        <SelectItem key={warehouse.id} value={warehouse.id}>
-                          {warehouse.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <WarehouseSelect
+                    value={field.value}
+                    onChange={(v) => field.onChange(v || "")}
+                    label="Depo *"
+                    required
+                    error={errors.warehouseId?.message}
+                  />
                 )}
               />
-              {errors.warehouseId && (
-                <p className="text-sm text-destructive">{errors.warehouseId.message}</p>
-              )}
             </div>
 
             <div className="col-span-2 space-y-2">
@@ -292,7 +278,6 @@ export function VehicleDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="1">Müsait</SelectItem>
-                      <SelectItem value="2">Teslimat'ta</SelectItem>
                       <SelectItem value="3">Bakımda</SelectItem>
                       <SelectItem value="4">Arızalı</SelectItem>
                     </SelectContent>

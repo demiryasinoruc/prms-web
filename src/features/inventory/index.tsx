@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useInventory, useDeleteInventory } from "./hooks"
-import { useWarehouseSelect } from "@/features/warehouses/hooks"
+import { WarehouseSelect } from "@/components/shared/warehouse-select"
 import { InventoryDialog } from "./inventory-dialog"
 import { InventoryDetailSheet } from "./inventory-detail-sheet"
 import {
@@ -69,8 +69,6 @@ export default function InventoryPage() {
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [detailInventoryId, setDetailInventoryId] = useState<string | null>(null)
-
-  const { data: warehouses } = useWarehouseSelect()
 
   const { data, isLoading } = useInventory({
     pageNumber: page + 1,
@@ -292,17 +290,15 @@ export default function InventoryPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={warehouseFilter} onValueChange={(value) => { setWarehouseFilter(value); setPage(0) }}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Depo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Depolar</SelectItem>
-                {warehouses?.map((w) => (
-                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <WarehouseSelect
+              value={warehouseFilter === "all" ? null : warehouseFilter}
+              onChange={(v) => {
+                setWarehouseFilter(v || "all")
+                setPage(0)
+              }}
+              filterMode
+              triggerClassName="w-[180px]"
+            />
           </div>
 
           <DataTable
