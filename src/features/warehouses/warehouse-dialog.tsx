@@ -10,11 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { FormField } from "@/components/shared/form-field"
 import { useCreateWarehouse, useUpdateWarehouse, useWarehouseForEdit } from "./hooks"
 import type { Warehouse } from "@/types/api"
 
@@ -118,30 +116,26 @@ export function WarehouseDialog({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Depo Adı *</Label>
-              <Input placeholder="Ana Depo, Şube 1..." {...register("name")} />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Depo Adı *"
+              placeholder="Ana Depo, Şube 1..."
+              {...register("name")}
+              error={errors.name?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Adres</Label>
-              <Textarea
-                placeholder="Depo adresi..."
-                rows={3}
-                {...register("address")}
-              />
-            </div>
+            <FormField
+              label="Adres"
+              placeholder="Depo adresi..."
+              multiline
+              rows={3}
+              {...register("address")}
+            />
 
-            <div className="space-y-2">
-              <Label>İletişim Bilgisi</Label>
-              <Input
-                placeholder="Telefon, e-posta..."
-                {...register("contactInfo")}
-              />
-            </div>
+            <FormField
+              label="İletişim Bilgisi"
+              placeholder="Telefon, e-posta..."
+              {...register("contactInfo")}
+            />
 
             {warehouse && (
               <StatusSwitchField

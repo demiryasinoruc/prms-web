@@ -9,10 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { FormField } from "@/components/shared/form-field"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { useCreateCertificate, useUpdateCertificate } from "./hooks"
 import type { Certificate } from "./api"
@@ -102,29 +100,22 @@ export function CertificateDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Sertifika Adı *</Label>
-            <Input
-              placeholder="Sertifika adı"
-              {...register("name")}
-              autoFocus
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
+          <FormField
+            label="Sertifika Adı *"
+            placeholder="Sertifika adı"
+            {...register("name")}
+            autoFocus
+            error={errors.name?.message}
+          />
 
-          <div className="space-y-2">
-            <Label>Açıklama *</Label>
-            <Textarea
-              placeholder="Sertifika açıklaması"
-              {...register("description")}
-              rows={3}
-            />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description.message}</p>
-            )}
-          </div>
+          <FormField
+            label="Açıklama *"
+            placeholder="Sertifika açıklaması"
+            {...register("description")}
+            multiline
+            rows={3}
+            error={errors.description?.message}
+          />
 
           {certificate && (
             <StatusSwitchField

@@ -2,12 +2,8 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
-  Pencil,
-  Trash2,
   Warehouse,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -15,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import { useWarehouses, useDeleteWarehouse } from "./hooks"
@@ -25,6 +21,7 @@ import { WarehouseDetailSheet } from "./warehouse-detail-sheet"
 import type { Warehouse as WarehouseType } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
 
 export default function WarehousesPage() {
   const canCreate = usePermission(Permissions.Warehouse.Create)
@@ -99,64 +96,23 @@ export default function WarehousesPage() {
       enableSorting: true,
       cell: ({ row }) => row.original.contactInfo || "-",
     },
-    {
-      accessorKey: "isActive",
-      header: "Durum",
-      enableSorting: true,
-      cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? "default" : "secondary"}>
-          {row.original.isActive ? "Aktif" : "Pasif"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canUpdate && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Düzenle"
-              onClick={() => handleEdit(row.original)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Sil"
-              onClick={() => deleteWarehouse.mutateAsync(row.original.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
+    createStatusBadgeColumn<WarehouseType>({ enableSorting: true }),
+    createActionButtonsColumn<WarehouseType>({
+      onEdit: handleEdit,
+      onDelete: (id) => deleteWarehouse.mutateAsync(id),
+      getId: (row) => row.id,
+      canUpdate,
+      canDelete,
+    }),
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Depolar</h1>
-          <p className="text-muted-foreground">
-            Depo ve şube lokasyonlarını yönetin
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Depo
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Depolar"
+        description="Depo ve şube lokasyonlarını yönetin"
+        action={{ label: "Yeni Depo", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       <Card>
         <CardHeader>

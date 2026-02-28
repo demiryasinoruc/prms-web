@@ -10,11 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
+import { FormField } from "@/components/shared/form-field"
+import { FormSelectField } from "@/components/shared/form-select-field"
+import { SwitchField } from "@/components/shared/switch-field"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import {
   Select,
@@ -345,82 +345,52 @@ export function MaintenanceScheduleDialog({
 
           {/* Basic Info */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Plan Adı *</Label>
-              <Input
+            <div className="sm:col-span-2">
+              <FormField
+                label="Plan Adı *"
                 placeholder="Bakım planı adı"
                 {...register("name")}
                 autoFocus
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Bakım Türü *</Label>
-              <Controller
-                control={control}
-                name="maintenanceType"
-                render={({ field }) => (
-                  <Select
-                    value={String(field.value)}
-                    onValueChange={(value) => field.onChange(Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Bakım türü seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(MaintenanceTypeLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                error={errors.name?.message}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Tetikleme Türü *</Label>
-              <Controller
-                control={control}
-                name="triggerType"
-                render={({ field }) => (
-                  <Select
-                    value={String(field.value)}
-                    onValueChange={(value) => field.onChange(Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tetikleme türü seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(MaintenanceTriggerTypeLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+            <FormSelectField
+              label="Bakım Türü *"
+              name="maintenanceType"
+              control={control}
+              valueType="number"
+              options={Object.entries(MaintenanceTypeLabels).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              placeholder="Bakım türü seçiniz"
+            />
+
+            <FormSelectField
+              label="Tetikleme Türü *"
+              name="triggerType"
+              control={control}
+              valueType="number"
+              options={Object.entries(MaintenanceTriggerTypeLabels).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              placeholder="Tetikleme türü seçiniz"
+            />
           </div>
 
           {/* Trigger Intervals */}
           <div className="grid gap-4 sm:grid-cols-2">
             {showUsageInterval && (
               <div className="space-y-2">
-                <Label>Kullanım Aralığı (birim) *</Label>
-                <Input
+                <FormField
+                  label="Kullanım Aralığı (birim) *"
                   type="number"
                   placeholder="Örn: 500"
                   {...register("usageInterval", { valueAsNumber: true })}
+                  error={errors.usageInterval?.message}
                 />
-                {errors.usageInterval && (
-                  <p className="text-sm text-destructive">{errors.usageInterval.message}</p>
-                )}
                 <p className="text-xs text-muted-foreground">
                   Ürünün ömür birimi cinsinden aralık
                 </p>
@@ -429,15 +399,13 @@ export function MaintenanceScheduleDialog({
 
             {showDayInterval && (
               <div className="space-y-2">
-                <Label>Gün Aralığı *</Label>
-                <Input
+                <FormField
+                  label="Gün Aralığı *"
                   type="number"
                   placeholder="Örn: 30"
                   {...register("dayInterval", { valueAsNumber: true })}
+                  error={errors.dayInterval?.message}
                 />
-                {errors.dayInterval && (
-                  <p className="text-sm text-destructive">{errors.dayInterval.message}</p>
-                )}
                 <p className="text-xs text-muted-foreground">
                   Kaç günde bir bakım yapılacak
                 </p>
@@ -447,33 +415,29 @@ export function MaintenanceScheduleDialog({
 
           {/* Estimates */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Tahmini Süre (saat)</Label>
-              <Input
-                type="number"
-                step="0.5"
-                placeholder="Örn: 2"
-                {...register("estimatedDurationHours", { valueAsNumber: true })}
-              />
-            </div>
+            <FormField
+              label="Tahmini Süre (saat)"
+              type="number"
+              step="0.5"
+              placeholder="Örn: 2"
+              {...register("estimatedDurationHours", { valueAsNumber: true })}
+            />
 
-            <div className="space-y-2">
-              <Label>Tahmini Maliyet</Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Örn: 500.00"
-                {...register("estimatedCost", { valueAsNumber: true })}
-              />
-            </div>
+            <FormField
+              label="Tahmini Maliyet"
+              type="number"
+              step="0.01"
+              placeholder="Örn: 500.00"
+              {...register("estimatedCost", { valueAsNumber: true })}
+            />
           </div>
 
           {/* Alerts */}
           <div className="grid gap-4 sm:grid-cols-2">
             {showDayInterval && (
               <div className="space-y-2">
-                <Label>Uyarı (gün önce)</Label>
-                <Input
+                <FormField
+                  label="Uyarı (gün önce)"
                   type="number"
                   placeholder="Örn: 7"
                   {...register("alertDaysBefore", { valueAsNumber: true })}
@@ -486,8 +450,8 @@ export function MaintenanceScheduleDialog({
 
             {showUsageInterval && (
               <div className="space-y-2">
-                <Label>Uyarı (kullanım önce)</Label>
-                <Input
+                <FormField
+                  label="Uyarı (kullanım önce)"
                   type="number"
                   placeholder="Örn: 50"
                   {...register("alertUsageBefore", { valueAsNumber: true })}
@@ -500,30 +464,23 @@ export function MaintenanceScheduleDialog({
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label>Açıklama</Label>
-            <Textarea
-              placeholder="Bakım planı açıklaması"
-              {...register("description")}
-              rows={3}
-            />
-          </div>
+          <FormField
+            label="Açıklama"
+            placeholder="Bakım planı açıklaması"
+            {...register("description")}
+            multiline
+            rows={3}
+          />
 
           {/* Switches */}
           <div className="space-y-4">
             {targetType === "category" && (
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label>Alt Kategorilere Miras</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Bu plan alt kategorilere de uygulanır
-                  </p>
-                </div>
-                <Switch
-                  checked={inheritToChildren}
-                  onCheckedChange={(checked) => setValue("inheritToChildren", checked)}
-                />
-              </div>
+              <SwitchField
+                label="Alt Kategorilere Miras"
+                description="Bu plan alt kategorilere de uygulanır"
+                checked={inheritToChildren}
+                onCheckedChange={(checked) => setValue("inheritToChildren", checked)}
+              />
             )}
 
             {schedule && (

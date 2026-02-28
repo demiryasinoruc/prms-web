@@ -16,10 +16,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { FormField } from "@/components/shared/form-field"
+import { FormSelectField } from "@/components/shared/form-select-field"
 import {
   Select,
   SelectContent,
@@ -304,96 +304,62 @@ export function MaintenanceRecordDialog({
               )}
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Başlık *</Label>
-              <Input
+            <div className="sm:col-span-2">
+              <FormField
+                label="Başlık *"
                 placeholder="Bakım kaydı başlığı"
                 {...register("title")}
                 autoFocus
+                error={errors.title?.message}
               />
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title.message}</p>
-              )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Bakım Türü *</Label>
-              <Controller
-                control={control}
-                name="maintenanceType"
-                render={({ field }) => (
-                  <Select
-                    value={String(field.value)}
-                    onValueChange={(value) => field.onChange(Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Bakım türü seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(MaintenanceTypeLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+            <FormSelectField
+              label="Bakım Türü *"
+              name="maintenanceType"
+              control={control}
+              valueType="number"
+              options={Object.entries(MaintenanceTypeLabels).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              placeholder="Bakım türü seçiniz"
+            />
 
             {record && (
-              <div className="space-y-2">
-                <Label>Durum *</Label>
-                <Controller
-                  control={control}
-                  name="status"
-                  render={({ field }) => (
-                    <Select
-                      value={String(field.value)}
-                      onValueChange={(value) => field.onChange(Number(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Durum seçiniz" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(MaintenanceStatusLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
+              <FormSelectField
+                label="Durum *"
+                name="status"
+                control={control}
+                valueType="number"
+                options={Object.entries(MaintenanceStatusLabels).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+                placeholder="Durum seçiniz"
+              />
             )}
           </div>
 
           {/* Dates */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Planlanan Tarih</Label>
-              <Input
-                type="date"
-                {...register("scheduledDate")}
-              />
-            </div>
+            <FormField
+              label="Planlanan Tarih"
+              type="date"
+              {...register("scheduledDate")}
+            />
 
-            <div className="space-y-2">
-              <Label>Başlangıç Tarihi</Label>
-              <Input
-                type="date"
-                {...register("startDate")}
-              />
-            </div>
+            <FormField
+              label="Başlangıç Tarihi"
+              type="date"
+              {...register("startDate")}
+            />
 
-            <div className="space-y-2">
-              <Label>Tamamlanma Tarihi</Label>
-              <Input
-                type="date"
-                {...register("completedDate")}
-              />
-            </div>
+            <FormField
+              label="Tamamlanma Tarihi"
+              type="date"
+              {...register("completedDate")}
+            />
           </div>
 
           {/* Performer */}
@@ -450,55 +416,47 @@ export function MaintenanceRecordDialog({
                 />
               </div>
             ) : (
-              <div className="space-y-2">
-                <Label>Dış Kaynak Adı</Label>
-                <Input
-                  placeholder="Firma/kişi adı"
-                  {...register("performedByExternal")}
-                />
-              </div>
+              <FormField
+                label="Dış Kaynak Adı"
+                placeholder="Firma/kişi adı"
+                {...register("performedByExternal")}
+              />
             )}
           </div>
 
           {/* Costs */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label>İşçilik Maliyeti</Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                {...register("laborCost", { valueAsNumber: true })}
-              />
-            </div>
+            <FormField
+              label="İşçilik Maliyeti"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              {...register("laborCost", { valueAsNumber: true })}
+            />
 
-            <div className="space-y-2">
-              <Label>Parça Maliyeti</Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                {...register("partsCost", { valueAsNumber: true })}
-              />
-            </div>
+            <FormField
+              label="Parça Maliyeti"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              {...register("partsCost", { valueAsNumber: true })}
+            />
 
-            <div className="space-y-2">
-              <Label>Toplam Maliyet</Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                {...register("totalCost", { valueAsNumber: true })}
-              />
-            </div>
+            <FormField
+              label="Toplam Maliyet"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              {...register("totalCost", { valueAsNumber: true })}
+            />
           </div>
 
           {/* Lifespan - Sadece ömür takibi olan ürünler için */}
           {hasLifespanTracking && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Bakım Anındaki Ömür ({selectedInventory?.lifespanUnitTypeName})</Label>
-                <Input
+                <FormField
+                  label={`Bakım Anındaki Ömür (${selectedInventory?.lifespanUnitTypeName})`}
                   type="number"
                   step="0.01"
                   placeholder="Örn: 500"
@@ -514,46 +472,40 @@ export function MaintenanceRecordDialog({
           {/* Next Schedule */}
           {status === MaintenanceStatus.Completed && (
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Sonraki Bakım Tarihi</Label>
-                <Input
-                  type="date"
-                  {...register("nextScheduledDate")}
-                />
-              </div>
+              <FormField
+                label="Sonraki Bakım Tarihi"
+                type="date"
+                {...register("nextScheduledDate")}
+              />
 
               {hasLifespanTracking && (
-                <div className="space-y-2">
-                  <Label>Sonraki Bakım Ömrü ({selectedInventory?.lifespanUnitTypeName})</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Örn: 1000"
-                    {...register("nextScheduledLifespan", { valueAsNumber: true })}
-                  />
-                </div>
+                <FormField
+                  label={`Sonraki Bakım Ömrü (${selectedInventory?.lifespanUnitTypeName})`}
+                  type="number"
+                  step="0.01"
+                  placeholder="Örn: 1000"
+                  {...register("nextScheduledLifespan", { valueAsNumber: true })}
+                />
               )}
             </div>
           )}
 
           {/* Description & Notes */}
-          <div className="space-y-2">
-            <Label>Açıklama</Label>
-            <Textarea
-              placeholder="Bakım detayları"
-              {...register("description")}
-              rows={3}
-            />
-          </div>
+          <FormField
+            label="Açıklama"
+            placeholder="Bakım detayları"
+            {...register("description")}
+            multiline
+            rows={3}
+          />
 
-          <div className="space-y-2">
-            <Label>Notlar</Label>
-            <Textarea
-              placeholder="Ek notlar"
-              {...register("notes")}
-              rows={2}
-            />
-          </div>
+          <FormField
+            label="Notlar"
+            placeholder="Ek notlar"
+            {...register("notes")}
+            multiline
+            rows={2}
+          />
 
           <div className="flex justify-end gap-3 pt-4">
             <Button

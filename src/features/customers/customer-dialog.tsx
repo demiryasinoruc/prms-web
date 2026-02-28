@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -22,8 +21,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
+import { FormField } from "@/components/shared/form-field"
+import { FormSelectField } from "@/components/shared/form-select-field"
 import { useCreateCustomer, useUpdateCustomer, useCustomerForEdit } from "./hooks"
 import { CustomerType, AddressType, type Customer } from "@/types/api"
 
@@ -195,71 +195,69 @@ export function CustomerDialog({
 
             <TabsContent value="info" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-2">
-                  <Label>Müşteri Adı *</Label>
-                  <Input placeholder="Müşteri adı" {...register("name")} />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Müşteri Tipi *</Label>
-                  <Controller
-                    control={control}
-                    name="customerType"
-                    render={({ field }) => (
-                      <Select
-                        key={`customerType-${field.value}`}
-                        value={field.value != null ? String(field.value) : "none"}
-                        onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">Bireysel</SelectItem>
-                          <SelectItem value="2">Kurumsal</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                <div className="col-span-2">
+                  <FormField
+                    label="Müşteri Adı *"
+                    placeholder="Müşteri adı"
+                    {...register("name")}
+                    error={errors.name?.message}
                   />
                 </div>
 
+                <FormSelectField
+                  label="Müşteri Tipi *"
+                  name="customerType"
+                  control={control}
+                  valueType="number"
+                  options={[
+                    { value: "1", label: "Bireysel" },
+                    { value: "2", label: "Kurumsal" },
+                  ]}
+                />
+
                 {customerType === CustomerType.Individual ? (
-                  <div className="space-y-2">
-                    <Label>TC Kimlik No</Label>
-                    <Input placeholder="11 haneli TC no" {...register("identityNumber")} />
-                  </div>
+                  <FormField
+                    label="TC Kimlik No"
+                    placeholder="11 haneli TC no"
+                    {...register("identityNumber")}
+                  />
                 ) : (
                   <>
-                    <div className="space-y-2">
-                      <Label>Vergi No</Label>
-                      <Input placeholder="Vergi numarası" {...register("taxNumber")} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Vergi Dairesi</Label>
-                      <Input placeholder="Vergi dairesi" {...register("taxOffice")} />
-                    </div>
+                    <FormField
+                      label="Vergi No"
+                      placeholder="Vergi numarası"
+                      {...register("taxNumber")}
+                    />
+                    <FormField
+                      label="Vergi Dairesi"
+                      placeholder="Vergi dairesi"
+                      {...register("taxOffice")}
+                    />
                   </>
                 )}
 
-                <div className="space-y-2">
-                  <Label>Telefon</Label>
-                  <Input placeholder="0555 555 55 55" {...register("contactNumber")} />
-                </div>
+                <FormField
+                  label="Telefon"
+                  placeholder="0555 555 55 55"
+                  {...register("contactNumber")}
+                />
 
-                <div className="space-y-2">
-                  <Label>E-posta</Label>
-                  <Input type="email" placeholder="ornek@firma.com" {...register("email")} />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
-                  )}
-                </div>
+                <FormField
+                  label="E-posta"
+                  type="email"
+                  placeholder="ornek@firma.com"
+                  {...register("email")}
+                  error={errors.email?.message}
+                />
 
-                <div className="col-span-2 space-y-2">
-                  <Label>Notlar</Label>
-                  <Textarea placeholder="Ek notlar..." {...register("notes")} rows={3} />
+                <div className="col-span-2">
+                  <FormField
+                    label="Notlar"
+                    placeholder="Ek notlar..."
+                    {...register("notes")}
+                    multiline
+                    rows={3}
+                  />
                 </div>
 
                 {customer && (
@@ -323,18 +321,12 @@ export function CustomerDialog({
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label>Başlık *</Label>
-                          <Input
-                            placeholder="Ev, İş, Şantiye..."
-                            {...register(`addresses.${index}.title`)}
-                          />
-                          {errors.addresses?.[index]?.title && (
-                            <p className="text-sm text-destructive">
-                              {errors.addresses[index]?.title?.message}
-                            </p>
-                          )}
-                        </div>
+                        <FormField
+                          label="Başlık *"
+                          placeholder="Ev, İş, Şantiye..."
+                          {...register(`addresses.${index}.title`)}
+                          error={errors.addresses?.[index]?.title?.message}
+                        />
 
                         <div className="space-y-2">
                           <Label>Adres Tipi</Label>
@@ -360,39 +352,27 @@ export function CustomerDialog({
                           />
                         </div>
 
-                        <div className="col-span-2 space-y-2">
-                          <Label>Adres *</Label>
-                          <Input
+                        <div className="col-span-2">
+                          <FormField
+                            label="Adres *"
                             placeholder="Mahalle, sokak, no..."
                             {...register(`addresses.${index}.addressLine1`)}
+                            error={errors.addresses?.[index]?.addressLine1?.message}
                           />
-                          {errors.addresses?.[index]?.addressLine1 && (
-                            <p className="text-sm text-destructive">
-                              {errors.addresses[index]?.addressLine1?.message}
-                            </p>
-                          )}
                         </div>
 
-                        <div className="space-y-2">
-                          <Label>Şehir *</Label>
-                          <Input
-                            placeholder="İstanbul"
-                            {...register(`addresses.${index}.city`)}
-                          />
-                          {errors.addresses?.[index]?.city && (
-                            <p className="text-sm text-destructive">
-                              {errors.addresses[index]?.city?.message}
-                            </p>
-                          )}
-                        </div>
+                        <FormField
+                          label="Şehir *"
+                          placeholder="İstanbul"
+                          {...register(`addresses.${index}.city`)}
+                          error={errors.addresses?.[index]?.city?.message}
+                        />
 
-                        <div className="space-y-2">
-                          <Label>İlçe</Label>
-                          <Input
-                            placeholder="Kadıköy"
-                            {...register(`addresses.${index}.state`)}
-                          />
-                        </div>
+                        <FormField
+                          label="İlçe"
+                          placeholder="Kadıköy"
+                          {...register(`addresses.${index}.state`)}
+                        />
                       </div>
                     </div>
                   ))}

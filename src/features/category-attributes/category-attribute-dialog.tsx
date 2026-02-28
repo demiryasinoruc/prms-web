@@ -13,15 +13,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SwitchField } from "@/components/shared/switch-field"
+import { FormField } from "@/components/shared/form-field"
+import { FormSelectField } from "@/components/shared/form-select-field"
 import {
   useCreateCategoryAttribute,
   useUpdateCategoryAttribute,
@@ -249,73 +243,40 @@ export function CategoryAttributeDialog({
 
             {/* Özellik Adı ve Görünen Ad */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Özellik Adı (Kod)</Label>
-                <Input
-                  id="name"
-                  {...register("name")}
-                  placeholder="ornek_ozellik"
-                />
-                {errors.name && (
-                  <p className="text-sm text-destructive">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
+              <FormField
+                label="Özellik Adı (Kod)"
+                {...register("name")}
+                placeholder="ornek_ozellik"
+                error={errors.name?.message}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="displayName">Görünen Ad</Label>
-                <Input
-                  id="displayName"
-                  {...register("displayName")}
-                  placeholder="Örnek Özellik"
-                />
-                {errors.displayName && (
-                  <p className="text-sm text-destructive">
-                    {errors.displayName.message}
-                  </p>
-                )}
-              </div>
+              <FormField
+                label="Görünen Ad"
+                {...register("displayName")}
+                placeholder="Örnek Özellik"
+                error={errors.displayName?.message}
+              />
             </div>
 
             {/* Veri Tipi ve Sıralama */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dataType">Veri Tipi</Label>
-                <Controller
-                  control={control}
-                  name="dataType"
-                  render={({ field }) => (
-                    <Select
-                      key={`datatype-${field.value}`}
-                      value={String(field.value)}
-                      onValueChange={(value) => field.onChange(Number(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Veri tipi seçiniz" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(AttributeDataTypeLabels).map(
-                          ([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
+              <FormSelectField
+                label="Veri Tipi"
+                name="dataType"
+                control={control}
+                valueType="number"
+                options={Object.entries(AttributeDataTypeLabels).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+                placeholder="Veri tipi seçiniz"
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="displayOrder">Sıralama</Label>
-                <Input
-                  id="displayOrder"
-                  type="number"
-                  {...register("displayOrder", { valueAsNumber: true })}
-                />
-              </div>
+              <FormField
+                label="Sıralama"
+                type="number"
+                {...register("displayOrder", { valueAsNumber: true })}
+              />
             </div>
 
             {/* Select/MultiSelect için Seçenekler */}
@@ -363,170 +324,123 @@ export function CategoryAttributeDialog({
 
             {/* Placeholder ve Yardım Metni */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="placeholder">Placeholder</Label>
-                <Input
-                  id="placeholder"
-                  {...register("placeholder")}
-                  placeholder="Örnek: Değer giriniz"
-                />
-              </div>
+              <FormField
+                label="Placeholder"
+                {...register("placeholder")}
+                placeholder="Örnek: Değer giriniz"
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="defaultValue">Varsayılan Değer</Label>
-                <Input id="defaultValue" {...register("defaultValue")} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="helpText">Yardım Metni</Label>
-              <Textarea
-                id="helpText"
-                {...register("helpText")}
-                placeholder="Kullanıcıya gösterilecek yardım metni"
+              <FormField
+                label="Varsayılan Değer"
+                {...register("defaultValue")}
               />
             </div>
 
+            <FormField
+              label="Yardım Metni"
+              {...register("helpText")}
+              placeholder="Kullanıcıya gösterilecek yardım metni"
+              multiline
+            />
+
             {/* Switch'ler */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="isRequired">Zorunlu</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Bu alan zorunlu mu?
-                  </p>
-                </div>
-                <Controller
-                  control={control}
-                  name="isRequired"
-                  render={({ field }) => (
-                    <Switch
-                      id="isRequired"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                control={control}
+                name="isRequired"
+                render={({ field }) => (
+                  <SwitchField
+                    label="Zorunlu"
+                    description="Bu alan zorunlu mu?"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
 
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="inheritToChildren">Miras</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Alt kategorilere geçsin mi?
-                  </p>
-                </div>
-                <Controller
-                  control={control}
-                  name="inheritToChildren"
-                  render={({ field }) => (
-                    <Switch
-                      id="inheritToChildren"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                control={control}
+                name="inheritToChildren"
+                render={({ field }) => (
+                  <SwitchField
+                    label="Miras"
+                    description="Alt kategorilere geçsin mi?"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
             </div>
 
             {/* Varyant Özelliği (sadece Select tipinde) */}
             {watchedDataType === AttributeDataType.Select && (
-              <div className="flex items-center justify-between rounded-lg border p-3 border-primary/30 bg-primary/5">
-                <div>
-                  <Label htmlFor="isVariantAttribute">Varyant Özelliği</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Ürün varyantları oluşturmak için kullanılsın mı?
-                  </p>
-                </div>
-                <Controller
-                  control={control}
-                  name="isVariantAttribute"
-                  render={({ field }) => (
-                    <Switch
-                      id="isVariantAttribute"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                control={control}
+                name="isVariantAttribute"
+                render={({ field }) => (
+                  <SwitchField
+                    label="Varyant Özelliği"
+                    description="Ürün varyantları oluşturmak için kullanılsın mı?"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="border-primary/30 bg-primary/5"
+                  />
+                )}
+              />
             )}
 
             <div className="grid grid-cols-3 gap-4">
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="showInList">Listede Göster</Label>
-                </div>
-                <Controller
-                  control={control}
-                  name="showInList"
-                  render={({ field }) => (
-                    <Switch
-                      id="showInList"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                control={control}
+                name="showInList"
+                render={({ field }) => (
+                  <SwitchField
+                    label="Listede Göster"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
 
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="showInFilter">Filtrede Göster</Label>
-                </div>
-                <Controller
-                  control={control}
-                  name="showInFilter"
-                  render={({ field }) => (
-                    <Switch
-                      id="showInFilter"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                control={control}
+                name="showInFilter"
+                render={({ field }) => (
+                  <SwitchField
+                    label="Filtrede Göster"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
 
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="isSearchable">Aranabilir</Label>
-                </div>
-                <Controller
-                  control={control}
-                  name="isSearchable"
-                  render={({ field }) => (
-                    <Switch
-                      id="isSearchable"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                control={control}
+                name="isSearchable"
+                render={({ field }) => (
+                  <SwitchField
+                    label="Aranabilir"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
             </div>
 
             {/* Durum (sadece edit modda) */}
             {isEditMode && (
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="isActive">Durum</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Özellik aktif mi?
-                  </p>
-                </div>
-                <Controller
-                  control={control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <Switch
-                      id="isActive"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                control={control}
+                name="isActive"
+                render={({ field }) => (
+                  <SwitchField
+                    label="Durum"
+                    description="Özellik aktif mi?"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
             )}
 
             <DialogFooter>

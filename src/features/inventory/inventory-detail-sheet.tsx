@@ -16,9 +16,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { DetailSheetSkeleton, DetailSheetEmptyState } from "@/components/shared/detail-sheet-skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { useInventoryDetail } from "./hooks"
 import {
@@ -98,23 +98,7 @@ export function InventoryDetailSheet({
       <SheetContent className="sm:max-w-lg overflow-y-auto">
         {/* KURAL: Her durumda SheetTitle/SheetDescription render edilmeli */}
         {isLoading ? (
-          <div className="space-y-6">
-            <SheetHeader>
-              <SheetTitle>Envanter Detayları</SheetTitle>
-              <SheetDescription>Yükleniyor...</SheetDescription>
-            </SheetHeader>
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-48" />
-                <Skeleton className="h-5 w-20" />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          </div>
+          <DetailSheetSkeleton title="Envanter Detayları" />
         ) : inventory ? (
           <div className="space-y-6">
             <SheetHeader>
@@ -300,15 +284,7 @@ export function InventoryDetailSheet({
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            <SheetHeader>
-              <SheetTitle>Envanter Detayları</SheetTitle>
-              <SheetDescription>Bilgi bulunamadı</SheetDescription>
-            </SheetHeader>
-            <div className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground">Envanter kaydı bulunamadı</p>
-            </div>
-          </div>
+          <DetailSheetEmptyState title="Envanter Detayları" message="Envanter kaydı bulunamadı" />
         )}
       </SheetContent>
     </Sheet>

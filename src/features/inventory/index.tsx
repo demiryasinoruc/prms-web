@@ -2,13 +2,9 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
   Package,
-  Pencil,
-  Trash2,
   Warehouse,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -25,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { useInventory, useDeleteInventory } from "./hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
@@ -37,6 +34,7 @@ import {
 } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
 
 export default function InventoryPage() {
   const canCreate = usePermission(Permissions.Inventory.Create)
@@ -178,62 +176,23 @@ export default function InventoryPage() {
           ? new Date(row.original.expiryDate).toLocaleDateString("tr-TR")
           : "-",
     },
-    {
-      accessorKey: "isActive",
-      header: "Kayıt Durumu",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? "default" : "secondary"}>
-          {row.original.isActive ? "Aktif" : "Pasif"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canUpdate && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Düzenle"
-              onClick={() => handleEdit(row.original)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Sil"
-              onClick={() => deleteInventory.mutateAsync(row.original.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
+    createStatusBadgeColumn<Inventory>({ header: "Kayıt Durumu" }),
+    createActionButtonsColumn<Inventory>({
+      onEdit: handleEdit,
+      onDelete: (id) => deleteInventory.mutateAsync(id),
+      getId: (row) => row.id,
+      canUpdate,
+      canDelete,
+    }),
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Envanter</h1>
-          <p className="text-muted-foreground">Stok durumunuzu takip edin</p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Envanter
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Envanter"
+        description="Stok durumunuzu takip edin"
+        action={{ label: "Yeni Envanter", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       <Card>
         <CardHeader>

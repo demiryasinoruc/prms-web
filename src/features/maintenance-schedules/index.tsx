@@ -2,14 +2,11 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
-  Pencil,
-  Trash2,
   Wrench,
   Calendar,
   Gauge,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import {
@@ -28,6 +25,7 @@ import type { MaintenanceSchedule } from "./api"
 import { MaintenanceTriggerType } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
 
 export default function MaintenanceSchedulesPage() {
   const canCreate = usePermission(Permissions.MaintenanceSchedule.Create)
@@ -168,64 +166,23 @@ export default function MaintenanceSchedulesPage() {
         )
       ),
     },
-    {
-      accessorKey: "isActive",
-      header: "Durum",
-      enableSorting: true,
-      cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? "default" : "secondary"}>
-          {row.original.isActive ? "Aktif" : "Pasif"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canUpdate && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Düzenle"
-              onClick={() => handleEdit(row.original)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Sil"
-              onClick={() => deleteSchedule.mutateAsync(row.original.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
+    createStatusBadgeColumn<MaintenanceSchedule>({ enableSorting: true }),
+    createActionButtonsColumn<MaintenanceSchedule>({
+      onEdit: handleEdit,
+      onDelete: (id) => deleteSchedule.mutateAsync(id),
+      getId: (row) => row.id,
+      canUpdate,
+      canDelete,
+    }),
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bakım Planları</h1>
-          <p className="text-muted-foreground">
-            Kategori ve ürün bazlı periyodik bakım planlarını yönetin
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Bakım Planı
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Bakım Planları"
+        description="Kategori ve ürün bazlı periyodik bakım planlarını yönetin"
+        action={{ label: "Yeni Bakım Planı", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       <Card>
         <CardHeader>

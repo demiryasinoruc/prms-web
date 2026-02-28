@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { DetailSheetSkeleton, DetailSheetEmptyState } from "@/components/shared/detail-sheet-skeleton"
 import {
   Card,
   CardContent,
@@ -15,7 +16,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useEmployee } from "./hooks"
 import { Gender, type Employee } from "@/types/api"
 
@@ -55,23 +55,7 @@ export function EmployeeDetailSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         {isLoading ? (
-          <div className="space-y-6">
-            <SheetHeader>
-              <SheetTitle>Çalışan Detayları</SheetTitle>
-              <SheetDescription>Yükleniyor...</SheetDescription>
-            </SheetHeader>
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-48" />
-                <Skeleton className="h-5 w-20" />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          </div>
+          <DetailSheetSkeleton title="Çalışan Detayları" />
         ) : employee ? (
           <div className="space-y-6">
             <SheetHeader>
@@ -168,15 +152,7 @@ export function EmployeeDetailSheet({
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            <SheetHeader>
-              <SheetTitle>Çalışan Detayları</SheetTitle>
-              <SheetDescription>Bilgi bulunamadı</SheetDescription>
-            </SheetHeader>
-            <div className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground">Çalışan bulunamadı</p>
-            </div>
-          </div>
+          <DetailSheetEmptyState title="Çalışan Detayları" message="Çalışan bulunamadı" />
         )}
       </SheetContent>
     </Sheet>

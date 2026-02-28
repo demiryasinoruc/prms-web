@@ -9,12 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import {
   Select,
   SelectContent,
@@ -22,6 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { FormField } from "@/components/shared/form-field"
+import { FormSelectField } from "@/components/shared/form-select-field"
+import { SwitchField } from "@/components/shared/switch-field"
+import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import {
   useCreateExtraService,
   useUpdateExtraService,
@@ -107,6 +107,7 @@ export function ExtraServiceDialog({
   const {
     register,
     handleSubmit,
+    control,
     setValue,
     watch,
     formState: { errors },
@@ -117,8 +118,6 @@ export function ExtraServiceDialog({
 
   const isActive = watch("isActive")
   const requiresEmployee = watch("requiresEmployee")
-  const pricePeriodId = watch("pricePeriodId")
-  const currencyId = watch("currencyId")
   const requiredCertificateId = watch("requiredCertificateId")
 
   const onSubmit = async (data: ExtraServiceFormData) => {
@@ -171,91 +170,52 @@ export function ExtraServiceDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Hizmet Adı *</Label>
-            <Input
-              placeholder="Hizmet adı"
-              {...register("name")}
-              autoFocus
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
+          <FormField
+            label="Hizmet Adı *"
+            placeholder="Hizmet adı"
+            {...register("name")}
+            autoFocus
+            error={errors.name?.message}
+          />
 
-          <div className="space-y-2">
-            <Label>Açıklama *</Label>
-            <Textarea
-              placeholder="Hizmet açıklaması"
-              {...register("description")}
-              rows={2}
-            />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description.message}</p>
-            )}
-          </div>
+          <FormField
+            label="Açıklama *"
+            placeholder="Hizmet açıklaması"
+            {...register("description")}
+            multiline
+            rows={2}
+            error={errors.description?.message}
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Fiyat *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                {...register("price", { valueAsNumber: true })}
-              />
-              {errors.price && (
-                <p className="text-sm text-destructive">{errors.price.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Fiyat *"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              {...register("price", { valueAsNumber: true })}
+              error={errors.price?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Para Birimi *</Label>
-              <Select
-                key={`currencyId-${currencyId}`}
-                value={currencyId != null ? String(currencyId) : "none"}
-                onValueChange={(value) => setValue("currencyId", value === "none" ? "" : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seçiniz" />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencies?.map((currency) => (
-                    <SelectItem key={currency.value} value={String(currency.value)}>
-                      {currency.text}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.currencyId && (
-                <p className="text-sm text-destructive">{errors.currencyId.message}</p>
-              )}
-            </div>
+            <FormSelectField
+              label="Para Birimi *"
+              name="currencyId"
+              control={control}
+              options={currencies?.map((c) => ({ value: String(c.value), label: c.text })) || []}
+              placeholder="Seçiniz"
+              error={errors.currencyId?.message}
+            />
           </div>
 
-          <div className="space-y-2">
-            <Label>Fiyat Periyodu *</Label>
-            <Select
-              key={`pricePeriodId-${pricePeriodId}`}
-              value={pricePeriodId != null ? String(pricePeriodId) : "none"}
-              onValueChange={(value) => setValue("pricePeriodId", value === "none" ? "" : value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seçiniz" />
-              </SelectTrigger>
-              <SelectContent>
-                {pricePeriods?.map((period) => (
-                  <SelectItem key={period.value} value={String(period.value)}>
-                    {period.text}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.pricePeriodId && (
-              <p className="text-sm text-destructive">{errors.pricePeriodId.message}</p>
-            )}
-          </div>
+          <FormSelectField
+            label="Fiyat Periyodu *"
+            name="pricePeriodId"
+            control={control}
+            options={pricePeriods?.map((p) => ({ value: String(p.value), label: p.text })) || []}
+            placeholder="Seçiniz"
+            error={errors.pricePeriodId?.message}
+          />
 
           <div className="space-y-2">
             <Label>Gerekli Sertifika (Opsiyonel)</Label>
@@ -278,27 +238,20 @@ export function ExtraServiceDialog({
             </Select>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="space-y-0.5">
-              <Label>Personel Gerekli</Label>
-              <p className="text-sm text-muted-foreground">
-                Bu hizmet kiralamaya eklendiğinde personel ataması zorunlu olsun
-              </p>
-            </div>
-            <Switch
-              checked={requiresEmployee}
-              onCheckedChange={(checked) => setValue("requiresEmployee", checked)}
-            />
-          </div>
+          <SwitchField
+            label="Personel Gerekli"
+            description="Bu hizmet kiralamaya eklendiğinde personel ataması zorunlu olsun"
+            checked={requiresEmployee}
+            onCheckedChange={(checked) => setValue("requiresEmployee", checked)}
+          />
 
-          <div className="space-y-2">
-            <Label>Notlar</Label>
-            <Textarea
-              placeholder="Ek notlar"
-              {...register("notes")}
-              rows={2}
-            />
-          </div>
+          <FormField
+            label="Notlar"
+            placeholder="Ek notlar"
+            {...register("notes")}
+            multiline
+            rows={2}
+          />
 
           {extraService && (
             <StatusSwitchField

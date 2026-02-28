@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { FormField } from "@/components/shared/form-field"
+import { FormSelectField } from "@/components/shared/form-select-field"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { Badge } from "@/components/ui/badge"
 import { useCreateInventory, useUpdateInventory } from "./hooks"
@@ -334,42 +335,27 @@ export function InventoryDialog({
           />
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Durum *</Label>
-              <Controller
-                control={control}
-                name="status"
-                render={({ field }) => (
-                  <Select
-                    key={`status-${field.value}`}
-                    value={field.value != null ? String(field.value) : "none"}
-                    onValueChange={(value) => field.onChange(Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Durum seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(InventoryStatusLabels).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+            <FormSelectField
+              label="Durum *"
+              name="status"
+              control={control}
+              valueType="number"
+              options={Object.entries(InventoryStatusLabels).map(([key, label]) => ({
+                value: key,
+                label,
+              }))}
+              placeholder="Durum seçiniz"
+            />
 
             {/* Seri Numarası: Tracked için zorunlu, Countable için opsiyonel, Consumable için gizli */}
             {showSerialNumber && (
               <div className="space-y-2">
-                <Label>
-                  Seri Numarası {isSerialNumberRequired && "*"}
-                </Label>
-                <Input placeholder="SN-001" {...register("serialNumber")} />
-                {errors.serialNumber && (
-                  <p className="text-sm text-destructive">{errors.serialNumber.message}</p>
-                )}
+                <FormField
+                  label={`Seri Numarası ${isSerialNumberRequired ? "*" : ""}`}
+                  placeholder="SN-001"
+                  {...register("serialNumber")}
+                  error={errors.serialNumber?.message}
+                />
                 {isSerialNumberRequired && !errors.serialNumber && (
                   <p className="text-xs text-muted-foreground">
                     Takipli ürünler için zorunlu
@@ -382,18 +368,14 @@ export function InventoryDialog({
           <div className={`grid gap-4 ${isQuantityDisabled ? "grid-cols-1" : "grid-cols-2"}`}>
             {/* Miktar: Takipli ürünlerde gizli (her zaman 1) */}
             {!isQuantityDisabled && (
-              <div className="space-y-2">
-                <Label>Miktar *</Label>
-                <Input
-                  type="number"
-                  step="1"
-                  placeholder="1"
-                  {...register("quantity", { valueAsNumber: true })}
-                />
-                {errors.quantity && (
-                  <p className="text-sm text-destructive">{errors.quantity.message}</p>
-                )}
-              </div>
+              <FormField
+                label="Miktar *"
+                type="number"
+                step="1"
+                placeholder="1"
+                {...register("quantity", { valueAsNumber: true })}
+                error={errors.quantity?.message}
+              />
             )}
 
             <div className="space-y-2">
@@ -420,23 +402,14 @@ export function InventoryDialog({
           {showLifespanFields && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>
-                  Mevcut Kullanım *
-                  {selectedProduct?.lifespanUnitTypeName && (
-                    <span className="text-muted-foreground ml-1">
-                      ({selectedProduct.lifespanUnitTypeName})
-                    </span>
-                  )}
-                </Label>
-                <Input
+                <FormField
+                  label={`Mevcut Kullanım *${selectedProduct?.lifespanUnitTypeName ? ` (${selectedProduct.lifespanUnitTypeName})` : ""}`}
                   type="number"
                   step="0.1"
                   placeholder="0"
                   {...register("currentLifespan", { valueAsNumber: true })}
+                  error={errors.currentLifespan?.message}
                 />
-                {errors.currentLifespan && (
-                  <p className="text-sm text-destructive">{errors.currentLifespan.message}</p>
-                )}
                 {selectedProduct?.totalLifespan && selectedProduct.totalLifespan > 0 && (
                   <p className="text-xs text-muted-foreground">
                     Toplam ömür: {selectedProduct.totalLifespan} {selectedProduct.lifespanUnitTypeName}
@@ -444,27 +417,30 @@ export function InventoryDialog({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>Son Bakım Tarihi</Label>
-                <Input type="date" {...register("lastMaintenanceDate")} />
-              </div>
+              <FormField
+                label="Son Bakım Tarihi"
+                type="date"
+                {...register("lastMaintenanceDate")}
+              />
             </div>
           )}
 
           {showExpiryDate && (
-            <div className="space-y-2">
-              <Label>Son Kullanma Tarihi *</Label>
-              <Input type="date" {...register("expiryDate")} />
-              {errors.expiryDate && (
-                <p className="text-sm text-destructive">{errors.expiryDate.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Son Kullanma Tarihi *"
+              type="date"
+              {...register("expiryDate")}
+              error={errors.expiryDate?.message}
+            />
           )}
 
-          <div className="space-y-2">
-            <Label>Notlar</Label>
-            <Textarea placeholder="Ek notlar..." {...register("notes")} rows={3} />
-          </div>
+          <FormField
+            label="Notlar"
+            placeholder="Ek notlar..."
+            {...register("notes")}
+            multiline
+            rows={3}
+          />
 
           {inventory && (
             <Controller

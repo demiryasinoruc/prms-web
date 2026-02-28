@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
+import { FormField } from "@/components/shared/form-field"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   useCreateProduct,
@@ -375,21 +375,21 @@ export function ProductDialog({
 
             <TabsContent value="general" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-2">
-                  <Label>Ürün Adı *</Label>
-                  <Input placeholder="Ürün adı" {...register("name")} />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
-                  )}
+                <div className="col-span-2">
+                  <FormField
+                    label="Ürün Adı *"
+                    placeholder="Ürün adı"
+                    error={errors.name?.message}
+                    {...register("name")}
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Ürün Kodu *</Label>
-                  <Input placeholder="PRD-001" {...register("productCode")} />
-                  {errors.productCode && (
-                    <p className="text-sm text-destructive">{errors.productCode.message}</p>
-                  )}
-                </div>
+                <FormField
+                  label="Ürün Kodu *"
+                  placeholder="PRD-001"
+                  error={errors.productCode?.message}
+                  {...register("productCode")}
+                />
 
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-1">
@@ -575,12 +575,13 @@ export function ProductDialog({
                   )}
                 </div>
 
-                <div className="col-span-2 space-y-2">
-                  <Label>Açıklama</Label>
-                  <Textarea
+                <div className="col-span-2">
+                  <FormField
+                    label="Açıklama"
                     placeholder="Ürün açıklaması"
-                    {...register("description")}
+                    multiline
                     rows={3}
+                    {...register("description")}
                   />
                 </div>
 
@@ -623,16 +624,14 @@ export function ProductDialog({
                     </div>
                     {watchedLifespanUnitTypeId != null && (
                       <div className="space-y-2">
-                        <Label>Toplam Ömür *</Label>
-                        <Input
+                        <FormField
+                          label="Toplam Ömür *"
                           type="number"
                           step="0.1"
                           placeholder="Örn: 1000"
+                          error={errors.totalLifespan?.message}
                           {...register("totalLifespan", { valueAsNumber: true })}
                         />
-                        {errors.totalLifespan && (
-                          <p className="text-sm text-destructive">{errors.totalLifespan.message}</p>
-                        )}
                         <p className="text-xs text-muted-foreground">
                           Ürünün toplam kullanım ömrü
                         </p>
@@ -727,18 +726,14 @@ export function ProductDialog({
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Minimum Stok Seviyesi</Label>
-                  <Input
-                    type="number"
-                    step="1"
-                    placeholder="0"
-                    {...register("minimumStockLevel", { valueAsNumber: true })}
-                  />
-                  {errors.minimumStockLevel && (
-                    <p className="text-sm text-destructive">{errors.minimumStockLevel.message}</p>
-                  )}
-                </div>
+                <FormField
+                  label="Minimum Stok Seviyesi"
+                  type="number"
+                  step="1"
+                  placeholder="0"
+                  error={errors.minimumStockLevel?.message}
+                  {...register("minimumStockLevel", { valueAsNumber: true })}
+                />
 
                 <div className="col-span-2 flex items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
@@ -759,12 +754,13 @@ export function ProductDialog({
                   />
                 </div>
 
-                <div className="col-span-2 space-y-2">
-                  <Label>Notlar</Label>
-                  <Textarea
+                <div className="col-span-2">
+                  <FormField
+                    label="Notlar"
                     placeholder="Ek notlar..."
-                    {...register("notes")}
+                    multiline
                     rows={3}
+                    {...register("notes")}
                   />
                 </div>
 

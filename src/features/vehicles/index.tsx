@@ -2,12 +2,8 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
-  Pencil,
-  Trash2,
   Truck,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -24,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { useVehicles, useDeleteVehicle } from "./hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
@@ -32,6 +29,7 @@ import { VehicleDetailSheet } from "./vehicle-detail-sheet"
 import { VehicleType, VehicleStatus, type Vehicle } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn } from "@/components/shared/column-helpers"
 
 const vehicleTypeLabels: Record<VehicleType, string> = {
   [VehicleType.Truck]: "Kamyon",
@@ -160,54 +158,22 @@ export default function VehiclesPage() {
           ? `${row.original.capacity} ${row.original.capacityUnit || ""}`
           : "-",
     },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canUpdate && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Düzenle"
-              onClick={() => handleEdit(row.original)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Sil"
-              onClick={() => deleteVehicle.mutateAsync(row.original.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
+    createActionButtonsColumn<Vehicle>({
+      onEdit: handleEdit,
+      onDelete: (id) => deleteVehicle.mutateAsync(id),
+      getId: (row) => row.id,
+      canUpdate,
+      canDelete,
+    }),
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Araçlar</h1>
-          <p className="text-muted-foreground">
-            Araç filonuzu yönetin
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Araç
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Araçlar"
+        description="Araç filonuzu yönetin"
+        action={{ label: "Yeni Araç", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       <Card>
         <CardHeader>

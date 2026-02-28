@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -20,6 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
+import { FormField } from "@/components/shared/form-field"
 import { useUserForEdit, useUpdateUser } from "./hooks"
 import { useRoleSelect } from "@/features/roles/hooks"
 
@@ -104,30 +104,28 @@ export function UserDialog({ open, onOpenChange, userId }: UserDialogProps) {
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Ad *</Label>
-                <Input placeholder="Ad" {...register("name")} />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
-                )}
-              </div>
+              <FormField
+                label="Ad *"
+                placeholder="Ad"
+                error={errors.name?.message}
+                {...register("name")}
+              />
 
-              <div className="space-y-2">
-                <Label>Soyad *</Label>
-                <Input placeholder="Soyad" {...register("surname")} />
-                {errors.surname && (
-                  <p className="text-sm text-destructive">{errors.surname.message}</p>
-                )}
-              </div>
+              <FormField
+                label="Soyad *"
+                placeholder="Soyad"
+                error={errors.surname?.message}
+                {...register("surname")}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label>E-posta *</Label>
-              <Input type="email" placeholder="ornek@sirket.com" {...register("email")} />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
+            <FormField
+              label="E-posta *"
+              type="email"
+              placeholder="ornek@sirket.com"
+              error={errors.email?.message}
+              {...register("email")}
+            />
 
             <div className="space-y-2">
               <Label>Rol *</Label>

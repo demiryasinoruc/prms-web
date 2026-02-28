@@ -2,9 +2,6 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
-  Pencil,
-  Trash2,
   ClipboardList,
   Calendar,
   CheckCircle,
@@ -12,7 +9,7 @@ import {
   XCircle,
   PlayCircle,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import {
   Card,
@@ -41,6 +38,7 @@ import {
 } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn } from "@/components/shared/column-helpers"
 
 export default function MaintenanceRecordsPage() {
   const canCreate = usePermission(Permissions.MaintenanceRecord.Create)
@@ -211,54 +209,22 @@ export default function MaintenanceRecordsPage() {
         </span>
       ),
     },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canUpdate && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Düzenle"
-              onClick={() => handleEdit(row.original)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Sil"
-              onClick={() => deleteRecord.mutateAsync(row.original.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
+    createActionButtonsColumn<MaintenanceRecord>({
+      onEdit: handleEdit,
+      onDelete: (id) => deleteRecord.mutateAsync(id),
+      getId: (row) => row.id,
+      canUpdate,
+      canDelete,
+    }),
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bakım Kayıtları</h1>
-          <p className="text-muted-foreground">
-            Envanter öğeleri için yapılan bakım kayıtlarını yönetin
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Bakım Kaydı
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Bakım Kayıtları"
+        description="Envanter öğeleri için yapılan bakım kayıtlarını yönetin"
+        action={{ label: "Yeni Bakım Kaydı", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       <Card>
         <CardHeader>

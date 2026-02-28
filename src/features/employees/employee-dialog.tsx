@@ -9,19 +9,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
+import { FormField } from "@/components/shared/form-field"
+import { FormSelectField } from "@/components/shared/form-select-field"
 import { useCreateEmployee, useUpdateEmployee, useEmployeeForEdit } from "./hooks"
 import { Gender, type Employee } from "@/types/api"
 
@@ -119,78 +111,57 @@ export function EmployeeDialog({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Ad *</Label>
-              <Input placeholder="Ad" {...register("name")} />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Ad *"
+              placeholder="Ad"
+              {...register("name")}
+              error={errors.name?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Soyad *</Label>
-              <Input placeholder="Soyad" {...register("surname")} />
-              {errors.surname && (
-                <p className="text-sm text-destructive">{errors.surname.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Soyad *"
+              placeholder="Soyad"
+              {...register("surname")}
+              error={errors.surname?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Cinsiyet</Label>
-              <Controller
-                control={control}
-                name="gender"
-                render={({ field }) => (
-                  <Select
-                    key={`gender-${field.value}`}
-                    value={field.value != null ? String(field.value) : "none"}
-                    onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Erkek</SelectItem>
-                      <SelectItem value="2">Kadın</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+            <FormSelectField
+              label="Cinsiyet"
+              name="gender"
+              control={control}
+              valueType="number"
+              options={[
+                { value: "1", label: "Erkek" },
+                { value: "2", label: "Kadın" },
+              ]}
+            />
 
-            <div className="space-y-2">
-              <Label>Doğum Tarihi</Label>
-              <Input
-                type="date"
-                {...register("birthDate")}
-              />
-            </div>
+            <FormField
+              label="Doğum Tarihi"
+              type="date"
+              {...register("birthDate")}
+            />
 
-            <div className="space-y-2">
-              <Label>E-posta</Label>
-              <Input
-                type="email"
-                placeholder="ornek@email.com"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
+            <FormField
+              label="E-posta"
+              type="email"
+              placeholder="ornek@email.com"
+              {...register("email")}
+              error={errors.email?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Telefon</Label>
-              <Input
-                placeholder="0532 123 45 67"
-                {...register("contactNumber")}
-              />
-            </div>
+            <FormField
+              label="Telefon"
+              placeholder="0532 123 45 67"
+              {...register("contactNumber")}
+            />
 
-            <div className="col-span-2 space-y-2">
-              <Label>Notlar</Label>
-              <Textarea
+            <div className="col-span-2">
+              <FormField
+                label="Notlar"
                 placeholder="Ek notlar..."
                 {...register("notes")}
+                multiline
                 rows={3}
               />
             </div>

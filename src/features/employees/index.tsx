@@ -2,12 +2,8 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
-  Pencil,
-  Trash2,
   User,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -24,6 +20,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import { useEmployees, useDeleteEmployee } from "./hooks"
@@ -32,6 +29,7 @@ import { EmployeeDetailSheet } from "./employee-detail-sheet"
 import { Gender, type Employee } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
 
 const genderLabels: Record<Gender, string> = {
   [Gender.Male]: "Erkek",
@@ -121,64 +119,23 @@ export default function EmployeesPage() {
         </Badge>
       ),
     },
-    {
-      accessorKey: "isActive",
-      header: "Durum",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? "default" : "secondary"}>
-          {row.original.isActive ? "Aktif" : "Pasif"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canUpdate && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Düzenle"
-              onClick={() => handleEdit(row.original)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Sil"
-              onClick={() => deleteEmployee.mutateAsync(row.original.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
+    createStatusBadgeColumn<Employee>(),
+    createActionButtonsColumn<Employee>({
+      onEdit: handleEdit,
+      onDelete: (id) => deleteEmployee.mutateAsync(id),
+      getId: (row) => row.id,
+      canUpdate,
+      canDelete,
+    }),
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Çalışanlar</h1>
-          <p className="text-muted-foreground">
-            Personel kayıtlarını yönetin
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Çalışan
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Çalışanlar"
+        description="Personel kayıtlarını yönetin"
+        action={{ label: "Yeni Çalışan", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       <Card>
         <CardHeader>

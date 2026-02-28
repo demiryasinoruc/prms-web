@@ -2,12 +2,8 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
-  Pencil,
-  Trash2,
   Package,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -17,6 +13,7 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import { CategoryFilterSelect } from "@/components/shared/category-filter-select"
@@ -26,6 +23,7 @@ import { ProductDetailSheet } from "./product-detail-sheet"
 import { ProductType, ProductTypeLabels, type Product } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
 
 export default function ProductsPage() {
   const canCreate = usePermission(Permissions.Product.Create)
@@ -144,64 +142,23 @@ export default function ProductsPage() {
         </div>
       ),
     },
-    {
-      accessorKey: "isActive",
-      header: "Durum",
-      enableSorting: true,
-      cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? "default" : "secondary"}>
-          {row.original.isActive ? "Aktif" : "Pasif"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canUpdate && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Düzenle"
-              onClick={() => handleEdit(row.original)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Sil"
-              onClick={() => deleteProduct.mutateAsync(row.original.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      ),
-    },
+    createStatusBadgeColumn<Product>({ enableSorting: true }),
+    createActionButtonsColumn<Product>({
+      onEdit: handleEdit,
+      onDelete: (id) => deleteProduct.mutateAsync(id),
+      getId: (row) => row.id,
+      canUpdate,
+      canDelete,
+    }),
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Ürünler</h1>
-          <p className="text-muted-foreground">
-            Kiralanabilir ürünlerinizi yönetin
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Ürün
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Ürünler"
+        description="Kiralanabilir ürünlerinizi yönetin"
+        action={{ label: "Yeni Ürün", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       {/* KURAL: Card wrapper */}
       <Card>

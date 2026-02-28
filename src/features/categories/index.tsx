@@ -2,13 +2,9 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
-  Pencil,
-  Trash2,
   FolderTree,
   ChevronRight,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -24,12 +20,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { useCategories, useDeleteCategory, useCategorySelectParent } from "./hooks"
 import { CategoryDialog } from "./category-dialog"
 import type { Category } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn } from "@/components/shared/column-helpers"
 
 export default function CategoriesPage() {
   const canManage = usePermission(Permissions.Category.Update)
@@ -100,54 +98,22 @@ export default function CategoriesPage() {
         )
       },
     },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canManage && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                title="Düzenle"
-                onClick={() => handleEdit(row.original)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                title="Sil"
-                onClick={() => deleteCategory.mutateAsync(row.original.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-        </div>
-      ),
-    },
+    createActionButtonsColumn<Category>({
+      onEdit: handleEdit,
+      onDelete: (id) => deleteCategory.mutateAsync(id),
+      getId: (row) => row.id,
+      canUpdate: canManage,
+      canDelete: canManage,
+    }),
   ]
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kategoriler</h1>
-          <p className="text-muted-foreground">
-            Ürün kategorilerini yönetin
-          </p>
-        </div>
-        {canManage && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Kategori
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Kategoriler"
+        description="Ürün kategorilerini yönetin"
+        action={{ label: "Yeni Kategori", onClick: () => setDialogOpen(true), permission: canManage }}
+      />
 
       <Card>
         <CardHeader>

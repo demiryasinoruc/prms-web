@@ -9,18 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { FormField } from "@/components/shared/form-field"
+import { FormSelectField } from "@/components/shared/form-select-field"
 import { useCreateVehicle, useUpdateVehicle, useVehicleForEdit } from "./hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
 import { VehicleType, VehicleStatus, type Vehicle } from "@/types/api"
@@ -141,105 +133,72 @@ export function VehicleDialog({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Araç Tipi *</Label>
-              <Controller
-                control={control}
-                name="vehicleType"
-                render={({ field }) => (
-                  <Select
-                    key={`vehicleType-${field.value}`}
-                    value={field.value != null ? String(field.value) : "none"}
-                    onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Kamyon</SelectItem>
-                      <SelectItem value="2">Kamyonet</SelectItem>
-                      <SelectItem value="3">Minibüs</SelectItem>
-                      <SelectItem value="4">Binek</SelectItem>
-                      <SelectItem value="5">Diğer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+            <FormSelectField
+              label="Araç Tipi *"
+              name="vehicleType"
+              control={control}
+              valueType="number"
+              options={[
+                { value: "1", label: "Kamyon" },
+                { value: "2", label: "Kamyonet" },
+                { value: "3", label: "Minibüs" },
+                { value: "4", label: "Binek" },
+                { value: "5", label: "Diğer" },
+              ]}
+            />
 
-            <div className="space-y-2">
-              <Label>Plaka *</Label>
-              <Input placeholder="34 ABC 123" {...register("plate")} />
-              {errors.plate && (
-                <p className="text-sm text-destructive">{errors.plate.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Plaka *"
+              placeholder="34 ABC 123"
+              {...register("plate")}
+              error={errors.plate?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Marka *</Label>
-              <Input placeholder="Ford, Mercedes..." {...register("brandName")} />
-              {errors.brandName && (
-                <p className="text-sm text-destructive">{errors.brandName.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Marka *"
+              placeholder="Ford, Mercedes..."
+              {...register("brandName")}
+              error={errors.brandName?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Model *</Label>
-              <Input placeholder="Transit, Sprinter..." {...register("model")} />
-              {errors.model && (
-                <p className="text-sm text-destructive">{errors.model.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Model *"
+              placeholder="Transit, Sprinter..."
+              {...register("model")}
+              error={errors.model?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Yıl *</Label>
-              <Input
-                type="number"
-                placeholder="2024"
-                {...register("year", { valueAsNumber: true })}
-              />
-              {errors.year && (
-                <p className="text-sm text-destructive">{errors.year.message}</p>
-              )}
-            </div>
+            <FormField
+              label="Yıl *"
+              type="number"
+              placeholder="2024"
+              {...register("year", { valueAsNumber: true })}
+              error={errors.year?.message}
+            />
 
-            <div className="space-y-2">
-              <Label>Renk</Label>
-              <Input placeholder="Beyaz, Siyah..." {...register("color")} />
-            </div>
+            <FormField
+              label="Renk"
+              placeholder="Beyaz, Siyah..."
+              {...register("color")}
+            />
 
-            <div className="space-y-2">
-              <Label>Kapasite</Label>
-              <Input
-                type="number"
-                placeholder="1000"
-                {...register("capacity", { valueAsNumber: true })}
-              />
-            </div>
+            <FormField
+              label="Kapasite"
+              type="number"
+              placeholder="1000"
+              {...register("capacity", { valueAsNumber: true })}
+            />
 
-            <div className="space-y-2">
-              <Label>Kapasite Birimi</Label>
-              <Controller
-                control={control}
-                name="capacityUnit"
-                render={({ field }) => (
-                  <Select
-                    key={`capacityUnit-${field.value}`}
-                    value={field.value || "none"}
-                    onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="kg">kg</SelectItem>
-                      <SelectItem value="m³">m³</SelectItem>
-                      <SelectItem value="adet">adet</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+            <FormSelectField
+              label="Kapasite Birimi"
+              name="capacityUnit"
+              control={control}
+              options={[
+                { value: "kg", label: "kg" },
+                { value: "m³", label: "m³" },
+                { value: "adet", label: "adet" },
+              ]}
+            />
 
             <div className="col-span-2">
               <Controller
@@ -257,32 +216,27 @@ export function VehicleDialog({
               />
             </div>
 
-            <div className="col-span-2 space-y-2">
-              <Label>Notlar</Label>
-              <Textarea placeholder="Ek notlar..." {...register("notes")} rows={3} />
+            <div className="col-span-2">
+              <FormField
+                label="Notlar"
+                placeholder="Ek notlar..."
+                {...register("notes")}
+                multiline
+                rows={3}
+              />
             </div>
 
-            <div className="col-span-2 space-y-2">
-              <Label>Durum *</Label>
-              <Controller
-                control={control}
+            <div className="col-span-2">
+              <FormSelectField
+                label="Durum *"
                 name="status"
-                render={({ field }) => (
-                  <Select
-                    key={`status-${field.value}`}
-                    value={field.value != null ? String(field.value) : "none"}
-                    onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Müsait</SelectItem>
-                      <SelectItem value="3">Bakımda</SelectItem>
-                      <SelectItem value="4">Arızalı</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+                control={control}
+                valueType="number"
+                options={[
+                  { value: "1", label: "Müsait" },
+                  { value: "3", label: "Bakımda" },
+                  { value: "4", label: "Arızalı" },
+                ]}
               />
             </div>
           </div>

@@ -2,7 +2,6 @@ import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
   Pencil,
   Trash2,
   Shield,
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { useRoles, useDeleteRole } from "./hooks"
 import { RoleSheet } from "./role-sheet"
@@ -144,20 +144,11 @@ export default function RolesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Roller</h1>
-          <p className="text-muted-foreground">
-            Kullanıcı rollerini ve izinlerini yönetin
-          </p>
-        </div>
-        {canManage && (
-          <Button onClick={() => setSheetOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Rol
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Roller"
+        description="Kullanıcı rollerini ve izinlerini yönetin"
+        action={{ label: "Yeni Rol", onClick: () => setSheetOpen(true), permission: canManage }}
+      />
 
       <Card>
         <CardHeader>

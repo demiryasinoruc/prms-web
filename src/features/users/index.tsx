@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { useUsers } from "./hooks"
 import { useRoleSelect } from "@/features/roles/hooks"
 import { UserDialog } from "./user-dialog"
@@ -132,14 +133,10 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kullanıcılar</h1>
-          <p className="text-muted-foreground">
-            Şirket kullanıcılarını yönetin
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Kullanıcılar"
+        description="Şirket kullanıcılarını yönetin"
+      />
 
       <Card>
         <CardHeader>

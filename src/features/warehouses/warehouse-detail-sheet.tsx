@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { DetailSheetSkeleton, DetailSheetEmptyState } from "@/components/shared/detail-sheet-skeleton"
 import {
   Card,
   CardContent,
@@ -14,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useWarehouse } from "./hooks"
 import type { Warehouse as WarehouseType } from "@/types/api"
 
@@ -44,16 +44,7 @@ export function WarehouseDetailSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         {isLoading ? (
-          <div className="space-y-6">
-            <SheetHeader>
-              <SheetTitle>Depo Detayı</SheetTitle>
-              <SheetDescription>Yükleniyor...</SheetDescription>
-            </SheetHeader>
-            <div className="space-y-4">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          </div>
+          <DetailSheetSkeleton title="Depo Detayı" />
         ) : warehouse ? (
           <div className="space-y-6">
             <SheetHeader>
@@ -119,15 +110,7 @@ export function WarehouseDetailSheet({
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            <SheetHeader>
-              <SheetTitle>Depo Detayı</SheetTitle>
-              <SheetDescription>Bilgi bulunamadı</SheetDescription>
-            </SheetHeader>
-            <div className="flex items-center justify-center py-8">
-              <p className="text-muted-foreground">Depo bulunamadı</p>
-            </div>
-          </div>
+          <DetailSheetEmptyState title="Depo Detayı" message="Depo bulunamadı" />
         )}
       </SheetContent>
     </Sheet>

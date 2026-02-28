@@ -2,13 +2,9 @@ import { useState, useMemo } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
-  Pencil,
-  Trash2,
   Building2,
   User,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -25,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { StatusFilterSelect } from "@/components/shared/status-filter-select"
 import { useCustomers, useDeleteCustomer } from "./hooks"
@@ -33,6 +30,7 @@ import { CustomerDetailSheet } from "./customer-detail-sheet"
 import { CustomerType, type Customer } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
 
 export default function CustomersPage() {
   const [search, setSearch] = useState("")
@@ -123,66 +121,25 @@ export default function CustomersPage() {
         enableSorting: true,
         cell: ({ row }) => row.original.email || "-",
       },
-      {
-        accessorKey: "isActive",
-        header: "Durum",
-        enableSorting: false,
-        cell: ({ row }) => (
-          <Badge variant={row.original.isActive ? "default" : "secondary"}>
-            {row.original.isActive ? "Aktif" : "Pasif"}
-          </Badge>
-        ),
-      },
-      {
-        id: "actions",
-        enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-1">
-            {canUpdate && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                title="Düzenle"
-                onClick={() => handleEdit(row.original)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            )}
-            {canDelete && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                title="Sil"
-                onClick={() => deleteCustomer.mutateAsync(row.original.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        ),
-      },
+      createStatusBadgeColumn<Customer>(),
+      createActionButtonsColumn<Customer>({
+        onEdit: handleEdit,
+        onDelete: (id) => deleteCustomer.mutateAsync(id),
+        getId: (row) => row.id,
+        canUpdate,
+        canDelete,
+      }),
     ],
     [canUpdate, canDelete]
   )
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Müşteriler</h1>
-          <p className="text-muted-foreground">
-            Müşteri kayıtlarınızı yönetin
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Müşteri
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Müşteriler"
+        description="Müşteri kayıtlarınızı yönetin"
+        action={{ label: "Yeni Müşteri", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       <Card>
         <CardHeader>

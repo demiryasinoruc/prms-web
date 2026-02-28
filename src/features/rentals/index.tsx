@@ -2,7 +2,6 @@ import { useState, useMemo } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
-  Plus,
   FileText,
   Trash2,
   AlertTriangle,
@@ -26,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
+import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { useRentals, useDeleteRental } from "./hooks"
 import { RentalDialog } from "./rental-dialog"
@@ -276,20 +276,11 @@ export default function RentalsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kiralamalar</h1>
-          <p className="text-muted-foreground">
-            Kiralama işlemlerinizi yönetin
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Yeni Kiralama
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Kiralamalar"
+        description="Kiralama işlemlerinizi yönetin"
+        action={{ label: "Yeni Kiralama", onClick: () => setDialogOpen(true), permission: canCreate }}
+      />
 
       <Card>
         <CardHeader>
