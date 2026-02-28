@@ -41,6 +41,7 @@ import {
   ReturnConditionLabels,
   DiscountType,
 } from "./api"
+import { DeliveryType } from "@/features/company/api"
 
 interface RentalDetailSheetProps {
   open: boolean
@@ -202,7 +203,17 @@ export function RentalDetailSheet({
                 Teslimat Bilgileri
               </h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
-                {rental.deliveryAddressLine && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground flex items-center gap-1">
+                    <Truck className="h-3 w-3" /> Teslimat Tipi
+                  </p>
+                  <Badge variant={rental.deliveryType === DeliveryType.CompanyDelivery ? "default" : "secondary"}>
+                    {rental.deliveryType === DeliveryType.CompanyDelivery
+                      ? "Teslimatı Biz Yapıyoruz"
+                      : "Müşteri Teslim Alacak"}
+                  </Badge>
+                </div>
+                {rental.deliveryType === DeliveryType.CompanyDelivery && rental.deliveryAddressLine && (
                   <div className="col-span-2">
                     <p className="text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" /> Teslimat Adresi
@@ -216,18 +227,22 @@ export function RentalDetailSheet({
                   </p>
                   <p className="font-medium">{rental.sourceWarehouseName || "-"}</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground flex items-center gap-1">
-                    <Truck className="h-3 w-3" /> Araç
-                  </p>
-                  <p className="font-medium">{rental.deliveryVehiclePlate || "-"}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground flex items-center gap-1">
-                    <UserCheck className="h-3 w-3" /> Teslimat Personeli
-                  </p>
-                  <p className="font-medium">{rental.deliveryEmployeeName || "-"}</p>
-                </div>
+                {rental.deliveryType === DeliveryType.CompanyDelivery && (
+                  <>
+                    <div>
+                      <p className="text-muted-foreground flex items-center gap-1">
+                        <Truck className="h-3 w-3" /> Araç
+                      </p>
+                      <p className="font-medium">{rental.deliveryVehiclePlate || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground flex items-center gap-1">
+                        <UserCheck className="h-3 w-3" /> Teslimat Personeli
+                      </p>
+                      <p className="font-medium">{rental.deliveryEmployeeName || "-"}</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
