@@ -28,6 +28,7 @@ export interface CompanyForEdit {
   defaultDeliveryType: DeliveryType
   defaultCurrencyId: number | null
   defaultPricePeriodId: number | null
+  availabilityCheckMode: string
 }
 
 export interface CompanyUpdateRequest {
@@ -38,6 +39,7 @@ export interface CompanyUpdateRequest {
   defaultDeliveryType: DeliveryType
   defaultCurrencyId: number | null
   defaultPricePeriodId: number | null
+  availabilityCheckMode: string
 }
 
 export const companyApi = {
@@ -65,6 +67,7 @@ export const companyApi = {
       defaultDeliveryType: DeliveryType
       defaultCurrencyId: number | null
       defaultPricePeriodId: number | null
+      availabilityCheckMode: string
     }>(`/company/edit/${id}`)
     return {
       name: response.data.name,
@@ -74,6 +77,7 @@ export const companyApi = {
       defaultDeliveryType: response.data.defaultDeliveryType,
       defaultCurrencyId: response.data.defaultCurrencyId,
       defaultPricePeriodId: response.data.defaultPricePeriodId,
+      availabilityCheckMode: response.data.availabilityCheckMode,
     } as CompanyForEdit
   },
 
@@ -86,6 +90,7 @@ export const companyApi = {
       defaultDeliveryType: data.defaultDeliveryType,
       defaultCurrencyId: data.defaultCurrencyId,
       defaultPricePeriodId: data.defaultPricePeriodId,
+      availabilityCheckMode: data.availabilityCheckMode,
     })
   },
 }

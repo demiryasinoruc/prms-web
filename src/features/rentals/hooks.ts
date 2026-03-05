@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import {
   rentalApi,
   type RentalListParams,
@@ -51,7 +52,15 @@ export function useCreateRental() {
 
   return useMutation({
     mutationFn: (data: RentalCreateRequest) => rentalApi.create(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.warnings?.length) {
+        data.warnings.forEach((w) => {
+          const msg = w.serialNumber
+            ? `${w.productName} (${w.serialNumber}): ${w.rentalNumber} ile çakışıyor (${w.startDate} - ${w.endDate})`
+            : `${w.productName}: ${w.requestedQuantity} talep, ${w.availableQuantity} müsait`
+          toast.warning(msg)
+        })
+      }
       queryClient.invalidateQueries({ queryKey: rentalKeys.lists() })
     },
   })

@@ -382,6 +382,22 @@ export interface RentalItemReturnRequest {
   lifespanAtReturn?: number | null
 }
 
+// Availability Warning
+export interface AvailabilityWarning {
+  rentalNumber: string
+  productName: string
+  serialNumber?: string
+  startDate: string
+  endDate: string
+  requestedQuantity?: number
+  availableQuantity?: number
+}
+
+export interface RentalCreateResponse {
+  id: string
+  warnings?: AvailabilityWarning[]
+}
+
 // API Response type from backend
 interface ApiRentalListResponse {
   totalCount: number
@@ -432,8 +448,8 @@ export const rentalApi = {
     return response.data
   },
 
-  create: async (data: RentalCreateRequest) => {
-    const response = await api.post<{ id: string }>("/rental", {
+  create: async (data: RentalCreateRequest): Promise<RentalCreateResponse> => {
+    const response = await api.post<RentalCreateResponse>("/rental", {
       CustomerId: data.customerId,
       DeliveryAddressId: data.deliveryAddressId || null,
       DeliveryType: data.deliveryType,

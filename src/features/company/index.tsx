@@ -35,6 +35,7 @@ const companySchema = z.object({
   defaultDeliveryType: z.nativeEnum(DeliveryType),
   defaultCurrencyId: z.number().nullable(),
   defaultPricePeriodId: z.number().nullable(),
+  availabilityCheckMode: z.string().default("warn"),
 })
 
 type CompanyFormData = z.infer<typeof companySchema>
@@ -55,6 +56,7 @@ export default function CompanySettingsPage() {
     defaultDeliveryType: DeliveryType.CompanyDelivery,
     defaultCurrencyId: null,
     defaultPricePeriodId: null,
+    availabilityCheckMode: "warn",
   }
 
   const formValues: CompanyFormData = companyForEdit ? {
@@ -65,6 +67,7 @@ export default function CompanySettingsPage() {
     defaultDeliveryType: companyForEdit.defaultDeliveryType,
     defaultCurrencyId: companyForEdit.defaultCurrencyId,
     defaultPricePeriodId: companyForEdit.defaultPricePeriodId,
+    availabilityCheckMode: companyForEdit.availabilityCheckMode,
   } : defaultValues
 
   const {
@@ -91,6 +94,7 @@ export default function CompanySettingsPage() {
           defaultDeliveryType: data.defaultDeliveryType,
           defaultCurrencyId: data.defaultCurrencyId,
           defaultPricePeriodId: data.defaultPricePeriodId,
+          availabilityCheckMode: data.availabilityCheckMode,
         },
       })
       toast.success("Firma bilgileri güncellendi")
@@ -202,6 +206,34 @@ export default function CompanySettingsPage() {
                           onCheckedChange={field.onChange}
                           disabled={!canManage}
                         />
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label>Müsaitlik Kontrolü</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Kiralama oluşturulurken ürün müsait değilse ne yapılacağını belirler
+                      </p>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="availabilityCheckMode"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!canManage}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="warn">Uyar</SelectItem>
+                            <SelectItem value="block">Engelle</SelectItem>
+                          </SelectContent>
+                        </Select>
                       )}
                     />
                   </div>
