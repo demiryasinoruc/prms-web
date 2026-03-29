@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
@@ -29,6 +29,7 @@ interface CompanyResponse {
 }
 
 interface ProfileResponse {
+  id: string
   name: string
   surname: string
   eMail: string
@@ -38,8 +39,8 @@ interface ProfileResponse {
 }
 
 const loginSchema = z.object({
-  email: z.string().email("Gecerli bir e-posta adresi giriniz"),
-  password: z.string().min(6, "Sifre en az 6 karakter olmalidir"),
+  email: z.string().email("Geçerli bir e-posta adresi giriniz"),
+  password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -57,32 +58,60 @@ export default function LoginPage() {
     },
   })
 
+  const clearAuthState = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("refreshToken")
+    localStorage.removeItem("companyId")
+  }
+
   const onSubmit = async (data: LoginFormData) => {
     setError(null)
     try {
-      // Step 1: Login and get tokens
-      const authResponse = await api.post<AuthResponse>("/auth/login", {
-        eMail: data.email,
-        password: data.password,
-      })
-      const { token, refreshToken } = authResponse.data
+      // Adım 1: Giriş yap ve token al
+      let token: string
+      let refreshToken: string
+      try {
+        const authResponse = await api.post<AuthResponse>("/auth/login", {
+          eMail: data.email,
+          password: data.password,
+        })
+        token = authResponse.data.token
+        refreshToken = authResponse.data.refreshToken
+      } catch {
+        setError("E-posta veya şifre hatalı.")
+        return
+      }
 
-      // Store tokens immediately for next request
+      // Token'ları sakla (sonraki istekler için gerekli)
       localStorage.setItem("token", token)
       localStorage.setItem("refreshToken", refreshToken)
 
-      // Step 2: Fetch user's company first (needed for X-Company-ID header)
-      const companyResponse = await api.get<CompanyResponse>("/company/get-company-by-user")
-      const company = companyResponse.data
+      // Adım 2: Kullanıcının firmasını al
+      let company: CompanyResponse
+      try {
+        const companyResponse = await api.get<CompanyResponse>("/company/get-company-by-user")
+        company = companyResponse.data
+      } catch {
+        clearAuthState()
+        setError("Hesabınıza bağlı bir firma bulunamadı. Lütfen yöneticinizle iletişime geçin.")
+        return
+      }
       localStorage.setItem("companyId", company.id)
 
-      // Step 3: Fetch user profile (includes permissions)
-      const profileResponse = await api.get<ProfileResponse>("/user/profile")
-      const profile = profileResponse.data
+      // Adım 3: Kullanıcı profilini al
+      let profile: ProfileResponse
+      try {
+        const profileResponse = await api.get<ProfileResponse>("/user/profile")
+        profile = profileResponse.data
+      } catch {
+        clearAuthState()
+        setError("Profil bilgileri alınamadı. Lütfen tekrar deneyin.")
+        return
+      }
 
-      // Step 4: Set auth state with user info
+      // Adım 4: Auth state'i güncelle
       setAuth({
-        id: "",
+        id: profile.id,
         name: profile.name,
         surname: profile.surname,
         email: profile.eMail,
@@ -101,16 +130,17 @@ export default function LoginPage() {
 
       navigate("/")
     } catch {
-      setError("E-posta veya sifre hatali")
+      clearAuthState()
+      setError("Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.")
     }
   }
 
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Giris Yap</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Giriş Yap</h1>
         <p className="text-sm text-muted-foreground">
-          Hesabiniza giris yapmak icin bilgilerinizi girin
+          Hesabınıza giriş yapmak için bilgilerinizi girin
         </p>
       </div>
 
@@ -139,7 +169,7 @@ export default function LoginPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sifre</FormLabel>
+                <FormLabel>Şifre</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="******" {...field} />
                 </FormControl>
@@ -160,22 +190,22 @@ export default function LoginPage() {
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Giris yapiliyor...
+                Giriş yapılıyor...
               </>
             ) : (
-              "Giris Yap"
+              "Giriş Yap"
             )}
           </Button>
         </form>
       </Form>
 
       <div className="text-center text-sm">
-        <a
-          href="/forgot-password"
+        <Link
+          to="/forgot-password"
           className="text-primary underline-offset-4 hover:underline"
         >
-          Sifremi unuttum
-        </a>
+          Şifremi unuttum
+        </Link>
       </div>
     </div>
   )

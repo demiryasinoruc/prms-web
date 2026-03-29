@@ -28,7 +28,6 @@ const routeLabels: Record<string, string> = {
   certificates: "Sertifikalar",
   // Tanımlar
   categories: "Kategoriler",
-  brands: "Markalar",
   "extra-services": "Ek Hizmetler",
   "product-rules": "Ürün Kuralları",
   // Ayarlar

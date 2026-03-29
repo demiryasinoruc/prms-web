@@ -111,7 +111,7 @@ export const categoryApi = {
   create: async (data: CategoryCreateRequest) => {
     const response = await api.post<Category>("/category", {
       Name: data.name,
-      ParentId: data.parentId || null,
+      ParentCategoryId: data.parentId || null,
     })
     return response.data
   },

@@ -7,6 +7,7 @@ export interface CompanySettings {
   defaultCurrencyId: number | null
   defaultPricePeriodId: number | null
   availabilityCheckMode: string
+  productRuleCheckMode: string
 }
 
 export const settingsApi = {

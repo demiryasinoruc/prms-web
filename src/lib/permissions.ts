@@ -96,12 +96,6 @@ export const Permissions = {
     Update: "categoryattribute.update",
     Delete: "categoryattribute.delete",
   },
-  Brand: {
-    View: "brand.view",
-    Create: "brand.create",
-    Update: "brand.update",
-    Delete: "brand.delete",
-  },
   ExtraServices: {
     View: "extraservice.view",
     Create: "extraservice.create",

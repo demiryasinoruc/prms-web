@@ -36,6 +36,7 @@ const companySchema = z.object({
   defaultCurrencyId: z.number().nullable(),
   defaultPricePeriodId: z.number().nullable(),
   availabilityCheckMode: z.string().default("warn"),
+  productRuleCheckMode: z.string().default("enforce"),
 })
 
 type CompanyFormData = z.infer<typeof companySchema>
@@ -57,6 +58,7 @@ export default function CompanySettingsPage() {
     defaultCurrencyId: null,
     defaultPricePeriodId: null,
     availabilityCheckMode: "warn",
+    productRuleCheckMode: "enforce",
   }
 
   const formValues: CompanyFormData = companyForEdit ? {
@@ -68,6 +70,7 @@ export default function CompanySettingsPage() {
     defaultCurrencyId: companyForEdit.defaultCurrencyId,
     defaultPricePeriodId: companyForEdit.defaultPricePeriodId,
     availabilityCheckMode: companyForEdit.availabilityCheckMode,
+    productRuleCheckMode: companyForEdit.productRuleCheckMode,
   } : defaultValues
 
   const {
@@ -232,6 +235,35 @@ export default function CompanySettingsPage() {
                           <SelectContent>
                             <SelectItem value="warn">Uyar</SelectItem>
                             <SelectItem value="block">Engelle</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label>Ürün Kuralları Kontrolü</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Kiralama oluşturulurken zorunlu ürün kurallarının nasıl ele alınacağını belirler
+                      </p>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="productRuleCheckMode"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!canManage}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="enforce">Engelle</SelectItem>
+                            <SelectItem value="warn">Uyar</SelectItem>
+                            <SelectItem value="auto">Otomatik</SelectItem>
                           </SelectContent>
                         </Select>
                       )}

@@ -7,6 +7,7 @@ const MainLayout = lazy(() => import("@/components/layout/main-layout"))
 const AuthLayout = lazy(() => import("@/components/layout/auth-layout"))
 
 const LoginPage = lazy(() => import("@/features/auth/login"))
+const ForgotPasswordPage = lazy(() => import("@/features/auth/forgot-password"))
 const DashboardPage = lazy(() => import("@/features/dashboard"))
 const ProductsPage = lazy(() => import("@/features/products"))
 const CustomersPage = lazy(() => import("@/features/customers"))
@@ -15,7 +16,6 @@ const EmployeesPage = lazy(() => import("@/features/employees"))
 const WarehousesPage = lazy(() => import("@/features/warehouses"))
 const RentalsPage = lazy(() => import("@/features/rentals"))
 const InventoryPage = lazy(() => import("@/features/inventory"))
-const BrandsPage = lazy(() => import("@/features/brands"))
 const CategoriesPage = lazy(() => import("@/features/categories"))
 const CategoryAttributesPage = lazy(() => import("@/features/category-attributes"))
 const ProductRulesPage = lazy(() => import("@/features/product-rules"))
@@ -71,6 +71,18 @@ export const router = createBrowserRouter([
         <Suspense fallback={<PageLoader />}>
           <AuthLayout>
             <LoginPage />
+          </AuthLayout>
+        </Suspense>
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <PublicRoute>
+        <Suspense fallback={<PageLoader />}>
+          <AuthLayout>
+            <ForgotPasswordPage />
           </AuthLayout>
         </Suspense>
       </PublicRoute>
@@ -206,14 +218,6 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "brands",
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <BrandsPage />
-          </Suspense>
-        ),
-      },
-      {
         path: "extra-services",
         element: (
           <Suspense fallback={<PageLoader />}>
@@ -271,7 +275,6 @@ export const router = createBrowserRouter([
       { path: "operations/certificates", element: <Navigate to="/certificates" replace /> },
       { path: "operations/maintenance-schedules", element: <Navigate to="/maintenance-schedules" replace /> },
       { path: "operations/maintenance-records", element: <Navigate to="/maintenance-records" replace /> },
-      { path: "products/brands", element: <Navigate to="/brands" replace /> },
       { path: "products/categories", element: <Navigate to="/categories" replace /> },
       { path: "products/category-attributes", element: <Navigate to="/categories" replace /> },
       { path: "products/extra-services", element: <Navigate to="/extra-services" replace /> },
