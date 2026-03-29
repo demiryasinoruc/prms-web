@@ -1,6 +1,7 @@
 type ConfirmOptions = {
   title: string
   description: string
+  actionLabel?: string
 }
 
 type ConfirmListener = (options: ConfirmOptions) => Promise<boolean>
@@ -22,4 +23,9 @@ export async function confirmDelete(entityName: string | null): Promise<boolean>
     title: `${name} silmek istediğinize emin misiniz?`,
     description: "Bu işlem geri alınamaz. Kayıt kalıcı olarak silinecektir.",
   })
+}
+
+export async function confirm(options: ConfirmOptions): Promise<boolean> {
+  if (!_listener) return true
+  return _listener(options)
 }

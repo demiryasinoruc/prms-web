@@ -35,6 +35,7 @@ const routeLabels: Record<string, string> = {
   company: "Firma Bilgileri",
   users: "Kullanıcılar",
   roles: "Roller",
+  invitations: "Davetler",
   profile: "Profil",
   // Geriye uyumluluk
   operations: "Operasyon",

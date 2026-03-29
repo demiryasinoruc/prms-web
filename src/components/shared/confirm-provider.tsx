@@ -15,6 +15,7 @@ interface ConfirmState {
   open: boolean
   title: string
   description: string
+  actionLabel?: string
 }
 
 export function ConfirmProvider() {
@@ -66,7 +67,7 @@ export function ConfirmProvider() {
             onClick={handleConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            Sil
+            {state.actionLabel || "Sil"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
