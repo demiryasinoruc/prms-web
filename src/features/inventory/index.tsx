@@ -32,6 +32,7 @@ import {
   InventoryStatusLabels,
   type Inventory,
 } from "./api"
+import { ProductType } from "@/features/products/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
@@ -148,9 +149,25 @@ export default function InventoryPage() {
     },
     {
       accessorKey: "quantity",
-      header: "Miktar",
+      header: "Stok",
       enableSorting: true,
-      cell: ({ row }) => formatNumber(row.original.quantity),
+      cell: ({ row }) => {
+        const inv = row.original
+        if (inv.productType === ProductType.Tracked) {
+          return formatNumber(inv.quantity)
+        }
+        return (
+          <div className="text-sm">
+            <span>{formatNumber(inv.quantity)}</span>
+            {inv.rentedQuantity > 0 && (
+              <span className="text-muted-foreground">
+                {" "}/ <span className="text-orange-600">{formatNumber(inv.rentedQuantity)} kirada</span>
+                {" "}/ <span className="text-green-600">{formatNumber(inv.availableQuantity)} müsait</span>
+              </span>
+            )}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "currentUnitValue",
@@ -274,6 +291,7 @@ export default function InventoryPage() {
             productId: inventory.productId,
             productName: inventory.productName,
             productCode: inventory.productCode,
+            productType: inventory.productType,
             productVariantId: inventory.productVariantId ?? null,
             productVariantSku: inventory.productVariantSku ?? null,
             warehouseId: inventory.warehouseId,
@@ -281,6 +299,8 @@ export default function InventoryPage() {
             status: inventory.status,
             serialNumber: inventory.serialNumber,
             quantity: inventory.quantity,
+            rentedQuantity: inventory.rentedQuantity,
+            availableQuantity: inventory.availableQuantity,
             currentUnitValue: inventory.currentUnitValue,
             currentLifespan: inventory.currentLifespan,
             lifespanUnitTypeName: inventory.lifespanUnitTypeName,

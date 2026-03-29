@@ -28,6 +28,7 @@ export interface Inventory {
   productId: string
   productName: string
   productCode: string
+  productType: ProductType
   productVariantId: string | null
   productVariantSku: string | null
   warehouseId: string
@@ -35,6 +36,8 @@ export interface Inventory {
   status: InventoryStatus
   serialNumber: string
   quantity: number
+  rentedQuantity: number
+  availableQuantity: number
   currentUnitValue: number
   currentLifespan: number | null
   lifespanUnitTypeName: string | null
