@@ -6,8 +6,8 @@ export interface CompanySettings {
   defaultDeliveryType: DeliveryType
   defaultCurrencyId: number | null
   defaultPricePeriodId: number | null
-  availabilityCheckMode: string
-  productRuleCheckMode: string
+  availabilityCheckMode: number
+  productRuleCheckMode: number
 }
 
 export const settingsApi = {

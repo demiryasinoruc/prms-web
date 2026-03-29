@@ -41,7 +41,7 @@ interface ApiEmployee {
   surname: string
   gender: number
   birthDate?: string
-  eMail: string
+  email: string
   phone: string
   isActive: boolean
   notes?: string
@@ -56,7 +56,7 @@ function transformEmployee(apiEmployee: ApiEmployee): Employee {
     surname: apiEmployee.surname,
     gender: apiEmployee.gender as Gender,
     birthDate: apiEmployee.birthDate,
-    email: apiEmployee.eMail,
+    email: apiEmployee.email,
     phone: apiEmployee.phone,
     isActive: apiEmployee.isActive,
     notes: apiEmployee.notes,
@@ -115,7 +115,7 @@ export const employeeApi = {
       Surname: data.surname,
       Gender: data.gender,
       BirthDate: data.birthDate || null,
-      EMail: data.email || "",
+      Email: data.email || "",
       Phone: data.phone || "",
       Notes: data.notes || "",
     }
@@ -129,7 +129,7 @@ export const employeeApi = {
       Surname: data.surname,
       Gender: data.gender,
       BirthDate: data.birthDate || null,
-      EMail: data.email || "",
+      Email: data.email || "",
       Phone: data.phone || "",
       IsActive: data.isActive,
       Notes: data.notes || "",

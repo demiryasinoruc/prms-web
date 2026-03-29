@@ -32,7 +32,7 @@ interface ProfileResponse {
   id: string
   name: string
   surname: string
-  eMail: string
+  email: string
   roleId: string | null
   roleName: string | null
   permissions: string[]
@@ -72,7 +72,7 @@ export default function LoginPage() {
       let refreshToken: string
       try {
         const authResponse = await api.post<AuthResponse>("/auth/login", {
-          eMail: data.email,
+          email: data.email,
           password: data.password,
         })
         token = authResponse.data.token
@@ -114,7 +114,7 @@ export default function LoginPage() {
         id: profile.id,
         name: profile.name,
         surname: profile.surname,
-        email: profile.eMail,
+        email: profile.email,
         companyId: company.id,
         companyName: company.name,
         roleId: profile.roleId || "",

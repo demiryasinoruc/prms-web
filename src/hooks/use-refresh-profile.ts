@@ -3,9 +3,10 @@ import { useAuthStore } from "@/stores/auth"
 import api from "@/lib/axios"
 
 interface ProfileResponse {
+  id: string
   name: string
   surname: string
-  eMail: string
+  email: string
   roleId: string | null
   roleName: string | null
   permissions: string[]
@@ -21,7 +22,7 @@ interface CompanyResponse {
  * Can be called from anywhere (e.g., after role updates).
  */
 export async function refreshUserProfile(): Promise<void> {
-  const { token, refreshToken, user, setAuth, setCompany, setPermissions } = useAuthStore.getState()
+  const { token, refreshToken, setAuth, setCompany, setPermissions } = useAuthStore.getState()
 
   if (!token) return
 
@@ -36,10 +37,10 @@ export async function refreshUserProfile(): Promise<void> {
 
     setAuth(
       {
-        id: user?.id || "",
+        id: profile.id,
         name: profile.name,
         surname: profile.surname,
-        email: profile.eMail,
+        email: profile.email,
         companyId: company.id,
         companyName: company.name,
         roleId: profile.roleId || "",
@@ -64,7 +65,7 @@ export async function refreshUserProfile(): Promise<void> {
 export function useRefreshProfile() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { token, setAuth, setCompany, setPermissions, logout, user, refreshToken } = useAuthStore()
+  const { token, setAuth, setCompany, setPermissions, logout, refreshToken } = useAuthStore()
 
   // Prevent double fetch in StrictMode
   const hasFetched = useRef(false)
@@ -96,10 +97,10 @@ export function useRefreshProfile() {
         // Update auth state with fresh data
         setAuth(
           {
-            id: user?.id || "",
+            id: profile.id,
             name: profile.name,
             surname: profile.surname,
-            email: profile.eMail,
+            email: profile.email,
             companyId: company.id,
             companyName: company.name,
             roleId: profile.roleId || "",

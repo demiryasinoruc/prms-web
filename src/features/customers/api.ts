@@ -73,7 +73,7 @@ interface ApiCustomer {
   id: string
   type: number
   name: string
-  eMail: string
+  email: string
   phone: string
   identityNumber: string
   taxNumber: string
@@ -106,7 +106,7 @@ function transformCustomer(apiCustomer: ApiCustomer): Customer {
     id: apiCustomer.id,
     name: apiCustomer.name,
     customerType: apiCustomer.type,
-    email: apiCustomer.eMail,
+    email: apiCustomer.email,
     phone: apiCustomer.phone,
     identityNumber: apiCustomer.identityNumber,
     taxNumber: apiCustomer.taxNumber,
@@ -171,7 +171,7 @@ export const customerApi = {
     const requestBody = {
       Type: data.customerType,
       Name: data.name,
-      EMail: data.email || "",
+      Email: data.email || "",
       Phone: data.phone || "",
       IdentityNumber: data.identityNumber || "",
       TaxNumber: data.taxNumber || "",
@@ -200,7 +200,7 @@ export const customerApi = {
     const requestBody = {
       Type: data.customerType,
       Name: data.name,
-      EMail: data.email || "",
+      Email: data.email || "",
       Phone: data.phone || "",
       IdentityNumber: data.identityNumber || "",
       TaxNumber: data.taxNumber || "",

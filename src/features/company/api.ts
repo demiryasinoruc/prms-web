@@ -28,8 +28,8 @@ export interface CompanyForEdit {
   defaultDeliveryType: DeliveryType
   defaultCurrencyId: number | null
   defaultPricePeriodId: number | null
-  availabilityCheckMode: string
-  productRuleCheckMode: string
+  availabilityCheckMode: number
+  productRuleCheckMode: number
 }
 
 export interface CompanyUpdateRequest {
@@ -40,8 +40,8 @@ export interface CompanyUpdateRequest {
   defaultDeliveryType: DeliveryType
   defaultCurrencyId: number | null
   defaultPricePeriodId: number | null
-  availabilityCheckMode: string
-  productRuleCheckMode: string
+  availabilityCheckMode: number
+  productRuleCheckMode: number
 }
 
 export const companyApi = {
@@ -49,13 +49,13 @@ export const companyApi = {
     const response = await api.get<{
       id: string
       name: string
-      eMail: string
+      email: string
       phone: string
     }>("/company/get-company-by-user")
     return {
       id: response.data.id,
       name: response.data.name,
-      email: response.data.eMail,
+      email: response.data.email,
       phone: response.data.phone,
     } as CompanyProfile
   },
@@ -63,7 +63,7 @@ export const companyApi = {
   getForEdit: async (id: string) => {
     const response = await api.get<{
       name: string
-      eMail: string
+      email: string
       phone: string
       requireDeliveryAddressForRental: boolean
       defaultDeliveryType: DeliveryType
@@ -74,7 +74,7 @@ export const companyApi = {
     }>(`/company/edit/${id}`)
     return {
       name: response.data.name,
-      email: response.data.eMail,
+      email: response.data.email,
       phone: response.data.phone,
       requireDeliveryAddressForRental: response.data.requireDeliveryAddressForRental,
       defaultDeliveryType: response.data.defaultDeliveryType,
@@ -88,7 +88,7 @@ export const companyApi = {
   update: async (id: string, data: CompanyUpdateRequest) => {
     await api.put(`/company/${id}`, {
       name: data.name,
-      eMail: data.email,
+      email: data.email,
       phone: data.phone,
       requireDeliveryAddressForRental: data.requireDeliveryAddressForRental,
       defaultDeliveryType: data.defaultDeliveryType,

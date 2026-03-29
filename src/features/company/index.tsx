@@ -35,8 +35,8 @@ const companySchema = z.object({
   defaultDeliveryType: z.nativeEnum(DeliveryType),
   defaultCurrencyId: z.number().nullable(),
   defaultPricePeriodId: z.number().nullable(),
-  availabilityCheckMode: z.string().default("warn"),
-  productRuleCheckMode: z.string().default("enforce"),
+  availabilityCheckMode: z.number().default(1),
+  productRuleCheckMode: z.number().default(1),
 })
 
 type CompanyFormData = z.infer<typeof companySchema>
@@ -57,8 +57,8 @@ export default function CompanySettingsPage() {
     defaultDeliveryType: DeliveryType.CompanyDelivery,
     defaultCurrencyId: null,
     defaultPricePeriodId: null,
-    availabilityCheckMode: "warn",
-    productRuleCheckMode: "enforce",
+    availabilityCheckMode: 1,
+    productRuleCheckMode: 1,
   }
 
   const formValues: CompanyFormData = companyForEdit ? {
@@ -98,6 +98,7 @@ export default function CompanySettingsPage() {
           defaultCurrencyId: data.defaultCurrencyId,
           defaultPricePeriodId: data.defaultPricePeriodId,
           availabilityCheckMode: data.availabilityCheckMode,
+          productRuleCheckMode: data.productRuleCheckMode,
         },
       })
       toast.success("Firma bilgileri güncellendi")
@@ -225,16 +226,17 @@ export default function CompanySettingsPage() {
                       name="availabilityCheckMode"
                       render={({ field }) => (
                         <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
+                          key={`availability-${field.value}`}
+                          value={String(field.value)}
+                          onValueChange={(value) => field.onChange(Number(value))}
                           disabled={!canManage}
                         >
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="warn">Uyar</SelectItem>
-                            <SelectItem value="block">Engelle</SelectItem>
+                            <SelectItem value="1">Uyar</SelectItem>
+                            <SelectItem value="2">Engelle</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
@@ -253,17 +255,18 @@ export default function CompanySettingsPage() {
                       name="productRuleCheckMode"
                       render={({ field }) => (
                         <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
+                          key={`productrule-${field.value}`}
+                          value={String(field.value)}
+                          onValueChange={(value) => field.onChange(Number(value))}
                           disabled={!canManage}
                         >
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="enforce">Engelle</SelectItem>
-                            <SelectItem value="warn">Uyar</SelectItem>
-                            <SelectItem value="auto">Otomatik</SelectItem>
+                            <SelectItem value="1">Engelle</SelectItem>
+                            <SelectItem value="2">Uyar</SelectItem>
+                            <SelectItem value="3">Otomatik</SelectItem>
                           </SelectContent>
                         </Select>
                       )}

@@ -52,7 +52,7 @@ interface ApiUserListResponse {
     id: string
     name: string
     surname: string
-    eMail: string
+    email: string
     roleName: string
     createdDate: string
   }>
@@ -77,7 +77,7 @@ export const userApi = {
         id: item.id,
         name: item.name,
         surname: item.surname,
-        email: item.eMail,
+        email: item.email,
         roleName: item.roleName,
         createdDate: item.createdDate,
       })),
@@ -95,7 +95,7 @@ export const userApi = {
       id: string
       name: string
       surname: string
-      eMail: string
+      email: string
       roleName: string
       createdDate: string
     }>(`/user/detail/${id}`)
@@ -103,7 +103,7 @@ export const userApi = {
       id: response.data.id,
       name: response.data.name,
       surname: response.data.surname,
-      email: response.data.eMail,
+      email: response.data.email,
       roleName: response.data.roleName,
       createdDate: response.data.createdDate,
     } as UserDetail
@@ -114,14 +114,14 @@ export const userApi = {
       id: string
       name: string
       surname: string
-      eMail: string
+      email: string
       roleId: string | null
     }>(`/user/get-for-edit/${id}`)
     return {
       id: response.data.id,
       name: response.data.name,
       surname: response.data.surname,
-      email: response.data.eMail,
+      email: response.data.email,
       roleId: response.data.roleId,
     } as UserForEdit
   },
@@ -130,7 +130,7 @@ export const userApi = {
     await api.put(`/user/${id}`, {
       Name: data.name,
       Surname: data.surname,
-      EMail: data.email,
+      Email: data.email,
       RoleId: data.roleId,
     })
   },

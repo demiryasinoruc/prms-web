@@ -58,8 +58,8 @@ export interface ExtraServiceCreateRequest {
   name: string
   description: string
   price: number
-  pricePeriodId: string
-  currencyId: string
+  pricePeriodId: number
+  currencyId: number
   requiredCertificateId?: string | null
   requiresEmployee: boolean
   notes?: string | null
@@ -69,8 +69,8 @@ export interface ExtraServiceUpdateRequest {
   name: string
   description: string
   price: number
-  pricePeriodId: string
-  currencyId: string
+  pricePeriodId: number
+  currencyId: number
   requiredCertificateId?: string | null
   requiresEmployee: boolean
   isActive: boolean
@@ -148,8 +148,8 @@ export const extraServiceApi = {
       Name: data.name,
       Description: data.description,
       Price: data.price,
-      PricePeriodId: data.pricePeriodId,
-      CurrencyId: data.currencyId,
+      PricePeriodId: Number(data.pricePeriodId),
+      CurrencyId: Number(data.currencyId),
       RequiredCertificateId: data.requiredCertificateId || null,
       RequiresEmployee: data.requiresEmployee,
       Notes: data.notes || null,
@@ -162,8 +162,8 @@ export const extraServiceApi = {
       Name: data.name,
       Description: data.description,
       Price: data.price,
-      PricePeriodId: data.pricePeriodId,
-      CurrencyId: data.currencyId,
+      PricePeriodId: Number(data.pricePeriodId),
+      CurrencyId: Number(data.currencyId),
       RequiredCertificateId: data.requiredCertificateId || null,
       RequiresEmployee: data.requiresEmployee,
       IsActive: data.isActive,

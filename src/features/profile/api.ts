@@ -1,6 +1,7 @@
 import api from "@/lib/axios"
 
 export interface UserProfile {
+  id: string
   name: string
   surname: string
   email: string
@@ -22,16 +23,18 @@ export interface ChangePasswordRequest {
 export const profileApi = {
   getProfile: async () => {
     const response = await api.get<{
+      id: string
       name: string
       surname: string
-      eMail: string
+      email: string
       roleId: string | null
       roleName: string | null
     }>("/user/profile")
     return {
+      id: response.data.id,
       name: response.data.name,
       surname: response.data.surname,
-      email: response.data.eMail,
+      email: response.data.email,
       roleId: response.data.roleId,
       roleName: response.data.roleName,
     } as UserProfile
@@ -41,7 +44,7 @@ export const profileApi = {
     await api.put(`/user/${id}`, {
       Name: data.name,
       Surname: data.surname,
-      EMail: data.email,
+      Email: data.email,
       RoleId: roleId,
     })
   },

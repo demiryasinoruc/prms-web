@@ -216,17 +216,6 @@ export interface RentalItem {
   returnNotes?: string
 }
 
-export interface RentalPayment {
-  id: string
-  rentalId: string
-  paymentType: PaymentType
-  amount: number
-  paymentMethod: PaymentMethod
-  referenceNumber?: string
-  notes?: string
-  createdAt: string
-}
-
 export enum PaymentType {
   Deposit = 1,
   Advance = 2,
