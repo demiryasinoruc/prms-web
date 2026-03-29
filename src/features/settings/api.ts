@@ -8,6 +8,7 @@ export interface CompanySettings {
   defaultPricePeriodId: number | null
   availabilityCheckMode: number
   productRuleCheckMode: number
+  autoMaintenanceOnDamagedReturn: boolean
 }
 
 export const settingsApi = {

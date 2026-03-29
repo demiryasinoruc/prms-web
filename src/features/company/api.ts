@@ -30,6 +30,7 @@ export interface CompanyForEdit {
   defaultPricePeriodId: number | null
   availabilityCheckMode: number
   productRuleCheckMode: number
+  autoMaintenanceOnDamagedReturn: boolean
 }
 
 export interface CompanyUpdateRequest {
@@ -42,6 +43,7 @@ export interface CompanyUpdateRequest {
   defaultPricePeriodId: number | null
   availabilityCheckMode: number
   productRuleCheckMode: number
+  autoMaintenanceOnDamagedReturn: boolean
 }
 
 export const companyApi = {
@@ -69,8 +71,9 @@ export const companyApi = {
       defaultDeliveryType: DeliveryType
       defaultCurrencyId: number | null
       defaultPricePeriodId: number | null
-      availabilityCheckMode: string
-      productRuleCheckMode: string
+      availabilityCheckMode: number
+      productRuleCheckMode: number
+      autoMaintenanceOnDamagedReturn: boolean
     }>(`/company/edit/${id}`)
     return {
       name: response.data.name,
@@ -82,6 +85,7 @@ export const companyApi = {
       defaultPricePeriodId: response.data.defaultPricePeriodId,
       availabilityCheckMode: response.data.availabilityCheckMode,
       productRuleCheckMode: response.data.productRuleCheckMode,
+      autoMaintenanceOnDamagedReturn: response.data.autoMaintenanceOnDamagedReturn,
     } as CompanyForEdit
   },
 
@@ -96,6 +100,7 @@ export const companyApi = {
       defaultPricePeriodId: data.defaultPricePeriodId,
       availabilityCheckMode: data.availabilityCheckMode,
       productRuleCheckMode: data.productRuleCheckMode,
+      autoMaintenanceOnDamagedReturn: data.autoMaintenanceOnDamagedReturn,
     })
   },
 }

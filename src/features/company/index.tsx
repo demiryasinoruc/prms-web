@@ -37,6 +37,7 @@ const companySchema = z.object({
   defaultPricePeriodId: z.number().nullable(),
   availabilityCheckMode: z.number().default(1),
   productRuleCheckMode: z.number().default(1),
+  autoMaintenanceOnDamagedReturn: z.boolean(),
 })
 
 type CompanyFormData = z.infer<typeof companySchema>
@@ -59,6 +60,7 @@ export default function CompanySettingsPage() {
     defaultPricePeriodId: null,
     availabilityCheckMode: 1,
     productRuleCheckMode: 1,
+    autoMaintenanceOnDamagedReturn: false,
   }
 
   const formValues: CompanyFormData = companyForEdit ? {
@@ -71,6 +73,7 @@ export default function CompanySettingsPage() {
     defaultPricePeriodId: companyForEdit.defaultPricePeriodId,
     availabilityCheckMode: companyForEdit.availabilityCheckMode,
     productRuleCheckMode: companyForEdit.productRuleCheckMode,
+    autoMaintenanceOnDamagedReturn: companyForEdit.autoMaintenanceOnDamagedReturn,
   } : defaultValues
 
   const {
@@ -269,6 +272,26 @@ export default function CompanySettingsPage() {
                             <SelectItem value="3">Otomatik</SelectItem>
                           </SelectContent>
                         </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label>Hasarlı İade Bakıma Alsın</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Hasarlı iade edilen ürünler otomatik olarak bakıma alınsın
+                      </p>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="autoMaintenanceOnDamagedReturn"
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!canManage}
+                        />
                       )}
                     />
                   </div>
