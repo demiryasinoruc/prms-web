@@ -50,17 +50,17 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
+          <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings/profile")}>
             <User className="mr-2 h-4 w-4" />
             Profil
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate("/settings")}>
+          <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings")}>
             <Settings className="mr-2 h-4 w-4" />
             Ayarlar
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           Cikis Yap
         </DropdownMenuItem>
