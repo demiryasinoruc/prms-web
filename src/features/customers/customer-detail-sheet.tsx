@@ -85,10 +85,10 @@ export function CustomerDetailSheet({
                   <CardDescription>Müşteri iletişim detayları</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {customer.contactNumber && (
+                  {customer.phone && (
                     <div className="flex items-center gap-3">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{customer.contactNumber}</span>
+                      <span className="text-sm">{customer.phone}</span>
                     </div>
                   )}
                   {customer.email && (
@@ -97,7 +97,7 @@ export function CustomerDetailSheet({
                       <span className="text-sm">{customer.email}</span>
                     </div>
                   )}
-                  {!customer.contactNumber && !customer.email && (
+                  {!customer.phone && !customer.email && (
                     <p className="text-sm text-muted-foreground">İletişim bilgisi girilmemiş</p>
                   )}
                 </CardContent>

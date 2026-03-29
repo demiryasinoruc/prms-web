@@ -105,16 +105,16 @@ export function EmployeeDetailSheet({
                       </div>
                     </div>
                   )}
-                  {employee.contactNumber && (
+                  {employee.phone && (
                     <div className="flex items-center gap-3">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-xs text-muted-foreground">Telefon</p>
-                        <p className="text-sm font-medium">{employee.contactNumber}</p>
+                        <p className="text-sm font-medium">{employee.phone}</p>
                       </div>
                     </div>
                   )}
-                  {!employee.email && !employee.contactNumber && (
+                  {!employee.email && !employee.phone && (
                     <p className="text-sm text-muted-foreground">İletişim bilgisi girilmemiş</p>
                   )}
                 </CardContent>

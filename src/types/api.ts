@@ -128,7 +128,7 @@ export interface Customer {
   identityNumber?: string
   taxNumber?: string
   taxOffice?: string
-  contactNumber?: string
+  phone?: string
   email?: string
   notes?: string
   isActive: boolean
@@ -247,7 +247,7 @@ export interface Employee {
   name: string
   surname: string
   email?: string
-  contactNumber?: string
+  phone?: string
   birthDate?: string
   gender: Gender
   notes?: string

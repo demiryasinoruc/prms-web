@@ -17,7 +17,7 @@ export interface EmployeeCreateRequest {
   gender: number
   birthDate?: string
   email?: string
-  contactNumber?: string
+  phone?: string
   notes?: string
 }
 
@@ -42,7 +42,7 @@ interface ApiEmployee {
   gender: number
   birthDate?: string
   eMail: string
-  contactNumber: string
+  phone: string
   isActive: boolean
   notes?: string
   createdDate?: string
@@ -57,7 +57,7 @@ function transformEmployee(apiEmployee: ApiEmployee): Employee {
     gender: apiEmployee.gender as Gender,
     birthDate: apiEmployee.birthDate,
     email: apiEmployee.eMail,
-    contactNumber: apiEmployee.contactNumber,
+    phone: apiEmployee.phone,
     isActive: apiEmployee.isActive,
     notes: apiEmployee.notes,
   }
@@ -116,7 +116,7 @@ export const employeeApi = {
       Gender: data.gender,
       BirthDate: data.birthDate || null,
       EMail: data.email || "",
-      ContactNumber: data.contactNumber || "",
+      Phone: data.phone || "",
       Notes: data.notes || "",
     }
     const response = await api.post<Employee>("/employee", requestBody)
@@ -130,7 +130,7 @@ export const employeeApi = {
       Gender: data.gender,
       BirthDate: data.birthDate || null,
       EMail: data.email || "",
-      ContactNumber: data.contactNumber || "",
+      Phone: data.phone || "",
       IsActive: data.isActive,
       Notes: data.notes || "",
     }

@@ -21,7 +21,7 @@ export interface CustomerCreateRequest {
   identityNumber?: string
   taxNumber?: string
   taxOffice?: string
-  contactNumber?: string
+  phone?: string
   email?: string
   notes?: string
   isActive: boolean
@@ -74,7 +74,7 @@ interface ApiCustomer {
   type: number
   name: string
   eMail: string
-  contactNumber: string
+  phone: string
   identityNumber: string
   taxNumber: string
   taxOffice: string
@@ -107,7 +107,7 @@ function transformCustomer(apiCustomer: ApiCustomer): Customer {
     name: apiCustomer.name,
     customerType: apiCustomer.type,
     email: apiCustomer.eMail,
-    contactNumber: apiCustomer.contactNumber,
+    phone: apiCustomer.phone,
     identityNumber: apiCustomer.identityNumber,
     taxNumber: apiCustomer.taxNumber,
     taxOffice: apiCustomer.taxOffice,
@@ -172,7 +172,7 @@ export const customerApi = {
       Type: data.customerType,
       Name: data.name,
       EMail: data.email || "",
-      ContactNumber: data.contactNumber || "",
+      Phone: data.phone || "",
       IdentityNumber: data.identityNumber || "",
       TaxNumber: data.taxNumber || "",
       TaxOffice: data.taxOffice || "",
@@ -201,7 +201,7 @@ export const customerApi = {
       Type: data.customerType,
       Name: data.name,
       EMail: data.email || "",
-      ContactNumber: data.contactNumber || "",
+      Phone: data.phone || "",
       IdentityNumber: data.identityNumber || "",
       TaxNumber: data.taxNumber || "",
       TaxOffice: data.taxOffice || "",

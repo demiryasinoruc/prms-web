@@ -104,10 +104,10 @@ export default function EmployeesPage() {
       cell: ({ row }) => row.original.email || "-",
     },
     {
-      accessorKey: "contactNumber",
+      accessorKey: "phone",
       header: "Telefon",
       enableSorting: true,
-      cell: ({ row }) => row.original.contactNumber || "-",
+      cell: ({ row }) => row.original.phone || "-",
     },
     {
       accessorKey: "gender",

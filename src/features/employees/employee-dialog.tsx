@@ -23,7 +23,7 @@ const employeeSchema = z.object({
   gender: z.number(),
   birthDate: z.string().optional(),
   email: z.string().email("Geçerli bir e-posta giriniz").optional().or(z.literal("")),
-  contactNumber: z.string().optional().default(""),
+  phone: z.string().optional().default(""),
   isActive: z.boolean().optional().default(true),
   notes: z.string().optional().default(""),
 })
@@ -42,7 +42,7 @@ const defaultValues: EmployeeFormData = {
   gender: Gender.Male,
   birthDate: "",
   email: "",
-  contactNumber: "",
+  phone: "",
   isActive: true,
   notes: "",
 }
@@ -64,7 +64,7 @@ export function EmployeeDialog({
     gender: editEmployee?.gender ?? employee.gender,
     birthDate: editEmployee?.birthDate ? editEmployee.birthDate.split("T")[0] : "",
     email: editEmployee?.email ?? employee.email ?? "",
-    contactNumber: editEmployee?.contactNumber ?? employee.contactNumber ?? "",
+    phone: editEmployee?.phone ?? employee.phone ?? "",
     isActive: editEmployee?.isActive ?? employee.isActive,
     notes: editEmployee?.notes ?? "",
   } : defaultValues
@@ -153,7 +153,7 @@ export function EmployeeDialog({
             <FormField
               label="Telefon"
               placeholder="0532 123 45 67"
-              {...register("contactNumber")}
+              {...register("phone")}
             />
 
             <div className="col-span-2">

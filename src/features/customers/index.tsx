@@ -110,10 +110,10 @@ export default function CustomersPage() {
         },
       },
       {
-        accessorKey: "contactNumber",
+        accessorKey: "phone",
         header: "Telefon",
         enableSorting: true,
-        cell: ({ row }) => row.original.contactNumber || "-",
+        cell: ({ row }) => row.original.phone || "-",
       },
       {
         accessorKey: "email",

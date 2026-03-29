@@ -46,7 +46,7 @@ const customerSchema = z.object({
   identityNumber: z.string().optional().default(""),
   taxNumber: z.string().optional().default(""),
   taxOffice: z.string().optional().default(""),
-  contactNumber: z.string().optional().default(""),
+  phone: z.string().optional().default(""),
   email: z.string().email("Geçerli bir e-posta giriniz").optional().or(z.literal("")).default(""),
   notes: z.string().optional().default(""),
   isActive: z.boolean().default(true),
@@ -67,7 +67,7 @@ const defaultValues: CustomerFormData = {
   identityNumber: "",
   taxNumber: "",
   taxOffice: "",
-  contactNumber: "",
+  phone: "",
   email: "",
   notes: "",
   isActive: true,
@@ -92,7 +92,7 @@ export function CustomerDialog({
     identityNumber: editCustomer.identityNumber || "",
     taxNumber: editCustomer.taxNumber || "",
     taxOffice: editCustomer.taxOffice || "",
-    contactNumber: editCustomer.contactNumber || "",
+    phone: editCustomer.phone || "",
     email: editCustomer.email || "",
     notes: editCustomer.notes || "",
     isActive: editCustomer.isActive ?? true,
@@ -115,7 +115,7 @@ export function CustomerDialog({
     identityNumber: customer.identityNumber || "",
     taxNumber: customer.taxNumber || "",
     taxOffice: customer.taxOffice || "",
-    contactNumber: customer.contactNumber || "",
+    phone: customer.phone || "",
     email: customer.email || "",
     notes: customer.notes || "",
     isActive: customer.isActive ?? true,
@@ -239,7 +239,7 @@ export function CustomerDialog({
                 <FormField
                   label="Telefon"
                   placeholder="0555 555 55 55"
-                  {...register("contactNumber")}
+                  {...register("phone")}
                 />
 
                 <FormField
