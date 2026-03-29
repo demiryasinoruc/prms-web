@@ -10,16 +10,32 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { DataTable } from "@/components/data-table"
 import { PageHeader } from "@/components/shared/page-header"
 import { SearchInput } from "@/components/shared/search-input"
 import { useInvitations, useRevokeInvitation } from "./hooks"
 import { InvitationDialog } from "./invitation-dialog"
-import type { Invitation } from "./api"
+import { InvitationStatus, type Invitation } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { confirm } from "@/lib/confirm"
 import { toast } from "sonner"
+
+const statusBadgeVariant: Record<number, "default" | "secondary" | "destructive" | "outline"> = {
+  [InvitationStatus.Pending]: "default",
+  [InvitationStatus.Accepted]: "secondary",
+  [InvitationStatus.Rejected]: "destructive",
+  [InvitationStatus.Revoked]: "outline",
+  [InvitationStatus.Expired]: "outline",
+}
 
 export default function InvitationsPage() {
   const [search, setSearch] = useState("")
@@ -30,10 +46,24 @@ export default function InvitationsPage() {
     sortBy: string | null
     sortDir: "asc" | "desc" | null
   }>({ sortBy: null, sortDir: null })
+  const [statusFilter, setStatusFilter] = useState<string>("pending")
 
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const canManage = usePermission(Permissions.User.Manage)
+
+  const statusId = useMemo(() => {
+    if (statusFilter === "pending") return undefined // Varsayılan: bekleyen + süresi dolmamış
+    if (statusFilter === "all") return undefined
+    return Number(statusFilter)
+  }, [statusFilter])
+
+  // "all" seçildiğinde backend'e özel bir parametre göndermemiz lazım
+  // statusId undefined + isAll=true gibi. Ama backend'de filtre null olunca varsayılan davranış devreye giriyor.
+  // Bunu çözmek için "all" durumunda -1 gibi geçersiz bir değer göndermek yerine,
+  // backend'deki varsayılan davranışı kullanmayı bırakıp tüm statüleri göstermek için 0 kullanalım.
+  // Aslında en temizi: statusFilter === "all" iken tüm statüleri listelemek.
+  // Backend'de Filters.StatusId = 0 veya null kontrolü yapabiliriz.
 
   const { data, isLoading } = useInvitations({
     pageNumber: page + 1,
@@ -41,21 +71,22 @@ export default function InvitationsPage() {
     searchTerm: debouncedSearch || undefined,
     sortBy: sorting.sortBy || undefined,
     sortDir: sorting.sortDir || undefined,
+    statusId: statusFilter === "all" ? -1 : statusId,
   })
 
   const revokeInvitation = useRevokeInvitation()
 
   const handleRevoke = async (id: string) => {
     const confirmed = await confirm({
-      title: "Daveti iptal etmek istediginize emin misiniz?",
-      description: "Bu davet iptal edilecek ve kullanici bu davetle kayit olamayacaktir.",
-      actionLabel: "Iptal Et",
+      title: "Daveti iptal etmek istediğinize emin misiniz?",
+      description: "Bu davet iptal edilecek ve kullanıcı bu davetle kayıt olamayacaktır.",
+      actionLabel: "İptal Et",
     })
     if (!confirmed) return
 
     try {
       await revokeInvitation.mutateAsync(id)
-      toast.success("Davet basariyla iptal edildi")
+      toast.success("Davet başarıyla iptal edildi")
     } catch {
       // Error handled by axios interceptor
     }
@@ -78,15 +109,25 @@ export default function InvitationsPage() {
         cell: ({ row }) => row.original.roleName,
       },
       {
+        accessorKey: "statusId",
+        header: "Durum",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <Badge variant={statusBadgeVariant[row.original.statusId] || "outline"}>
+            {row.original.statusName}
+          </Badge>
+        ),
+      },
+      {
         accessorKey: "createdDate",
-        header: "Gonderilme Tarihi",
+        header: "Gönderilme Tarihi",
         enableSorting: true,
         cell: ({ row }) =>
           new Date(row.original.createdDate).toLocaleDateString("tr-TR"),
       },
       {
         accessorKey: "expiredDate",
-        header: "Son Gecerlilik Tarihi",
+        header: "Son Geçerlilik Tarihi",
         enableSorting: true,
         cell: ({ row }) =>
           new Date(row.original.expiredDate).toLocaleDateString("tr-TR"),
@@ -95,7 +136,7 @@ export default function InvitationsPage() {
         id: "actions",
         enableSorting: false,
         cell: ({ row }) =>
-          canManage ? (
+          canManage && row.original.statusId === InvitationStatus.Pending ? (
             <div className="flex items-center justify-end">
               <Button
                 variant="ghost"
@@ -117,7 +158,7 @@ export default function InvitationsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Davetler"
-        description="Bekleyen davetleri yonetin"
+        description="Davetleri yönetin"
         action={{
           label: "Yeni Davet",
           onClick: () => setDialogOpen(true),
@@ -129,7 +170,7 @@ export default function InvitationsPage() {
         <CardHeader>
           <CardTitle>Davet Listesi</CardTitle>
           <CardDescription>
-            Toplam {data?.totalCount || 0} bekleyen davet
+            Toplam {data?.totalCount || 0} davet
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -142,13 +183,32 @@ export default function InvitationsPage() {
               }}
               placeholder="E-posta ara..."
             />
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value)
+                setPage(0)
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Durum" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Bekleyen</SelectItem>
+                <SelectItem value={String(InvitationStatus.Accepted)}>Kabul Edildi</SelectItem>
+                <SelectItem value={String(InvitationStatus.Rejected)}>Reddedildi</SelectItem>
+                <SelectItem value={String(InvitationStatus.Revoked)}>İptal Edildi</SelectItem>
+                <SelectItem value={String(InvitationStatus.Expired)}>Süresi Doldu</SelectItem>
+                <SelectItem value="all">Tüm Durumlar</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <DataTable
             columns={columns}
             data={data?.items || []}
             isLoading={isLoading}
-            emptyMessage="Bekleyen davet bulunmuyor"
+            emptyMessage="Davet bulunamadı"
             pagination={{
               pageIndex: page,
               pageSize,

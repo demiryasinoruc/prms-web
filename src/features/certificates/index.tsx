@@ -108,6 +108,7 @@ export default function CertificatesPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Sertifika",
     }),
   ]
 

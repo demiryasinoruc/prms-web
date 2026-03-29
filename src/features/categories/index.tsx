@@ -104,6 +104,7 @@ export default function CategoriesPage() {
       getId: (row) => row.id,
       canUpdate: canManage,
       canDelete: canManage,
+      entityName: "Kategori",
     }),
   ]
 

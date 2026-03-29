@@ -215,6 +215,7 @@ export default function MaintenanceRecordsPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Bakım Kaydı",
     }),
   ]
 

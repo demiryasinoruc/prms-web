@@ -2,6 +2,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { confirmDelete } from "@/lib/confirm"
 
 interface ActionButtonsOptions<T> {
   onEdit?: (row: T) => void
@@ -9,11 +10,18 @@ interface ActionButtonsOptions<T> {
   getId: (row: T) => string
   canUpdate?: boolean
   canDelete?: boolean
+  entityName?: string
 }
 
 export function createActionButtonsColumn<T>(
   options: ActionButtonsOptions<T>
 ): ColumnDef<T> {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirmDelete(options.entityName || null)
+    if (!confirmed) return
+    await options.onDelete!(id)
+  }
+
   return {
     id: "actions",
     enableSorting: false,
@@ -36,7 +44,7 @@ export function createActionButtonsColumn<T>(
             size="icon"
             className="h-8 w-8 text-destructive hover:text-destructive"
             title="Sil"
-            onClick={() => options.onDelete!(options.getId(row.original))}
+            onClick={() => handleDelete(options.getId(row.original))}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

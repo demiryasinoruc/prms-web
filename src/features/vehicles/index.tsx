@@ -164,6 +164,7 @@ export default function VehiclesPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Araç",
     }),
   ]
 

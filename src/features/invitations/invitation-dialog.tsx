@@ -20,8 +20,8 @@ const invitationSchema = z.object({
   email: z
     .string()
     .min(1, "E-posta adresi zorunlu")
-    .email("Gecerli bir e-posta adresi giriniz"),
-  roleId: z.string().min(1, "Rol secimi zorunlu"),
+    .email("Geçerli bir e-posta adresi giriniz"),
+  roleId: z.string().min(1, "Rol seçimi zorunlu"),
 })
 
 type InvitationFormData = z.infer<typeof invitationSchema>
@@ -56,7 +56,7 @@ export function InvitationDialog({ open, onOpenChange }: InvitationDialogProps) 
         email: data.email,
         roleId: data.roleId,
       })
-      toast.success("Davet basariyla gonderildi")
+      toast.success("Davet başarıyla gönderildi")
       onOpenChange(false)
     } catch {
       // Error handled by axios interceptor
@@ -74,7 +74,7 @@ export function InvitationDialog({ open, onOpenChange }: InvitationDialogProps) 
         <DialogHeader>
           <DialogTitle>Yeni Davet</DialogTitle>
           <DialogDescription>
-            Kullaniciya e-posta ile davet gonderin
+            Kullanıcıya e-posta ile davet gönderin
           </DialogDescription>
         </DialogHeader>
 
@@ -92,7 +92,7 @@ export function InvitationDialog({ open, onOpenChange }: InvitationDialogProps) 
             name="roleId"
             control={control}
             options={roleOptions}
-            placeholder="Rol seciniz"
+            placeholder="Rol seçiniz"
             error={errors.roleId?.message}
           />
 
@@ -102,13 +102,13 @@ export function InvitationDialog({ open, onOpenChange }: InvitationDialogProps) 
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Vazgec
+              İptal
             </Button>
             <Button type="submit" disabled={createInvitation.isPending}>
               {createInvitation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Davet Gonder
+              Davet Gönder
             </Button>
           </div>
         </form>

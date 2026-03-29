@@ -18,7 +18,7 @@ import {
 import api from "@/lib/axios"
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email("Gecerli bir e-posta adresi giriniz"),
+  email: z.string().email("Geçerli bir e-posta adresi giriniz"),
 })
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
       })
       setIsSubmitted(true)
     } catch {
-      setError("Sifre sifirlama istegi gonderilemedi")
+      setError("Şifre sıfırlama isteği gönderilemedi")
     }
   }
 
@@ -50,14 +50,14 @@ export default function ForgotPasswordPage() {
     return (
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">E-posta Gonderildi</h1>
+          <h1 className="text-2xl font-bold tracking-tight">E-posta Gönderildi</h1>
           <p className="text-sm text-muted-foreground">
-            Sifre sifirlama talebiniz alindi. E-posta adresinizi kontrol edin.
+            Şifre sıfırlama talebiniz alındı. E-posta adresinizi kontrol edin.
           </p>
         </div>
 
         <Button asChild className="w-full">
-          <Link to="/login">Giris Sayfasina Don</Link>
+          <Link to="/login">Giriş Sayfasına Dön</Link>
         </Button>
       </div>
     )
@@ -66,9 +66,9 @@ export default function ForgotPasswordPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Sifremi Unuttum</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Şifremi Unuttum</h1>
         <p className="text-sm text-muted-foreground">
-          Hesabinizla iliskili e-posta adresini girin
+          Hesabınızla ilişkili e-posta adresini girin
         </p>
       </div>
 
@@ -104,10 +104,10 @@ export default function ForgotPasswordPage() {
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Gonderiliyor...
+                Gönderiliyor...
               </>
             ) : (
-              "Sifre Sifirlama Linki Gonder"
+              "Şifre Sıfırlama Linki Gönder"
             )}
           </Button>
         </form>
@@ -119,7 +119,7 @@ export default function ForgotPasswordPage() {
           className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
         >
           <ArrowLeft className="h-3 w-3" />
-          Giris Sayfasina Don
+          Giriş Sayfasına Dön
         </Link>
       </div>
     </div>

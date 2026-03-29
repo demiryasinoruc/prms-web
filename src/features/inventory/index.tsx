@@ -200,6 +200,7 @@ export default function InventoryPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Envanter",
     }),
   ]
 

@@ -146,6 +146,7 @@ export default function ExtraServicesPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Ek Hizmet",
     }),
   ]
 

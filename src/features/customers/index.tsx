@@ -128,6 +128,7 @@ export default function CustomersPage() {
         getId: (row) => row.id,
         canUpdate,
         canDelete,
+        entityName: "Müşteri",
       }),
     ],
     [canUpdate, canDelete]

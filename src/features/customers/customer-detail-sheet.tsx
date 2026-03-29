@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
@@ -64,6 +65,7 @@ export function CustomerDetailSheet({
                   </div>
                   <div>
                     <SheetTitle className="text-left">{customer.name}</SheetTitle>
+                    <SheetDescription className="sr-only">Müşteri detay bilgileri</SheetDescription>
                     <Badge variant="outline" className="mt-1">
                       {isIndividual ? "Bireysel" : "Kurumsal"}
                     </Badge>

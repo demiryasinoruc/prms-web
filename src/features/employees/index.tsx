@@ -126,6 +126,7 @@ export default function EmployeesPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Çalışan",
     }),
   ]
 

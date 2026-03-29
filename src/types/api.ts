@@ -47,34 +47,6 @@ export interface Company {
   isActive: boolean
 }
 
-export interface Product {
-  id: string
-  productCode: string
-  name: string
-  description?: string
-  basePrice: number
-  pricePeriodId: string
-  pricePeriodName: string
-  currencyId: string
-  currencyCode: string
-  categoryId: string
-  categoryName: string
-  brandId?: string
-  brandName?: string
-  unitTypeId: string
-  unitTypeName: string
-  productType: ProductType
-  totalLifespanHours?: number
-  minimumStockLevel?: number
-  isActive: boolean
-}
-
-export enum ProductType {
-  SerialTracked = 1,
-  Countable = 2,
-  Consumable = 3,
-}
-
 export interface Category {
   id: string
   name: string
@@ -82,12 +54,6 @@ export interface Category {
   parentId?: string
   parentName?: string
   children?: Category[]
-}
-
-export interface Brand {
-  id: string
-  name: string
-  description?: string
 }
 
 export interface Warehouse {
@@ -106,19 +72,9 @@ export interface Inventory {
   warehouseName: string
   serialNumber?: string
   quantity: number
-  status: InventoryStatus
+  status: number
   currentLifespanHours?: number
   lastMaintenanceDate?: string
-}
-
-export enum InventoryStatus {
-  Available = 1,
-  Rental = 2,
-  Maintenance = 3,
-  Broken = 4,
-  Lost = 5,
-  Destroyed = 6,
-  Reserved = 7,
 }
 
 export interface Customer {
@@ -167,7 +123,7 @@ export interface Rental {
   customerName: string
   warehouseId: string
   warehouseName: string
-  status: RentalStatus
+  status: number
   plannedStartDate: string
   plannedEndDate: string
   actualStartDate?: string
@@ -182,15 +138,6 @@ export interface Rental {
   currencyCode: string
   notes?: string
   items?: RentalItem[]
-  payments?: RentalPayment[]
-}
-
-export enum RentalStatus {
-  Draft = 1,
-  Confirmed = 2,
-  Delivered = 3,
-  Returned = 4,
-  Cancelled = 5,
 }
 
 export interface RentalItem {
@@ -202,7 +149,7 @@ export interface RentalItem {
   serialNumber?: string
   quantity: number
   unitPrice: number
-  pricePeriodId: string
+  pricePeriodId: number
   pricePeriodName: string
   discountAmount: number
   discountPercent: number
@@ -214,21 +161,6 @@ export interface RentalItem {
   returnCondition?: string
   damageFee: number
   returnNotes?: string
-}
-
-export enum PaymentType {
-  Deposit = 1,
-  Advance = 2,
-  Full = 3,
-  Damage = 4,
-  LateFee = 5,
-}
-
-export enum PaymentMethod {
-  Cash = 1,
-  Card = 2,
-  Transfer = 3,
-  Check = 4,
 }
 
 export interface Employee {

@@ -1,10 +1,20 @@
 import api from "@/lib/axios"
 import type { PaginatedResponse } from "@/types/api"
 
+export enum InvitationStatus {
+  Pending = 1,
+  Accepted = 2,
+  Rejected = 4,
+  Revoked = 8,
+  Expired = 16,
+}
+
 export interface Invitation {
   id: string
   email: string
   roleName: string
+  statusId: number
+  statusName: string
   createdDate: string
   expiredDate: string
 }
@@ -15,6 +25,7 @@ export interface InvitationListParams {
   searchTerm?: string
   sortBy?: string
   sortDir?: "asc" | "desc"
+  statusId?: number
 }
 
 export interface InvitationCreateRequest {
@@ -39,6 +50,7 @@ export const invitationApi = {
         "Searching.Search": params.searchTerm || undefined,
         "Sorting.SortBy": params.sortBy || undefined,
         "Sorting.SortDir": params.sortDir || undefined,
+        "Filters.StatusId": params.statusId || undefined,
       },
     })
 

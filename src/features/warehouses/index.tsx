@@ -103,6 +103,7 @@ export default function WarehousesPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Depo",
     }),
   ]
 

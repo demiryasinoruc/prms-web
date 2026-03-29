@@ -173,6 +173,7 @@ export default function MaintenanceSchedulesPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Bakım Planı",
     }),
   ]
 

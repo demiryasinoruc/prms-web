@@ -149,6 +149,7 @@ export default function ProductsPage() {
       getId: (row) => row.id,
       canUpdate,
       canDelete,
+      entityName: "Ürün",
     }),
   ]
 
