@@ -102,6 +102,7 @@ export default function CompanySettingsPage() {
           defaultPricePeriodId: data.defaultPricePeriodId,
           availabilityCheckMode: data.availabilityCheckMode,
           productRuleCheckMode: data.productRuleCheckMode,
+          autoMaintenanceOnDamagedReturn: data.autoMaintenanceOnDamagedReturn,
         },
       })
       toast.success("Firma bilgileri güncellendi")
