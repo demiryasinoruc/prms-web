@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"
-import { useAuthStore } from "@/stores/auth"
+import { useAuthStore, SYSTEM_ADMIN_USER_TYPE } from "@/stores/auth"
 import api from "@/lib/axios"
 
 interface ProfileResponse {
@@ -22,11 +22,33 @@ interface CompanyResponse {
  * Can be called from anywhere (e.g., after role updates).
  */
 export async function refreshUserProfile(): Promise<void> {
-  const { token, refreshToken, setAuth, setCompany, setPermissions } = useAuthStore.getState()
+  const { token, refreshToken, userType, setAuth, setCompany, setPermissions } = useAuthStore.getState()
 
   if (!token) return
 
   try {
+    if (userType === SYSTEM_ADMIN_USER_TYPE) {
+      const profileResponse = await api.get<ProfileResponse>("/user/profile")
+      const profile = profileResponse.data
+      setAuth(
+        {
+          id: profile.id,
+          name: profile.name,
+          surname: profile.surname,
+          email: profile.email,
+          companyId: "",
+          companyName: "",
+          roleId: "",
+          roleName: "",
+        },
+        token,
+        refreshToken || "",
+        SYSTEM_ADMIN_USER_TYPE
+      )
+      setPermissions([])
+      return
+    }
+
     const [profileResponse, companyResponse] = await Promise.all([
       api.get<ProfileResponse>("/user/profile"),
       api.get<CompanyResponse>("/company/get-company-by-user"),
@@ -47,7 +69,8 @@ export async function refreshUserProfile(): Promise<void> {
         roleName: profile.roleName || "",
       },
       token,
-      refreshToken || ""
+      refreshToken || "",
+      userType ?? 0
     )
     setCompany({
       id: company.id,
@@ -65,7 +88,7 @@ export async function refreshUserProfile(): Promise<void> {
 export function useRefreshProfile() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { token, setAuth, setCompany, setPermissions, logout, refreshToken } = useAuthStore()
+  const { token, userType, setAuth, setCompany, setPermissions, logout, refreshToken } = useAuthStore()
 
   // Prevent double fetch in StrictMode
   const hasFetched = useRef(false)
@@ -85,6 +108,29 @@ export function useRefreshProfile() {
       }
 
       try {
+        if (userType === SYSTEM_ADMIN_USER_TYPE) {
+          const profileResponse = await api.get<ProfileResponse>("/user/profile")
+          const profile = profileResponse.data
+          setAuth(
+            {
+              id: profile.id,
+              name: profile.name,
+              surname: profile.surname,
+              email: profile.email,
+              companyId: "",
+              companyName: "",
+              roleId: "",
+              roleName: "",
+            },
+            token,
+            refreshToken || "",
+            SYSTEM_ADMIN_USER_TYPE
+          )
+          setPermissions([])
+          setError(null)
+          return
+        }
+
         // Fetch profile and company in parallel
         const [profileResponse, companyResponse] = await Promise.all([
           api.get<ProfileResponse>("/user/profile"),
@@ -107,7 +153,8 @@ export function useRefreshProfile() {
             roleName: profile.roleName || "",
           },
           token,
-          refreshToken || ""
+          refreshToken || "",
+          userType ?? 0
         )
         setCompany({
           id: company.id,

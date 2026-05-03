@@ -15,12 +15,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { useAuthStore } from "@/stores/auth"
+import { useAuthStore, SYSTEM_ADMIN_USER_TYPE } from "@/stores/auth"
 import api from "@/lib/axios"
 
 interface AuthResponse {
   token: string
   refreshToken: string
+  userType: number
 }
 
 interface CompanyResponse {
@@ -70,6 +71,7 @@ export default function LoginPage() {
       // Adım 1: Giriş yap ve token al
       let token: string
       let refreshToken: string
+      let userType: number
       try {
         const authResponse = await api.post<AuthResponse>("/auth/login", {
           email: data.email,
@@ -77,6 +79,7 @@ export default function LoginPage() {
         })
         token = authResponse.data.token
         refreshToken = authResponse.data.refreshToken
+        userType = authResponse.data.userType
       } catch {
         setError("E-posta veya şifre hatalı.")
         return
@@ -85,6 +88,34 @@ export default function LoginPage() {
       // Token'ları sakla (sonraki istekler için gerekli)
       localStorage.setItem("token", token)
       localStorage.setItem("refreshToken", refreshToken)
+
+      // Sistem yöneticisi: firma ve rol-tabanlı izin akışını atla
+      if (userType === SYSTEM_ADMIN_USER_TYPE) {
+        let profile: ProfileResponse
+        try {
+          const profileResponse = await api.get<ProfileResponse>("/user/profile")
+          profile = profileResponse.data
+        } catch {
+          clearAuthState()
+          setError("Profil bilgileri alınamadı. Lütfen tekrar deneyin.")
+          return
+        }
+
+        setAuth({
+          id: profile.id,
+          name: profile.name,
+          surname: profile.surname,
+          email: profile.email,
+          companyId: "",
+          companyName: "",
+          roleId: "",
+          roleName: "",
+        }, token, refreshToken, userType)
+        setPermissions([])
+
+        navigate("/admin")
+        return
+      }
 
       // Adım 2: Kullanıcının firmasını al
       let company: CompanyResponse
@@ -119,7 +150,7 @@ export default function LoginPage() {
         companyName: company.name,
         roleId: profile.roleId || "",
         roleName: profile.roleName || "",
-      }, token, refreshToken)
+      }, token, refreshToken, userType)
       setCompany({
         id: company.id,
         name: company.name,

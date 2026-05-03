@@ -4,6 +4,7 @@ import { lazy, Suspense, type ReactNode } from "react"
 import { useRefreshProfile } from "@/hooks/use-refresh-profile"
 
 const MainLayout = lazy(() => import("@/components/layout/main-layout"))
+const AdminLayout = lazy(() => import("@/components/layout/admin-layout"))
 const AuthLayout = lazy(() => import("@/components/layout/auth-layout"))
 
 const LoginPage = lazy(() => import("@/features/auth/login"))
@@ -29,6 +30,8 @@ const MaintenanceSchedulesPage = lazy(() => import("@/features/maintenance-sched
 const MaintenanceRecordsPage = lazy(() => import("@/features/maintenance-records"))
 const InvitationsPage = lazy(() => import("@/features/invitations"))
 const ProfilePage = lazy(() => import("@/features/profile"))
+const AdminPlansPage = lazy(() => import("@/features/admin-plans"))
+const AdminCompaniesPage = lazy(() => import("@/features/admin-companies"))
 
 function PageLoader() {
   return (
@@ -40,6 +43,7 @@ function PageLoader() {
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isSystemAdmin = useAuthStore((state) => state.isSystemAdmin())
   const { isLoading } = useRefreshProfile()
 
   // Show loading while refreshing profile
@@ -51,14 +55,41 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
+  // Sistem admin firma akışına giremez, admin paneline yönlenir
+  if (isSystemAdmin) {
+    return <Navigate to="/admin" replace />
+  }
+
+  return <>{children}</>
+}
+
+function SystemAdminRoute({ children }: { children: ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isSystemAdmin = useAuthStore((state) => state.isSystemAdmin())
+  const { isLoading } = useRefreshProfile()
+
+  if (isLoading) {
+    return <PageLoader />
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Firma kullanıcısı admin paneline giremez, ana akışa yönlenir
+  if (!isSystemAdmin) {
+    return <Navigate to="/" replace />
+  }
+
   return <>{children}</>
 }
 
 function PublicRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isSystemAdmin = useAuthStore((state) => state.isSystemAdmin())
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to={isSystemAdmin ? "/admin" : "/"} replace />
   }
 
   return <>{children}</>
@@ -288,6 +319,38 @@ export const router = createBrowserRouter([
       { path: "products/category-attributes", element: <Navigate to="/categories" replace /> },
       { path: "products/extra-services", element: <Navigate to="/extra-services" replace /> },
       { path: "products/rules", element: <Navigate to="/product-rules" replace /> },
+    ],
+  },
+  {
+    path: "/admin",
+    element: (
+      <SystemAdminRoute>
+        <Suspense fallback={<PageLoader />}>
+          <AdminLayout />
+        </Suspense>
+      </SystemAdminRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/admin/plans" replace />,
+      },
+      {
+        path: "plans",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminPlansPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "companies",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminCompaniesPage />
+          </Suspense>
+        ),
+      },
     ],
   },
   {

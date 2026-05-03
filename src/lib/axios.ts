@@ -51,6 +51,16 @@ function getSuccessMessage(method: string, entityName: string | null): string | 
   }
 }
 
+function isSystemAdminEndpoint(url: string): boolean {
+  const cleanUrl = url.split("?")[0].toLowerCase()
+  return cleanUrl.startsWith("/admin/") ||
+    cleanUrl.startsWith("admin/") ||
+    cleanUrl.includes("/admin/") ||
+    cleanUrl.startsWith("/subscription-plan") ||
+    cleanUrl.startsWith("subscription-plan") ||
+    cleanUrl.includes("/subscription-plan")
+}
+
 api.interceptors.request.use(
   async (config) => {
     const token = localStorage.getItem("token")
@@ -59,7 +69,7 @@ api.interceptors.request.use(
     }
 
     const companyId = localStorage.getItem("companyId")
-    if (companyId) {
+    if (companyId && !isSystemAdminEndpoint(config.url || "")) {
       config.headers["X-Company-ID"] = companyId
     }
 

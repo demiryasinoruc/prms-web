@@ -41,6 +41,10 @@ const routeLabels: Record<string, string> = {
   operations: "Operasyon",
   "category-attributes": "Kategori Özellikleri",
   rules: "Ürün Kuralları",
+  // Sistem Yönetici Paneli
+  admin: "Sistem Yönetimi",
+  plans: "Planlar",
+  companies: "Firmalar",
 }
 
 export function Breadcrumbs() {

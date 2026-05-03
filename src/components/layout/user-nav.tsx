@@ -15,7 +15,8 @@ import { useAuthStore } from "@/stores/auth"
 
 export function UserNav() {
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user, logout, isSystemAdmin } = useAuthStore()
+  const sysAdmin = isSystemAdmin()
 
   const handleLogout = () => {
     logout()
@@ -49,17 +50,21 @@ export function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings/profile")}>
-            <User className="mr-2 h-4 w-4" />
-            Profil
-          </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings")}>
-            <Settings className="mr-2 h-4 w-4" />
-            Ayarlar
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        {!sysAdmin && (
+          <>
+            <DropdownMenuGroup>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings/profile")}>
+                <User className="mr-2 h-4 w-4" />
+                Profil
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings")}>
+                <Settings className="mr-2 h-4 w-4" />
+                Ayarlar
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           Cikis Yap
