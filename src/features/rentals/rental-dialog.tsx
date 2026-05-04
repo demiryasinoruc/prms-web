@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
-import { Loader2, Plus, Trash2, ChevronDown, ChevronRight, Settings2, ChevronUp, Receipt } from "lucide-react"
+import { Loader2, Plus, Trash2, ChevronDown, ChevronRight, Settings2, ChevronUp, Receipt, AlertCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,7 @@ import { ProductType } from "@/features/products/api"
 import { useInventorySelectByProduct } from "@/features/inventory/hooks"
 import { useProductVariantSelect } from "@/features/product-variants/hooks"
 import { useExtraServiceSelectForRental } from "@/features/extra-services/hooks"
+import { ServiceType } from "@/features/extra-services/api"
 import { useCompanySettings } from "@/features/settings/hooks"
 import { DeliveryType } from "@/features/company/api"
 import { useAllProductRules } from "@/features/product-rules/hooks"
@@ -216,6 +217,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
   // Fiyat özeti footer açık/kapalı
   const [isPriceSummaryOpen, setIsPriceSummaryOpen] = useState(true)
+
+  // Nakliye banner state'i (CompanyDelivery + Transport hizmeti yoksa gösterilir)
+  const [transportBannerDismissed, setTransportBannerDismissed] = useState(false)
+  const [selectedTransportServiceId, setSelectedTransportServiceId] = useState("")
 
   // Kural önerileri state'i
   interface RuleSuggestion {
@@ -500,6 +505,14 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       setValue("deliveryAddressId", null)
     }
   }, [watchedDeliveryType, setValue])
+
+  // Dialog yeniden açıldığında nakliye banner state'ini sıfırla
+  useEffect(() => {
+    if (open) {
+      setTransportBannerDismissed(false)
+      setSelectedTransportServiceId("")
+    }
+  }, [open])
 
   // Depo değiştiğinde tracked ürünlerin inventoryId'sini temizle
   useEffect(() => {
@@ -1753,6 +1766,108 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
             {/* Ek Hizmetler */}
             <TabsContent value="services" className="space-y-4 mt-4">
+              {/* Nakliye eksik uyarı banner'ı */}
+              {(() => {
+                const transportOptions = extraServices?.filter(
+                  (es) => es.serviceType === ServiceType.Transport
+                ) || []
+                const hasTransportService = watchedServices?.some((s) => {
+                  const matched = extraServices?.find((es) => es.id === s.extraServiceId)
+                  return matched?.serviceType === ServiceType.Transport
+                }) ?? false
+                const showTransportBanner =
+                  watchedDeliveryType === DeliveryType.CompanyDelivery &&
+                  !hasTransportService &&
+                  !transportBannerDismissed &&
+                  transportOptions.length > 0
+
+                if (!showTransportBanner) return null
+
+                return (
+                  <div
+                    role="alert"
+                    className="rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-900"
+                  >
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 mt-0.5 shrink-0 text-yellow-700" />
+                      <div className="flex-1 space-y-2">
+                        <div className="space-y-1">
+                          <p className="font-semibold">Nakliye hizmeti eklenmedi</p>
+                          <p className="text-sm">
+                            Şirket teslimatı seçtiniz. Bir nakliye hizmeti eklemek ister misiniz?
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <Select
+                            value={selectedTransportServiceId || "none"}
+                            onValueChange={(value) => {
+                              if (value === "none") return
+                              const transportSvc = extraServices?.find((es) => es.id === value)
+                              if (!transportSvc) return
+
+                              const services = watch("services")
+                              const lastService = services.length > 0 ? services[services.length - 1] : null
+                              const newIndex = services.length
+
+                              appendService({
+                                extraServiceId: transportSvc.id,
+                                assignedEmployeeId:
+                                  transportSvc.requiresEmployee && employees?.length === 1
+                                    ? employees[0].id
+                                    : null,
+                                assignedVehicleId:
+                                  transportSvc.requiresVehicle && vehicles?.length === 1
+                                    ? vehicles[0].id
+                                    : null,
+                                quantity: 1,
+                                unitPrice: transportSvc.price || 0,
+                                pricePeriodId:
+                                  transportSvc.pricePeriodId ||
+                                  companySettings?.defaultPricePeriodId ||
+                                  null,
+                                startDateTime: null,
+                                endDateTime: null,
+                                discountType: lastService?.discountType ?? DiscountType.Percent,
+                                discountValue: 0,
+                                notes: "",
+                              })
+
+                              // Eklenen nakliye satırını otomatik aç
+                              setOpenServices((prev) => new Set(prev).add(newIndex))
+                              // Dropdown'ı sıfırla
+                              setSelectedTransportServiceId("")
+                            }}
+                          >
+                            <SelectTrigger className="w-[260px] bg-white">
+                              <SelectValue placeholder="Nakliye türü seçiniz" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none" disabled>
+                                Nakliye türü seçiniz
+                              </SelectItem>
+                              {transportOptions.map((es) => (
+                                <SelectItem key={es.id} value={es.id}>
+                                  {es.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-yellow-900 hover:bg-yellow-100"
+                            onClick={() => setTransportBannerDismissed(true)}
+                          >
+                            Bu kiralamada gerekmiyor
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
               <div className="flex items-center justify-between">
                 <Label>Ek Hizmetler</Label>
                 <Button
