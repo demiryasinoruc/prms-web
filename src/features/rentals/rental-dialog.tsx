@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
+import { cn } from "@/lib/utils"
 import { z } from "zod"
 import { Loader2, Plus, Trash2, ChevronDown, ChevronRight, Settings2, ChevronUp, Receipt, AlertCircle } from "lucide-react"
 import {
@@ -46,6 +47,39 @@ import { useAllProductRules } from "@/features/product-rules/hooks"
 import { ProductRuleType, ProductRuleBehavior } from "@/features/product-rules/api"
 import { toast } from "sonner"
 
+// Hizmet kalemi tarih aralıklarını karşılaştırmak için yardımcı fonksiyon.
+// startDateTime/endDateTime "yyyy-MM-ddTHH:mm" formatında string olabilir.
+// fallbackStart/fallbackEnd kiralamanın "yyyy-MM-dd" formatındaki planlanan tarihleridir.
+function parseDateTimeOrFallback(
+  value: string | null | undefined,
+  fallback: string,
+  fallbackIsEnd: boolean,
+): Date | null {
+  const raw = value && value.length > 0 ? value : fallback
+  if (!raw) return null
+  // Sadece tarih (yyyy-MM-dd) ise, fallback gibi davran: bitiş ise gün sonuna ayarla
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+  const iso = isDateOnly ? `${raw}T${fallbackIsEnd ? "23:59:59" : "00:00:00"}` : raw
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function periodsOverlap(
+  s1: string | null | undefined,
+  e1: string | null | undefined,
+  s2: string | null | undefined,
+  e2: string | null | undefined,
+  fallbackStart: string,
+  fallbackEnd: string,
+): boolean {
+  const start1 = parseDateTimeOrFallback(s1, fallbackStart, false)
+  const end1 = parseDateTimeOrFallback(e1, fallbackEnd, true)
+  const start2 = parseDateTimeOrFallback(s2, fallbackStart, false)
+  const end2 = parseDateTimeOrFallback(e2, fallbackEnd, true)
+  if (!start1 || !end1 || !start2 || !end2) return false
+  return start1 < end2 && start2 < end1
+}
+
 const rentalItemSchema = z.object({
   productId: z.string().min(1, "Ürün seçiniz"),
   productVariantId: z.string().nullable().optional(),
@@ -90,6 +124,53 @@ const rentalSchema = z.object({
   notes: z.string().default(""),
   items: z.array(rentalItemSchema).default([]),
   services: z.array(rentalServiceSchema).default([]),
+}).superRefine((data, ctx) => {
+  // Aynı personel veya aynı araç birden fazla hizmete atanmışsa ve
+  // zaman aralıkları çakışıyorsa Zod hatası ekle (submit'i engeller).
+  const services = data.services ?? []
+  for (let i = 0; i < services.length; i++) {
+    for (let j = i + 1; j < services.length; j++) {
+      const a = services[i]
+      const b = services[j]
+      if (!a || !b) continue
+
+      const overlap = periodsOverlap(
+        a.startDateTime,
+        a.endDateTime,
+        b.startDateTime,
+        b.endDateTime,
+        data.plannedStartDate,
+        data.plannedEndDate,
+      )
+      if (!overlap) continue
+
+      if (a.assignedEmployeeId && a.assignedEmployeeId === b.assignedEmployeeId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["services", i, "assignedEmployeeId"],
+          message: `Aynı personel ${j + 1}. hizmet kaleminde de bu zaman aralığında atanmış`,
+        })
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["services", j, "assignedEmployeeId"],
+          message: `Aynı personel ${i + 1}. hizmet kaleminde de bu zaman aralığında atanmış`,
+        })
+      }
+
+      if (a.assignedVehicleId && a.assignedVehicleId === b.assignedVehicleId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["services", i, "assignedVehicleId"],
+          message: `Aynı araç ${j + 1}. hizmet kaleminde de bu zaman aralığında atanmış`,
+        })
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["services", j, "assignedVehicleId"],
+          message: `Aynı araç ${i + 1}. hizmet kaleminde de bu zaman aralığında atanmış`,
+        })
+      }
+    }
+  }
 })
 
 type RentalFormData = z.infer<typeof rentalSchema>
@@ -351,13 +432,74 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const watchedCustomerId = watch("customerId")
   // useWatch kullanarak items değişikliklerini reaktif olarak takip et
   const watchedItems = useWatch({ control, name: "items" })
-  const watchedServices = watch("services")
+  const watchedServices = useWatch({ control, name: "services" })
+  const watchedPlannedStartDate = useWatch({ control, name: "plannedStartDate" })
+  const watchedPlannedEndDate = useWatch({ control, name: "plannedEndDate" })
   const watchedRentalDiscountType = watch("discountType")
   const watchedRentalDiscountValue = watch("discountValue")
   const watchedDeliveryType = watch("deliveryType")
   const watchedSourceWarehouseId = watch("sourceWarehouseId")
   const watchedCurrencyId = watch("currencyId")
   const watchedExchangeRate = watch("exchangeRate")
+
+  // Hizmet kalemleri arası self-conflict tespiti.
+  // Aynı personel veya aynı araç, çakışan zaman aralığında 2+ kaleme atanmışsa
+  // ilgili index için { employee, vehicle } true olur. otherIndex çakışan ilk diğer satır.
+  const serviceConflicts = useMemo(() => {
+    const result: Record<
+      number,
+      {
+        employee: boolean
+        vehicle: boolean
+        employeeOtherIndex: number | null
+        vehicleOtherIndex: number | null
+      }
+    > = {}
+    const services = watchedServices ?? []
+    if (!watchedPlannedStartDate || !watchedPlannedEndDate) return result
+
+    for (let i = 0; i < services.length; i++) {
+      result[i] = {
+        employee: false,
+        vehicle: false,
+        employeeOtherIndex: null,
+        vehicleOtherIndex: null,
+      }
+    }
+
+    for (let i = 0; i < services.length; i++) {
+      for (let j = i + 1; j < services.length; j++) {
+        const a = services[i]
+        const b = services[j]
+        if (!a || !b) continue
+
+        const overlap = periodsOverlap(
+          a.startDateTime,
+          a.endDateTime,
+          b.startDateTime,
+          b.endDateTime,
+          watchedPlannedStartDate,
+          watchedPlannedEndDate,
+        )
+        if (!overlap) continue
+
+        if (a.assignedEmployeeId && a.assignedEmployeeId === b.assignedEmployeeId) {
+          result[i].employee = true
+          if (result[i].employeeOtherIndex === null) result[i].employeeOtherIndex = j
+          result[j].employee = true
+          if (result[j].employeeOtherIndex === null) result[j].employeeOtherIndex = i
+        }
+        if (a.assignedVehicleId && a.assignedVehicleId === b.assignedVehicleId) {
+          result[i].vehicle = true
+          if (result[i].vehicleOtherIndex === null) result[i].vehicleOtherIndex = j
+          result[j].vehicle = true
+          if (result[j].vehicleOtherIndex === null) result[j].vehicleOtherIndex = i
+        }
+      }
+    }
+
+    return result
+  }, [watchedServices, watchedPlannedStartDate, watchedPlannedEndDate])
 
   // Seçili para birimi TL mi? (TL varsayılan olarak ID=1 kabul ediyoruz)
   // Eğer currencies'den TL'nin ID'sini bulmak istersek currencies listesini kontrol edebiliriz
@@ -2175,6 +2317,11 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                               const colCount = 1 + (showEmployee ? 1 : 0) + (showVehicle ? 1 : 0)
                               const gridClass =
                                 colCount === 3 ? "grid-cols-3" : colCount === 2 ? "grid-cols-2" : "grid-cols-1"
+                              const conflict = serviceConflicts[index]
+                              const employeeConflict = !!conflict?.employee
+                              const vehicleConflict = !!conflict?.vehicle
+                              const employeeOtherIndex = conflict?.employeeOtherIndex ?? null
+                              const vehicleOtherIndex = conflict?.vehicleOtherIndex ?? null
                               return (
                                 <div className={`grid gap-4 ${gridClass}`}>
                                   {showEmployee && (
@@ -2189,7 +2336,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                             value={field.value || "none"}
                                             onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                                           >
-                                            <SelectTrigger>
+                                            <SelectTrigger
+                                              className={cn(
+                                                employeeConflict && "border-red-500 focus:ring-red-500",
+                                              )}
+                                              title={
+                                                employeeConflict && employeeOtherIndex !== null
+                                                  ? `Bu personel ${employeeOtherIndex + 1}. hizmet kaleminde de bu zaman aralığında atanmış`
+                                                  : undefined
+                                              }
+                                            >
                                               <SelectValue placeholder="Personel seçiniz" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -2203,6 +2359,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                           </Select>
                                         )}
                                       />
+                                      {employeeConflict && employeeOtherIndex !== null && (
+                                        <p className="text-xs text-red-600 flex items-center gap-1">
+                                          <AlertCircle className="h-3 w-3" />
+                                          Bu personel {employeeOtherIndex + 1}. hizmet kaleminde de bu zaman aralığında atanmış
+                                        </p>
+                                      )}
                                     </div>
                                   )}
 
@@ -2218,7 +2380,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                             value={field.value || "none"}
                                             onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                                           >
-                                            <SelectTrigger>
+                                            <SelectTrigger
+                                              className={cn(
+                                                vehicleConflict && "border-red-500 focus:ring-red-500",
+                                              )}
+                                              title={
+                                                vehicleConflict && vehicleOtherIndex !== null
+                                                  ? `Bu araç ${vehicleOtherIndex + 1}. hizmet kaleminde de bu zaman aralığında atanmış`
+                                                  : undefined
+                                              }
+                                            >
                                               <SelectValue placeholder="Araç seçiniz" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -2232,6 +2403,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                           </Select>
                                         )}
                                       />
+                                      {vehicleConflict && vehicleOtherIndex !== null && (
+                                        <p className="text-xs text-red-600 flex items-center gap-1">
+                                          <AlertCircle className="h-3 w-3" />
+                                          Bu araç {vehicleOtherIndex + 1}. hizmet kaleminde de bu zaman aralığında atanmış
+                                        </p>
+                                      )}
                                     </div>
                                   )}
 
