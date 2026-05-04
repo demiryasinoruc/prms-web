@@ -45,6 +45,11 @@ import { useCompanySettings } from "@/features/settings/hooks"
 import { DeliveryType } from "@/features/company/api"
 import { useAllProductRules } from "@/features/product-rules/hooks"
 import { ProductRuleType, ProductRuleBehavior } from "@/features/product-rules/api"
+import { useAvailabilityBatch } from "@/features/availability/hooks"
+import type {
+  BatchAvailabilityRequest,
+  BatchAvailabilityItemResult,
+} from "@/features/availability/api"
 import { toast } from "sonner"
 
 // Hizmet kalemi tarih aralıklarını karşılaştırmak için yardımcı fonksiyon.
@@ -441,6 +446,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const watchedSourceWarehouseId = watch("sourceWarehouseId")
   const watchedCurrencyId = watch("currencyId")
   const watchedExchangeRate = watch("exchangeRate")
+  // Availability hook için reaktif izleme (useWatch — yeniden render tetikler)
+  const watchedDeliveryVehicleId = useWatch({ control, name: "deliveryVehicleId" })
+  const watchedDeliveryEmployeeId = useWatch({ control, name: "deliveryEmployeeId" })
+  const watchedAvailabilityWarehouseId = useWatch({ control, name: "sourceWarehouseId" })
 
   // Hizmet kalemleri arası self-conflict tespiti.
   // Aynı personel veya aynı araç, çakışan zaman aralığında 2+ kaleme atanmışsa
@@ -500,6 +509,107 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
     return result
   }, [watchedServices, watchedPlannedStartDate, watchedPlannedEndDate])
+
+  // Realtime availability batch isteği için form değerlerinden request oluştur.
+  // plannedStart/EndDate "yyyy-MM-dd" formatında; backend'in DateTime parser'ı için
+  // gün başlangıç/bitişine çeviriyoruz. Item ve servis tarih override'ları
+  // datetime-local (yyyy-MM-ddTHH:mm) formatında — backend doğrudan parse eder.
+  const availabilityRequest = useMemo<BatchAvailabilityRequest | null>(() => {
+    if (!watchedPlannedStartDate || !watchedPlannedEndDate) return null
+
+    const defaultStartDate = `${watchedPlannedStartDate}T00:00:00`
+    const defaultEndDate = `${watchedPlannedEndDate}T23:59:59`
+
+    const items = (watchedItems || [])
+      .filter((item) => !!item?.productId)
+      .map((item, idx) => ({
+        itemKey: `item-${idx}`,
+        productId: item.productId,
+        productVariantId: item.productVariantId || undefined,
+        inventoryId: item.inventoryId || undefined,
+        quantity: item.quantity || 0,
+        startDateTime: item.startDateTime || undefined,
+        endDateTime: item.endDateTime || undefined,
+      }))
+
+    const vehicles = [
+      ...(watchedDeliveryVehicleId
+        ? [
+            {
+              itemKey: "delivery-vehicle",
+              vehicleId: watchedDeliveryVehicleId,
+              startDate: defaultStartDate,
+              endDate: defaultStartDate, // teslimat tek gün slotu
+            },
+          ]
+        : []),
+      ...(watchedServices || [])
+        .filter((s) => !!s?.assignedVehicleId)
+        .map((s, idx) => ({
+          itemKey: `service-vehicle-${idx}`,
+          vehicleId: s.assignedVehicleId!,
+          startDate: s.startDateTime || defaultStartDate,
+          endDate: s.endDateTime || defaultEndDate,
+        })),
+    ]
+
+    const employees = [
+      ...(watchedDeliveryEmployeeId
+        ? [
+            {
+              itemKey: "delivery-employee",
+              employeeId: watchedDeliveryEmployeeId,
+              startDate: defaultStartDate,
+              endDate: defaultStartDate, // teslimat tek gün slotu
+            },
+          ]
+        : []),
+      ...(watchedServices || [])
+        .filter((s) => !!s?.assignedEmployeeId)
+        .map((s, idx) => ({
+          itemKey: `service-employee-${idx}`,
+          employeeId: s.assignedEmployeeId!,
+          startDate: s.startDateTime || defaultStartDate,
+          endDate: s.endDateTime || defaultEndDate,
+        })),
+    ]
+
+    return {
+      excludeRentalId: editId || undefined,
+      defaultStartDate,
+      defaultEndDate,
+      warehouseId: watchedAvailabilityWarehouseId || undefined,
+      items,
+      vehicles,
+      employees,
+    }
+  }, [
+    watchedPlannedStartDate,
+    watchedPlannedEndDate,
+    watchedAvailabilityWarehouseId,
+    watchedDeliveryVehicleId,
+    watchedDeliveryEmployeeId,
+    watchedItems,
+    watchedServices,
+    editId,
+  ])
+
+  const { data: availabilityData, isLoading: availabilityLoading } =
+    useAvailabilityBatch(availabilityRequest)
+
+  // UI'da hızlı erişim için itemKey -> result lookup map
+  const availabilityMap = useMemo(() => {
+    const map = new Map<string, BatchAvailabilityItemResult>()
+    if (!availabilityData?.results) return map
+    for (const r of availabilityData.results) {
+      map.set(r.itemKey, r)
+    }
+    return map
+  }, [availabilityData])
+
+  // Sonraki task'larda kullanılacak — şu anda referansları reserve etmek için
+  void availabilityLoading
+  void availabilityMap
 
   // Seçili para birimi TL mi? (TL varsayılan olarak ID=1 kabul ediyoruz)
   // Eğer currencies'den TL'nin ID'sini bulmak istersek currencies listesini kontrol edebiliriz
