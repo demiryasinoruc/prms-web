@@ -46,6 +46,7 @@ import { DeliveryType } from "@/features/company/api"
 import { useAllProductRules } from "@/features/product-rules/hooks"
 import { ProductRuleType, ProductRuleBehavior } from "@/features/product-rules/api"
 import { useAvailabilityBatch } from "@/features/availability/hooks"
+import { AvailabilityBadge } from "@/features/availability/availability-badge"
 import type {
   BatchAvailabilityRequest,
   BatchAvailabilityItemResult,
@@ -606,10 +607,6 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     }
     return map
   }, [availabilityData])
-
-  // Sonraki task'larda kullanılacak — şu anda referansları reserve etmek için
-  void availabilityLoading
-  void availabilityMap
 
   // Seçili para birimi TL mi? (TL varsayılan olarak ID=1 kabul ediyoruz)
   // Eğer currencies'den TL'nin ID'sini bulmak istersek currencies listesini kontrol edebiliriz
@@ -1639,6 +1636,13 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                               </>
                             )}
                           </div>
+
+                          {item?.productId && (
+                            <AvailabilityBadge
+                              isLoading={availabilityLoading}
+                              result={availabilityMap.get(`item-${index}`)}
+                            />
+                          )}
 
                           <Button
                             type="button"
