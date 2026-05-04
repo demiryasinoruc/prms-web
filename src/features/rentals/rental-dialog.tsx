@@ -545,13 +545,17 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
           ]
         : []),
       ...(watchedServices || [])
-        .filter((s) => !!s?.assignedVehicleId)
-        .map((s, idx) => ({
-          itemKey: `service-vehicle-${idx}`,
-          vehicleId: s.assignedVehicleId!,
-          startDate: s.startDateTime || defaultStartDate,
-          endDate: s.endDateTime || defaultEndDate,
-        })),
+        .map((s, idx) =>
+          s?.assignedVehicleId
+            ? {
+                itemKey: `service-vehicle-${idx}`,
+                vehicleId: s.assignedVehicleId,
+                startDate: s.startDateTime || defaultStartDate,
+                endDate: s.endDateTime || defaultEndDate,
+              }
+            : null,
+        )
+        .filter((x): x is NonNullable<typeof x> => x !== null),
     ]
 
     const employees = [
@@ -566,13 +570,17 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
           ]
         : []),
       ...(watchedServices || [])
-        .filter((s) => !!s?.assignedEmployeeId)
-        .map((s, idx) => ({
-          itemKey: `service-employee-${idx}`,
-          employeeId: s.assignedEmployeeId!,
-          startDate: s.startDateTime || defaultStartDate,
-          endDate: s.endDateTime || defaultEndDate,
-        })),
+        .map((s, idx) =>
+          s?.assignedEmployeeId
+            ? {
+                itemKey: `service-employee-${idx}`,
+                employeeId: s.assignedEmployeeId,
+                startDate: s.startDateTime || defaultStartDate,
+                endDate: s.endDateTime || defaultEndDate,
+              }
+            : null,
+        )
+        .filter((x): x is NonNullable<typeof x> => x !== null),
     ]
 
     return {
@@ -1506,6 +1514,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                           </Select>
                         )}
                       />
+                      {watchedDeliveryVehicleId && (
+                        <AvailabilityBadge
+                          isLoading={availabilityLoading}
+                          result={availabilityMap.get("delivery-vehicle")}
+                        />
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -1533,6 +1547,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                           </Select>
                         )}
                       />
+                      {watchedDeliveryEmployeeId && (
+                        <AvailabilityBadge
+                          isLoading={availabilityLoading}
+                          result={availabilityMap.get("delivery-employee")}
+                        />
+                      )}
                     </div>
                   </>
                 )}
@@ -2473,6 +2493,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                           </Select>
                                         )}
                                       />
+                                      {service?.assignedEmployeeId && (
+                                        <AvailabilityBadge
+                                          isLoading={availabilityLoading}
+                                          result={availabilityMap.get(`service-employee-${index}`)}
+                                        />
+                                      )}
                                       {employeeConflict && employeeOtherIndex !== null && (
                                         <p className="text-xs text-red-600 flex items-center gap-1">
                                           <AlertCircle className="h-3 w-3" />
@@ -2517,6 +2543,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                           </Select>
                                         )}
                                       />
+                                      {service?.assignedVehicleId && (
+                                        <AvailabilityBadge
+                                          isLoading={availabilityLoading}
+                                          result={availabilityMap.get(`service-vehicle-${index}`)}
+                                        />
+                                      )}
                                       {vehicleConflict && vehicleOtherIndex !== null && (
                                         <p className="text-xs text-red-600 flex items-center gap-1">
                                           <AlertCircle className="h-3 w-3" />
