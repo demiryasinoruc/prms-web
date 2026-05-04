@@ -31,6 +31,7 @@ import {
   useCertificates,
 } from "./hooks"
 import type { ExtraService } from "./api"
+import { ServiceType, ServiceTypeLabels } from "./api"
 import { useCompanySettings } from "@/features/settings/hooks"
 
 const extraServiceSchema = z.object({
@@ -41,6 +42,8 @@ const extraServiceSchema = z.object({
   currencyId: z.string().min(1, "Para birimi seçiniz"),
   requiredCertificateId: z.string().nullable(),
   requiresEmployee: z.boolean(),
+  serviceType: z.nativeEnum(ServiceType).default(ServiceType.Other),
+  requiresVehicle: z.boolean().default(false),
   isActive: z.boolean(),
   notes: z.string().nullable(),
 })
@@ -53,6 +56,8 @@ type ExtraServiceFormData = {
   currencyId: string
   requiredCertificateId: string | null
   requiresEmployee: boolean
+  serviceType: ServiceType
+  requiresVehicle: boolean
   isActive: boolean
   notes: string | null
 }
@@ -65,6 +70,8 @@ const defaultValues: ExtraServiceFormData = {
   currencyId: "",
   requiredCertificateId: null,
   requiresEmployee: false,
+  serviceType: ServiceType.Other,
+  requiresVehicle: false,
   isActive: true,
   notes: "",
 }
@@ -97,6 +104,8 @@ export function ExtraServiceDialog({
     currencyId: String(serviceDetail.currencyId),
     requiredCertificateId: serviceDetail.requiredCertificateId || null,
     requiresEmployee: serviceDetail.requiresEmployee,
+    serviceType: serviceDetail.serviceType ?? ServiceType.Other,
+    requiresVehicle: serviceDetail.requiresVehicle ?? false,
     isActive: serviceDetail.isActive,
     notes: serviceDetail.notes || "",
   } : {
@@ -118,6 +127,7 @@ export function ExtraServiceDialog({
 
   const isActive = watch("isActive")
   const requiresEmployee = watch("requiresEmployee")
+  const requiresVehicle = watch("requiresVehicle")
   const requiredCertificateId = watch("requiredCertificateId")
 
   const onSubmit = async (data: ExtraServiceFormData) => {
@@ -133,6 +143,8 @@ export function ExtraServiceDialog({
             currencyId: Number(data.currencyId),
             requiredCertificateId: data.requiredCertificateId || null,
             requiresEmployee: data.requiresEmployee,
+            serviceType: data.serviceType,
+            requiresVehicle: data.requiresVehicle,
             isActive: data.isActive,
             notes: data.notes || null,
           },
@@ -146,6 +158,8 @@ export function ExtraServiceDialog({
           currencyId: Number(data.currencyId),
           requiredCertificateId: data.requiredCertificateId || null,
           requiresEmployee: data.requiresEmployee,
+          serviceType: data.serviceType,
+          requiresVehicle: data.requiresVehicle,
           notes: data.notes || null,
         })
       }
@@ -217,6 +231,19 @@ export function ExtraServiceDialog({
             error={errors.pricePeriodId?.message}
           />
 
+          <FormSelectField
+            label="Hizmet Tipi *"
+            name="serviceType"
+            control={control}
+            options={Object.entries(ServiceTypeLabels).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+            placeholder="Tip seçiniz"
+            valueType="number"
+            error={errors.serviceType?.message}
+          />
+
           <div className="space-y-2">
             <Label>Gerekli Sertifika (Opsiyonel)</Label>
             <Select
@@ -243,6 +270,13 @@ export function ExtraServiceDialog({
             description="Bu hizmet kiralamaya eklendiğinde personel ataması zorunlu olsun"
             checked={requiresEmployee}
             onCheckedChange={(checked) => setValue("requiresEmployee", checked)}
+          />
+
+          <SwitchField
+            label="Araç Gerekli"
+            description="Bu hizmet için bir araç ataması gerekiyor mu?"
+            checked={requiresVehicle}
+            onCheckedChange={(checked) => setValue("requiresVehicle", checked)}
           />
 
           <FormField
