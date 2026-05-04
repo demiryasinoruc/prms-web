@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { cn } from "@/lib/utils"
@@ -603,8 +603,26 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     editId,
   ])
 
-  const { data: availabilityData, isLoading: availabilityLoading } =
-    useAvailabilityBatch(availabilityRequest)
+  const {
+    data: availabilityData,
+    isLoading: availabilityLoading,
+    error: availabilityError,
+  } = useAvailabilityBatch(availabilityRequest)
+
+  // Müsaitlik isteği başarısız olduğunda kullanıcıya tek seferlik toast gösterilir.
+  // Aynı error referansı için tekrar tetiklenmez; recovery durumunda ref sıfırlanır
+  // ve sonraki bir hata yeniden gösterilebilir.
+  const availabilityErrorReportedRef = useRef<unknown>(null)
+  useEffect(() => {
+    if (availabilityError && availabilityError !== availabilityErrorReportedRef.current) {
+      toast.warning(
+        "Müsaitlik bilgileri kontrol edilemedi. Form gönderildiğinde sunucu yeniden kontrol edecek.",
+      )
+      availabilityErrorReportedRef.current = availabilityError
+    } else if (!availabilityError) {
+      availabilityErrorReportedRef.current = null
+    }
+  }, [availabilityError])
 
   // UI'da hızlı erişim için itemKey -> result lookup map
   const availabilityMap = useMemo(() => {
@@ -1253,6 +1271,17 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {availabilityError && (
+            <div
+              role="alert"
+              className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-sm flex items-center gap-2"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>
+                Müsaitlik kontrolü şu an yapılamıyor. Kaydetme sırasında sunucu kontrolü yine yapılacak.
+              </span>
+            </div>
+          )}
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="general">Genel</TabsTrigger>
