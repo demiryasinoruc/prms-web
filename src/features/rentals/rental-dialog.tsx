@@ -61,6 +61,7 @@ const rentalItemSchema = z.object({
 const rentalServiceSchema = z.object({
   extraServiceId: z.string().min(1, "Hizmet seçiniz"),
   assignedEmployeeId: z.string().nullable().optional(),
+  assignedVehicleId: z.string().nullable().optional(),
   quantity: z.number().min(1, "Miktar en az 1 olmalı"),
   unitPrice: z.number().min(0, "Fiyat 0 veya üzeri olmalı"),
   pricePeriodId: z.number().nullable().optional(),
@@ -296,6 +297,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     services: editData.services.map((service) => ({
       extraServiceId: service.extraServiceId,
       assignedEmployeeId: service.assignedEmployeeId,
+      assignedVehicleId: service.assignedVehicleId ?? null,
       quantity: service.quantity,
       unitPrice: service.unitPrice,
       pricePeriodId: service.pricePeriodId,
@@ -791,10 +793,15 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       if (!service.requiresEmployee) {
         setValue(`services.${index}.assignedEmployeeId`, null)
       }
+      // Araç gerektirmiyorsa atanan aracı temizle
+      if (!service.requiresVehicle) {
+        setValue(`services.${index}.assignedVehicleId`, null)
+      }
     } else {
       setValue(`services.${index}.unitPrice`, 0)
       setValue(`services.${index}.pricePeriodId`, null)
       setValue(`services.${index}.assignedEmployeeId`, null)
+      setValue(`services.${index}.assignedVehicleId`, null)
     }
   }
 
@@ -914,6 +921,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
         services: data.services.map((service) => ({
           ...service,
           assignedEmployeeId: service.assignedEmployeeId || null,
+          assignedVehicleId: service.assignedVehicleId || null,
           pricePeriodId: service.pricePeriodId || null,
           startDateTime: service.startDateTime || null,
           endDateTime: service.endDateTime || null,
@@ -1761,6 +1769,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                     appendService({
                       extraServiceId: singleService?.id || "",
                       assignedEmployeeId: (singleService?.requiresEmployee && employees?.length === 1) ? employees[0].id : null,
+                      assignedVehicleId: null,
                       quantity: 1,
                       unitPrice: singleService?.price || 0,
                       pricePeriodId: singleService?.pricePeriodId || companySettings?.defaultPricePeriodId || null,
@@ -1936,41 +1945,81 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                               </div>
                             </div>
 
-                            {/* Personel ve Notlar */}
-                            <div className={`grid gap-4 ${extraServices?.find(s => s.id === service?.extraServiceId)?.requiresEmployee ? "grid-cols-2" : "grid-cols-1"}`}>
-                              {extraServices?.find(s => s.id === service?.extraServiceId)?.requiresEmployee && (
-                                <div className="space-y-2">
-                                  <Label>Atanan Personel *</Label>
-                                  <Controller
-                                    control={control}
-                                    name={`services.${index}.assignedEmployeeId`}
-                                    render={({ field }) => (
-                                      <Select
-                                        value={field.value || "none"}
-                                        onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Personel seçiniz" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="none" disabled>Personel seçiniz</SelectItem>
-                                          {employees?.map((employee) => (
-                                            <SelectItem key={employee.id} value={employee.id}>
-                                              {employee.name}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    )}
-                                  />
-                                </div>
-                              )}
+                            {/* Personel, Araç ve Notlar */}
+                            {(() => {
+                              const selectedService = extraServices?.find(s => s.id === service?.extraServiceId)
+                              const showEmployee = !!selectedService?.requiresEmployee
+                              const showVehicle = !!selectedService?.requiresVehicle
+                              const colCount = 1 + (showEmployee ? 1 : 0) + (showVehicle ? 1 : 0)
+                              const gridClass =
+                                colCount === 3 ? "grid-cols-3" : colCount === 2 ? "grid-cols-2" : "grid-cols-1"
+                              return (
+                                <div className={`grid gap-4 ${gridClass}`}>
+                                  {showEmployee && (
+                                    <div className="space-y-2">
+                                      <Label>Atanan Personel *</Label>
+                                      <Controller
+                                        control={control}
+                                        name={`services.${index}.assignedEmployeeId`}
+                                        render={({ field }) => (
+                                          <Select
+                                            key={`service-employee-${index}-${field.value ?? "none"}`}
+                                            value={field.value || "none"}
+                                            onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                                          >
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Personel seçiniz" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="none" disabled>Personel seçiniz</SelectItem>
+                                              {employees?.map((employee) => (
+                                                <SelectItem key={employee.id} value={employee.id}>
+                                                  {employee.name}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        )}
+                                      />
+                                    </div>
+                                  )}
 
-                              <div className="space-y-2">
-                                <Label>Notlar</Label>
-                                <Input {...register(`services.${index}.notes`)} />
-                              </div>
-                            </div>
+                                  {showVehicle && (
+                                    <div className="space-y-2">
+                                      <Label>Atanan Araç *</Label>
+                                      <Controller
+                                        control={control}
+                                        name={`services.${index}.assignedVehicleId`}
+                                        render={({ field }) => (
+                                          <Select
+                                            key={`service-vehicle-${index}-${field.value ?? "none"}`}
+                                            value={field.value || "none"}
+                                            onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                                          >
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Araç seçiniz" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="none" disabled>Araç seçiniz</SelectItem>
+                                              {vehicles?.map((vehicle) => (
+                                                <SelectItem key={vehicle.id} value={vehicle.id}>
+                                                  {vehicle.plate}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        )}
+                                      />
+                                    </div>
+                                  )}
+
+                                  <div className="space-y-2">
+                                    <Label>Notlar</Label>
+                                    <Input {...register(`services.${index}.notes`)} />
+                                  </div>
+                                </div>
+                              )
+                            })()}
 
                             {/* Gelişmiş Seçenekler */}
                             <Collapsible
