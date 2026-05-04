@@ -222,6 +222,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const [transportBannerDismissed, setTransportBannerDismissed] = useState(false)
   const [selectedTransportServiceId, setSelectedTransportServiceId] = useState("")
 
+  // Hizmet toplu ekleme state'i
+  const [bulkServiceId, setBulkServiceId] = useState("")
+  const [bulkCount, setBulkCount] = useState(1)
+
   // Kural önerileri state'i
   interface RuleSuggestion {
     id: string
@@ -511,6 +515,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     if (open) {
       setTransportBannerDismissed(false)
       setSelectedTransportServiceId("")
+      setBulkServiceId("")
+      setBulkCount(1)
     }
   }, [open])
 
@@ -1884,7 +1890,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                     appendService({
                       extraServiceId: singleService?.id || "",
                       assignedEmployeeId: (singleService?.requiresEmployee && employees?.length === 1) ? employees[0].id : null,
-                      assignedVehicleId: null,
+                      assignedVehicleId: (singleService?.requiresVehicle && vehicles?.length === 1) ? vehicles[0].id : null,
                       quantity: 1,
                       unitPrice: singleService?.price || 0,
                       pricePeriodId: singleService?.pricePeriodId || companySettings?.defaultPricePeriodId || null,
@@ -1901,6 +1907,107 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Hizmet Ekle
+                </Button>
+              </div>
+
+              {/* Toplu Ekle inline yardımcı: Seçilen hizmetten N adet satır oluşturur */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground">Toplu Ekle:</span>
+                <Select
+                  value={bulkServiceId || "none"}
+                  onValueChange={(value) => setBulkServiceId(value === "none" ? "" : value)}
+                >
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Hizmet seçiniz" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none" disabled>
+                      Hizmet seçiniz
+                    </SelectItem>
+                    {extraServices?.map((es) => (
+                      <SelectItem key={es.id} value={es.id}>
+                        {es.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={bulkCount}
+                  onChange={(e) => {
+                    const raw = Number(e.target.value)
+                    if (Number.isNaN(raw)) {
+                      setBulkCount(1)
+                      return
+                    }
+                    const clamped = Math.max(1, Math.min(50, Math.floor(raw)))
+                    setBulkCount(clamped)
+                  }}
+                  className="w-[80px]"
+                  placeholder="Adet"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    !bulkServiceId ||
+                    bulkCount < 1 ||
+                    bulkCount > 50 ||
+                    isLoadingExtraServices
+                  }
+                  onClick={() => {
+                    const selectedSvc = extraServices?.find((es) => es.id === bulkServiceId)
+                    if (!selectedSvc) return
+
+                    const services = watch("services")
+                    const lastService = services.length > 0 ? services[services.length - 1] : null
+                    const startIndex = services.length
+                    const safeCount = Math.max(1, Math.min(50, Math.floor(bulkCount)))
+
+                    for (let i = 0; i < safeCount; i++) {
+                      appendService({
+                        extraServiceId: selectedSvc.id,
+                        assignedEmployeeId:
+                          selectedSvc.requiresEmployee && employees?.length === 1
+                            ? employees[0].id
+                            : null,
+                        assignedVehicleId:
+                          selectedSvc.requiresVehicle && vehicles?.length === 1
+                            ? vehicles[0].id
+                            : null,
+                        quantity: 1,
+                        unitPrice: selectedSvc.price || 0,
+                        pricePeriodId:
+                          selectedSvc.pricePeriodId ||
+                          companySettings?.defaultPricePeriodId ||
+                          null,
+                        startDateTime: null,
+                        endDateTime: null,
+                        discountType: lastService?.discountType ?? DiscountType.Percent,
+                        discountValue: 0,
+                        notes: "",
+                      })
+                    }
+
+                    // Yeni eklenen satırların hepsini otomatik aç
+                    setOpenServices((prev) => {
+                      const next = new Set(prev)
+                      for (let i = 0; i < safeCount; i++) {
+                        next.add(startIndex + i)
+                      }
+                      return next
+                    })
+
+                    // Formu sıfırla
+                    setBulkServiceId("")
+                    setBulkCount(1)
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Toplu Ekle
                 </Button>
               </div>
 
