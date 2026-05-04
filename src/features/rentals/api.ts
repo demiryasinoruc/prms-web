@@ -185,6 +185,8 @@ export interface RentalService {
   extraServiceName: string
   assignedEmployeeId: string | null
   assignedEmployeeName: string
+  assignedVehicleId?: string | null
+  assignedVehiclePlate?: string
   quantity: number
   unitPrice: number
   pricePeriodId: number | null
@@ -256,6 +258,7 @@ export interface RentalItemRequest {
 export interface RentalServiceRequest {
   extraServiceId: string
   assignedEmployeeId?: string | null
+  assignedVehicleId?: string | null
   quantity: number
   unitPrice: number
   pricePeriodId?: number | null
@@ -333,6 +336,7 @@ export interface RentalServiceForEdit {
   id: string
   extraServiceId: string
   assignedEmployeeId: string | null
+  assignedVehicleId?: string | null
   quantity: number
   unitPrice: number
   pricePeriodId: number | null
@@ -480,6 +484,7 @@ export const rentalApi = {
       Services: data.services.map((service) => ({
         ExtraServiceId: service.extraServiceId,
         AssignedEmployeeId: service.assignedEmployeeId || null,
+        AssignedVehicleId: service.assignedVehicleId || null,
         Quantity: service.quantity,
         UnitPrice: service.unitPrice,
         PricePeriodId: service.pricePeriodId || null,
@@ -527,6 +532,7 @@ export const rentalApi = {
       Services: data.services.map((service) => ({
         ExtraServiceId: service.extraServiceId,
         AssignedEmployeeId: service.assignedEmployeeId || null,
+        AssignedVehicleId: service.assignedVehicleId || null,
         Quantity: service.quantity,
         UnitPrice: service.unitPrice,
         PricePeriodId: service.pricePeriodId || null,

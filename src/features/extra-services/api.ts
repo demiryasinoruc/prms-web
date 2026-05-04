@@ -1,5 +1,23 @@
 import api from "@/lib/axios"
 
+export enum ServiceType {
+  Other = 0,
+  Transport = 1,
+  Personnel = 2,
+  VehicleService = 3,
+  Installation = 4,
+  Consulting = 5,
+}
+
+export const ServiceTypeLabels: Record<ServiceType, string> = {
+  [ServiceType.Other]: "Diğer",
+  [ServiceType.Transport]: "Nakliye",
+  [ServiceType.Personnel]: "Personel",
+  [ServiceType.VehicleService]: "Araçlı Hizmet",
+  [ServiceType.Installation]: "Kurulum/Montaj",
+  [ServiceType.Consulting]: "Danışmanlık",
+}
+
 export interface ExtraService {
   id: string
   name: string
@@ -9,6 +27,8 @@ export interface ExtraService {
   currencyCode: string
   requiredCertificateName: string | null
   requiresEmployee: boolean
+  serviceType: ServiceType
+  requiresVehicle: boolean
   isActive: boolean
 }
 
@@ -49,6 +69,8 @@ export interface ExtraServiceDetail {
   requiredCertificateId: string | null
   requiredCertificateName: string | null
   requiresEmployee: boolean
+  serviceType: ServiceType
+  requiresVehicle: boolean
   isActive: boolean
   notes: string | null
   createdDate: string
@@ -62,6 +84,8 @@ export interface ExtraServiceCreateRequest {
   currencyId: number
   requiredCertificateId?: string | null
   requiresEmployee: boolean
+  serviceType?: ServiceType
+  requiresVehicle?: boolean
   notes?: string | null
 }
 
@@ -73,6 +97,8 @@ export interface ExtraServiceUpdateRequest {
   currencyId: number
   requiredCertificateId?: string | null
   requiresEmployee: boolean
+  serviceType?: ServiceType
+  requiresVehicle?: boolean
   isActive: boolean
   notes?: string | null
 }
@@ -94,6 +120,8 @@ export interface ExtraServiceSelectForRental {
   pricePeriodId: number
   currencyCode: string
   requiresEmployee: boolean
+  serviceType: ServiceType
+  requiresVehicle: boolean
 }
 
 export const extraServiceApi = {
@@ -152,6 +180,8 @@ export const extraServiceApi = {
       CurrencyId: Number(data.currencyId),
       RequiredCertificateId: data.requiredCertificateId || null,
       RequiresEmployee: data.requiresEmployee,
+      ServiceType: data.serviceType ?? ServiceType.Other,
+      RequiresVehicle: data.requiresVehicle ?? false,
       Notes: data.notes || null,
     })
     return response.data
@@ -166,6 +196,8 @@ export const extraServiceApi = {
       CurrencyId: Number(data.currencyId),
       RequiredCertificateId: data.requiredCertificateId || null,
       RequiresEmployee: data.requiresEmployee,
+      ServiceType: data.serviceType ?? ServiceType.Other,
+      RequiresVehicle: data.requiresVehicle ?? false,
       IsActive: data.isActive,
       Notes: data.notes || null,
     })
