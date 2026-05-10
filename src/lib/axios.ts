@@ -161,6 +161,11 @@ api.interceptors.response.use(
           description: `${errorData.limitType}: ${errorData.current}/${errorData.max} (Plan: ${errorData.planName})`,
           duration: 6000,
         })
+      } else if (code === "NoActiveSubscription") {
+        toast.error(errorData.message || "Aktif aboneliğiniz bulunmuyor.", {
+          description: "Aboneliğinizi yenilemek için yöneticinizle iletişime geçin.",
+          duration: 8000,
+        })
       } else if (code === "CompanyDeactivated") {
         toast.error(errorData.message || "Şirketiniz pasif durumda.", {
           description: "Aboneliğinizi yenilemek için yöneticinizle iletişime geçin.",
