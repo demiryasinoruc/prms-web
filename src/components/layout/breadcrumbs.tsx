@@ -37,6 +37,7 @@ const routeLabels: Record<string, string> = {
   roles: "Roller",
   invitations: "Davetler",
   profile: "Profil",
+  usage: "Plan Kullanımı",
   // Geriye uyumluluk
   operations: "Operasyon",
   "category-attributes": "Kategori Özellikleri",
