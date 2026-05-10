@@ -152,13 +152,19 @@ api.interceptors.response.use(
       toast.error(message)
     }
 
-    // Handle 403 Forbidden — özel durum: subscription plan limit aşımı
+    // Handle 403 Forbidden — code'a göre özel durumlar
     if (error.response?.status === 403) {
       const errorData = error.response.data
-      if (errorData?.code === "SubscriptionLimitExceeded") {
+      const code = errorData?.code || errorData?.Code
+      if (code === "SubscriptionLimitExceeded") {
         toast.error(errorData.message, {
           description: `${errorData.limitType}: ${errorData.current}/${errorData.max} (Plan: ${errorData.planName})`,
           duration: 6000,
+        })
+      } else if (code === "CompanyDeactivated") {
+        toast.error(errorData.message || "Şirketiniz pasif durumda.", {
+          description: "Aboneliğinizi yenilemek için yöneticinizle iletişime geçin.",
+          duration: 8000,
         })
       } else {
         const message = errorData?.message || errorData?.Message || "Bu işlem için yetkiniz yok."
