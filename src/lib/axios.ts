@@ -175,8 +175,13 @@ api.interceptors.response.use(
     // Handle 404 Not Found errors
     if (error.response?.status === 404) {
       const errorData = error.response.data
-      const message = errorData?.message || errorData?.Message || "Kayıt bulunamadı."
-      toast.error(message)
+      const code = errorData?.code || errorData?.Code
+      // Sayfaların kendi empty state'i yeterli olan code'lar için toast atla
+      const silentCodes = ["NoActiveSubscription"]
+      if (!silentCodes.includes(code)) {
+        const message = errorData?.message || errorData?.Message || "Kayıt bulunamadı."
+        toast.error(message)
+      }
     }
 
     // Handle 500 Server errors
