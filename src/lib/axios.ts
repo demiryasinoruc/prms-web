@@ -152,6 +152,20 @@ api.interceptors.response.use(
       toast.error(message)
     }
 
+    // Handle 403 Forbidden — özel durum: subscription plan limit aşımı
+    if (error.response?.status === 403) {
+      const errorData = error.response.data
+      if (errorData?.code === "SubscriptionLimitExceeded") {
+        toast.error(errorData.message, {
+          description: `${errorData.limitType}: ${errorData.current}/${errorData.max} (Plan: ${errorData.planName})`,
+          duration: 6000,
+        })
+      } else {
+        const message = errorData?.message || errorData?.Message || "Bu işlem için yetkiniz yok."
+        toast.error(message)
+      }
+    }
+
     // Handle 404 Not Found errors
     if (error.response?.status === 404) {
       const errorData = error.response.data
