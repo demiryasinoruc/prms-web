@@ -13,27 +13,33 @@ export interface DashboardStats {
   overdueMaintenanceCount: number
 }
 
-export interface UpcomingMaintenance {
+export interface RecentRental {
   id: string
-  title: string
-  inventorySerialNumber: string
-  productName: string
-  scheduledDate: string | null
+  rentalNumber: string
+  customerName: string
+  createdDate: string
   status: number
 }
 
-export interface RecentMaintenance {
+export interface UpcomingReturn {
   id: string
-  title: string
-  inventorySerialNumber: string
-  productName: string
-  completedDate: string | null
-  maintenanceType: number
+  rentalNumber: string
+  customerName: string
+  plannedEndDate: string
+  status: number
 }
 
 export const dashboardApi = {
   getStats: async (): Promise<DashboardStats> => {
     const response = await api.get<DashboardStats>("/dashboard/stats")
+    return response.data
+  },
+  getRecentRentals: async (): Promise<RecentRental[]> => {
+    const response = await api.get<RecentRental[]>("/dashboard/recent-rentals")
+    return response.data
+  },
+  getUpcomingReturns: async (): Promise<UpcomingReturn[]> => {
+    const response = await api.get<UpcomingReturn[]>("/dashboard/upcoming-returns")
     return response.data
   },
 }

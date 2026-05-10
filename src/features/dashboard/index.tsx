@@ -18,10 +18,33 @@ import {
   AlertTriangle,
   Clock,
 } from "lucide-react"
-import { useDashboardStats } from "./hooks"
+import { useDashboardStats, useRecentRentals, useUpcomingReturns } from "./hooks"
+
+const RentalStatusLabels: Record<number, string> = {
+  1: "Taslak",
+  2: "Rezervasyon",
+  3: "Aktif",
+  4: "Kısmi Teslim",
+  5: "Beklemede",
+  6: "Tamamlandı",
+  7: "İptal",
+}
+
+function getUpcomingDateClass(plannedEndDate: string): string {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const end = new Date(plannedEndDate)
+  end.setHours(0, 0, 0, 0)
+  const diffDays = Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays <= 0) return "text-destructive font-medium"
+  if (diffDays === 1) return "text-amber-600 font-medium"
+  return "text-muted-foreground"
+}
 
 export default function DashboardPage() {
   const { data: stats, isLoading } = useDashboardStats()
+  const { data: recentRentals, isLoading: recentRentalsLoading } = useRecentRentals()
+  const { data: upcomingReturns, isLoading: upcomingReturnsLoading } = useUpcomingReturns()
 
   const statCards = [
     {
@@ -161,30 +184,108 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Son Kiralamalar</CardTitle>
-            <CardDescription>
-              Son 7 gündeki kiralama işlemleri
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Son Kiralamalar</CardTitle>
+              <CardDescription>
+                Son 7 gündeki kiralama işlemleri
+              </CardDescription>
+            </div>
+            <Link
+              to="/rentals"
+              className="text-sm text-primary hover:underline"
+            >
+              Tümünü Gör
+            </Link>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-muted-foreground text-center py-8">
-              Henüz veri yok
-            </div>
+            {recentRentalsLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : !recentRentals || recentRentals.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-8">
+                Henüz kiralama yok
+              </div>
+            ) : (
+              <div className="space-y-0">
+                {recentRentals.map((rental) => (
+                  <Link
+                    key={rental.id}
+                    to="/rentals"
+                    className="flex items-center justify-between border-b py-2 last:border-b-0 hover:bg-muted/50 -mx-2 px-2 rounded-sm transition-colors"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-medium">{rental.rentalNumber}</div>
+                      <div className="text-xs text-muted-foreground">{rental.customerName}</div>
+                    </div>
+                    <div className="text-right space-y-0.5">
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(rental.createdDate).toLocaleDateString("tr-TR")}
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {RentalStatusLabels[rental.status] ?? "Bilinmiyor"}
+                      </Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Yaklaşan Teslimler</CardTitle>
-            <CardDescription>
-              Önümüzdeki 7 gündeki iadeler
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Yaklaşan Teslimler</CardTitle>
+              <CardDescription>
+                Önümüzdeki 7 gündeki iadeler
+              </CardDescription>
+            </div>
+            <Link
+              to="/rentals"
+              className="text-sm text-primary hover:underline"
+            >
+              Tümünü Gör
+            </Link>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-muted-foreground text-center py-8">
-              Henüz veri yok
-            </div>
+            {upcomingReturnsLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : !upcomingReturns || upcomingReturns.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-8">
+                Henüz yaklaşan teslim yok
+              </div>
+            ) : (
+              <div className="space-y-0">
+                {upcomingReturns.map((rental) => (
+                  <Link
+                    key={rental.id}
+                    to="/rentals"
+                    className="flex items-center justify-between border-b py-2 last:border-b-0 hover:bg-muted/50 -mx-2 px-2 rounded-sm transition-colors"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-medium">{rental.rentalNumber}</div>
+                      <div className="text-xs text-muted-foreground">{rental.customerName}</div>
+                    </div>
+                    <div className="text-right space-y-0.5">
+                      <div className={`text-xs ${getUpcomingDateClass(rental.plannedEndDate)}`}>
+                        {new Date(rental.plannedEndDate).toLocaleDateString("tr-TR")}
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {RentalStatusLabels[rental.status] ?? "Bilinmiyor"}
+                      </Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
