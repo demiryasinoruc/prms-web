@@ -38,6 +38,7 @@ export interface ExtraServiceFilters {
   pricePeriodId?: string
   requiredCertificateId?: string
   isActive?: boolean
+  serviceType?: ServiceType
 }
 
 export interface ExtraServiceParams {
@@ -145,6 +146,8 @@ export const extraServiceApi = {
         queryParams.append("Filters.RequiredCertificateId", params.filters.requiredCertificateId)
       if (params.filters.isActive !== undefined)
         queryParams.append("Filters.IsActive", params.filters.isActive.toString())
+      if (params.filters.serviceType !== undefined)
+        queryParams.append("Filters.ServiceType", params.filters.serviceType.toString())
     }
 
     const queryString = queryParams.toString()

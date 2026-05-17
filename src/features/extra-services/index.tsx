@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select"
 import { useExtraServices, useDeleteExtraService, usePricePeriods, useCertificates } from "./hooks"
 import { ExtraServiceDialog } from "./extra-service-dialog"
+import { ServiceType, ServiceTypeLabels } from "./api"
 import type { ExtraService, ExtraServiceFilters, ExtraServiceParams } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
@@ -90,7 +91,7 @@ export default function ExtraServicesPage() {
     }).format(price)
   }
 
-  const updateFilter = (key: keyof ExtraServiceFilters, value: string | boolean | undefined) => {
+  const updateFilter = (key: keyof ExtraServiceFilters, value: string | number | boolean | undefined) => {
     setFilters(prev => ({ ...prev, [key]: value }))
     setPage(0)
   }
@@ -138,6 +139,14 @@ export default function ExtraServicesPage() {
       header: "Sertifika",
       enableSorting: false,
       cell: ({ row }) => row.original.requiredCertificateName || "-",
+    },
+    {
+      accessorKey: "serviceType",
+      header: "Tip",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Badge variant="secondary">{ServiceTypeLabels[row.original.serviceType]}</Badge>
+      ),
     },
     createStatusBadgeColumn<ExtraService>({ enableSorting: true }),
     createActionButtonsColumn<ExtraService>({
@@ -200,6 +209,22 @@ export default function ExtraServicesPage() {
                 {certificates?.map((cert) => (
                   <SelectItem key={String(cert.value)} value={String(cert.value)}>
                     {cert.text}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.serviceType === undefined ? "all" : String(filters.serviceType)}
+              onValueChange={(value) => updateFilter("serviceType", value === "all" ? undefined : (Number(value) as ServiceType))}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Hizmet Tipi" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Hizmet Tipleri</SelectItem>
+                {Object.entries(ServiceTypeLabels).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
