@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "./theme-toggle"
 import { UserNav } from "./user-nav"
 import { Breadcrumbs } from "./breadcrumbs"
+import { NotificationBell } from "@/features/notifications/notification-bell"
 
 export default function MainLayout() {
   return (
@@ -20,6 +21,7 @@ export default function MainLayout() {
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumbs />
           <div className="ml-auto flex items-center gap-2">
+            <NotificationBell />
             <ThemeToggle />
             <UserNav />
           </div>
