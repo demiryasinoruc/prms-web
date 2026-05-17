@@ -26,6 +26,8 @@ const RolesPage = lazy(() => import("@/features/roles"))
 const UsersPage = lazy(() => import("@/features/users"))
 const CompanySettingsPage = lazy(() => import("@/features/company"))
 const UsagePage = lazy(() => import("@/features/usage"))
+const SubscriptionPage = lazy(() => import("@/features/subscription"))
+const SubscriptionUpgradePage = lazy(() => import("@/features/subscription/upgrade"))
 const CalendarPage = lazy(() => import("@/features/calendar"))
 const MaintenanceSchedulesPage = lazy(() => import("@/features/maintenance-schedules"))
 const MaintenanceRecordsPage = lazy(() => import("@/features/maintenance-records"))
@@ -313,6 +315,22 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <UsagePage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "settings/subscription",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <SubscriptionPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "settings/subscription/upgrade",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <SubscriptionUpgradePage />
           </Suspense>
         ),
       },

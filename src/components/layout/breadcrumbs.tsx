@@ -38,6 +38,8 @@ const routeLabels: Record<string, string> = {
   invitations: "Davetler",
   profile: "Profil",
   usage: "Plan Kullanımı",
+  subscription: "Abonelik",
+  upgrade: "Plan Yükselt",
   // Geriye uyumluluk
   operations: "Operasyon",
   "category-attributes": "Kategori Özellikleri",
