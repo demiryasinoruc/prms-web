@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useDebounce } from "@/hooks/use-debounce"
 import { CategoryFilterSelect } from "@/components/shared/category-filter-select"
+import { confirmDelete } from "@/lib/confirm"
 import { useCategoryAttributes, useDeleteCategoryAttribute } from "./hooks"
 import { CategoryAttributeDialog } from "./category-attribute-dialog"
 import type { CategoryAttribute } from "./api"
@@ -226,21 +227,31 @@ export default function CategoryAttributesPage() {
                           {attr.isActive ? "Aktif" : "Pasif"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(attr)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteMutation.mutateAsync(attr.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Düzenle"
+                            onClick={() => handleEdit(attr)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            title="Sil"
+                            onClick={async () => {
+                              const confirmed = await confirmDelete("Kategori Özelliği")
+                              if (!confirmed) return
+                              await deleteMutation.mutateAsync(attr.id)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
