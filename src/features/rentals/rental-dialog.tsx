@@ -1326,22 +1326,6 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Başlangıç Tarihi *</Label>
-                  <Input type="date" {...register("plannedStartDate")} />
-                  {errors.plannedStartDate && (
-                    <p className="text-sm text-destructive">{errors.plannedStartDate.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Bitiş Tarihi *</Label>
-                  <Input type="date" {...register("plannedEndDate")} />
-                  {errors.plannedEndDate && (
-                    <p className="text-sm text-destructive">{errors.plannedEndDate.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
                   <Label>Para Birimi</Label>
                   <Controller
                     control={control}
@@ -1372,6 +1356,22 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                       </Select>
                     )}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Başlangıç Tarihi *</Label>
+                  <Input type="date" {...register("plannedStartDate")} />
+                  {errors.plannedStartDate && (
+                    <p className="text-sm text-destructive">{errors.plannedStartDate.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Bitiş Tarihi *</Label>
+                  <Input type="date" {...register("plannedEndDate")} />
+                  {errors.plannedEndDate && (
+                    <p className="text-sm text-destructive">{errors.plannedEndDate.message}</p>
+                  )}
                 </div>
 
                 {!isTRY && (
