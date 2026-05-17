@@ -29,6 +29,8 @@ const vehicleSchema = z.object({
   capacityUnit: z.string().optional().default(""),
   warehouseId: z.string().min(1, "Depo seçimi zorunlu"),
   notes: z.string().optional().default(""),
+  inspectionDate: z.string().optional().default(""),
+  insuranceDate: z.string().optional().default(""),
 })
 
 type VehicleFormData = z.infer<typeof vehicleSchema>
@@ -51,6 +53,13 @@ const defaultValues: VehicleFormData = {
   capacityUnit: "kg",
   warehouseId: "",
   notes: "",
+  inspectionDate: "",
+  insuranceDate: "",
+}
+
+function toDateInputValue(iso: string | null | undefined): string {
+  if (!iso) return ""
+  return iso.substring(0, 10)
 }
 
 export function VehicleDialog({
@@ -76,6 +85,8 @@ export function VehicleDialog({
     capacityUnit: editVehicle.capacityUnit || "kg",
     warehouseId: editVehicle.warehouseId || "",
     notes: editVehicle.notes || "",
+    inspectionDate: toDateInputValue(editVehicle.inspectionDate),
+    insuranceDate: toDateInputValue(editVehicle.insuranceDate),
   } : (open && vehicle) ? {
     vehicleType: vehicle.vehicleType,
     status: vehicle.status || VehicleStatus.Available,
@@ -88,6 +99,8 @@ export function VehicleDialog({
     capacityUnit: vehicle.capacityUnit || "kg",
     warehouseId: vehicle.warehouseId || "",
     notes: vehicle.notes || "",
+    inspectionDate: toDateInputValue(vehicle.inspectionDate),
+    insuranceDate: toDateInputValue(vehicle.insuranceDate),
   } : defaultValues
 
   const {
@@ -103,13 +116,18 @@ export function VehicleDialog({
 
   const onSubmit = async (data: VehicleFormData) => {
     try {
+      const payload = {
+        ...data,
+        inspectionDate: data.inspectionDate || null,
+        insuranceDate: data.insuranceDate || null,
+      }
       if (vehicle) {
         await updateVehicle.mutateAsync({
           id: vehicle.id,
-          data: { ...data, id: vehicle.id },
+          data: { ...payload, id: vehicle.id },
         })
       } else {
-        await createVehicle.mutateAsync(data)
+        await createVehicle.mutateAsync(payload)
       }
       onOpenChange(false)
     } catch {
@@ -215,6 +233,18 @@ export function VehicleDialog({
                 )}
               />
             </div>
+
+            <FormField
+              label="Muayene Tarihi"
+              type="date"
+              {...register("inspectionDate")}
+            />
+
+            <FormField
+              label="Sigorta Tarihi"
+              type="date"
+              {...register("insuranceDate")}
+            />
 
             <div className="col-span-2">
               <FormField

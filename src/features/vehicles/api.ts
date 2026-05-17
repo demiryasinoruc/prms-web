@@ -23,6 +23,8 @@ export interface VehicleCreateRequest {
   capacity?: number
   capacityUnit?: string
   notes?: string
+  inspectionDate?: string | null
+  insuranceDate?: string | null
 }
 
 export interface VehicleUpdateRequest extends VehicleCreateRequest {
@@ -53,6 +55,8 @@ interface ApiVehicle {
   warehouseId?: string
   warehouseName: string
   notes?: string
+  inspectionDate?: string | null
+  insuranceDate?: string | null
 }
 
 interface ApiVehicleForEdit {
@@ -67,6 +71,8 @@ interface ApiVehicleForEdit {
   capacity: number
   capacityUnit: string
   notes?: string
+  inspectionDate?: string | null
+  insuranceDate?: string | null
 }
 
 // Transform API response to frontend format
@@ -85,6 +91,8 @@ function transformVehicle(apiVehicle: ApiVehicle): Vehicle {
     warehouseId: apiVehicle.warehouseId || "",
     warehouseName: apiVehicle.warehouseName,
     notes: apiVehicle.notes,
+    inspectionDate: apiVehicle.inspectionDate ?? null,
+    insuranceDate: apiVehicle.insuranceDate ?? null,
   }
 }
 
@@ -146,6 +154,8 @@ export const vehicleApi = {
       Capacity: data.capacity || 0,
       CapacityUnit: data.capacityUnit || "",
       Notes: data.notes || "",
+      InspectionDate: data.inspectionDate || null,
+      InsuranceDate: data.insuranceDate || null,
     }
     const response = await api.post<Vehicle>("/vehicle", requestBody)
     return response.data
@@ -164,6 +174,8 @@ export const vehicleApi = {
       Capacity: data.capacity || 0,
       CapacityUnit: data.capacityUnit || "",
       Notes: data.notes || "",
+      InspectionDate: data.inspectionDate || null,
+      InsuranceDate: data.insuranceDate || null,
     }
     const response = await api.put<Vehicle>(`/vehicle/${id}`, requestBody)
     return response.data

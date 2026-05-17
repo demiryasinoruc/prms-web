@@ -1,4 +1,4 @@
-import { Pencil, Truck, Warehouse, Calendar, Gauge, FileText } from "lucide-react"
+import { Pencil, Truck, Warehouse, Calendar, Gauge, FileText, ShieldCheck, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -151,6 +151,47 @@ export function VehicleDetailSheet({
                   </div>
                 </CardContent>
               </Card>
+
+              {(vehicle.inspectionDate || vehicle.insuranceDate) && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Yasal Belgeler</CardTitle>
+                    <CardDescription>Muayene ve sigorta tarihleri</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {vehicle.inspectionDate && (
+                      <div className="flex items-center gap-3">
+                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Muayene Tarihi</p>
+                          <p className="text-sm font-medium">
+                            {new Date(vehicle.inspectionDate).toLocaleDateString("tr-TR", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {vehicle.insuranceDate && (
+                      <div className="flex items-center gap-3">
+                        <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Sigorta Bitiş</p>
+                          <p className="text-sm font-medium">
+                            {new Date(vehicle.insuranceDate).toLocaleDateString("tr-TR", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {vehicle.notes && (
                 <Card>
