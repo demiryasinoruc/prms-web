@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { MoreHorizontal, Plus, Pencil, Trash2, Link2, ArrowRight } from "lucide-react"
+import { Plus, Pencil, Trash2, Link2, ArrowRight } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,12 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -25,6 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { confirmDelete } from "@/lib/confirm"
 import {
   ProductRuleType,
   ProductRuleTypeLabels,
@@ -159,7 +154,7 @@ export default function ProductRulesPage() {
                   <TableHead className="text-right">Miktar</TableHead>
                   <TableHead>VEYA Grubu</TableHead>
                   <TableHead>Durum</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="w-[100px] text-right">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -222,26 +217,30 @@ export default function ProductRulesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(rule.id)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Düzenle
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => deleteRule.mutateAsync(rule.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Sil
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Düzenle"
+                          onClick={() => handleEdit(rule.id)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          title="Sil"
+                          onClick={async () => {
+                            const confirmed = await confirmDelete("Ürün Kuralı")
+                            if (!confirmed) return
+                            await deleteRule.mutateAsync(rule.id)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
