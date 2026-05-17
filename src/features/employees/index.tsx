@@ -30,6 +30,7 @@ import { Gender, type Employee } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 const genderLabels: Record<Gender, string> = {
   [Gender.Male]: "Erkek",
@@ -54,6 +55,7 @@ export default function EmployeesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
   const [detailEmployeeId, setDetailEmployeeId] = useState<string | null>(null)
 
   const { data, isLoading } = useEmployees({
@@ -202,7 +204,7 @@ export default function EmployeesPage() {
       </Card>
 
       <EmployeeDialog
-        key={editingEmployee?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         employee={editingEmployee}

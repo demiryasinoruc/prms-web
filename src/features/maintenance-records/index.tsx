@@ -37,6 +37,7 @@ import {
   MaintenanceTypeLabels,
 } from "./api"
 import { usePermission } from "@/hooks/use-permission"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn } from "@/components/shared/column-helpers"
 
@@ -60,6 +61,7 @@ export default function MaintenanceRecordsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<MaintenanceRecord | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   const { data, isLoading } = useMaintenanceRecords({
     pageNumber: page + 1,
@@ -303,7 +305,7 @@ export default function MaintenanceRecordsPage() {
       </Card>
 
       <MaintenanceRecordDialog
-        key={editingRecord?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         record={editingRecord}

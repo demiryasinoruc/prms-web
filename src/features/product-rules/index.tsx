@@ -28,11 +28,13 @@ import {
 } from "./api"
 import { useProductRules, useDeleteProductRule } from "./hooks"
 import { useProductSelect } from "@/features/products/hooks"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { ProductRuleDialog } from "./product-rule-dialog"
 
 export default function ProductRulesPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
   const [sourceProductFilter, setSourceProductFilter] = useState<string>("all")
 
   const { data: products } = useProductSelect()
@@ -251,7 +253,7 @@ export default function ProductRulesPage() {
       </Card>
 
       <ProductRuleDialog
-        key={editingId ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         editId={editingId}

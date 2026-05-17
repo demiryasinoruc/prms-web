@@ -31,6 +31,7 @@ import type { ExtraService, ExtraServiceFilters, ExtraServiceParams } from "./ap
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 export default function ExtraServicesPage() {
   const canCreate = usePermission(Permissions.ExtraServices.Create)
@@ -39,6 +40,7 @@ export default function ExtraServicesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<ExtraService | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   // Search, filter, sort, pagination state
   const [search, setSearch] = useState("")
@@ -263,7 +265,7 @@ export default function ExtraServicesPage() {
       </Card>
 
       <ExtraServiceDialog
-        key={editingService?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         extraService={editingService}

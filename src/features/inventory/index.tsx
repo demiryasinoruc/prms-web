@@ -36,6 +36,7 @@ import { ProductType } from "@/features/products/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 export default function InventoryPage() {
   const canCreate = usePermission(Permissions.Inventory.Create)
@@ -55,6 +56,7 @@ export default function InventoryPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
   const [detailInventoryId, setDetailInventoryId] = useState<string | null>(null)
 
   const { data, isLoading } = useInventory({
@@ -276,7 +278,7 @@ export default function InventoryPage() {
       </Card>
 
       <InventoryDialog
-        key={editingInventory?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         inventory={editingInventory}

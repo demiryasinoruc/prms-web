@@ -22,6 +22,7 @@ import type { Warehouse as WarehouseType } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 export default function WarehousesPage() {
   const canCreate = usePermission(Permissions.Warehouse.Create)
@@ -41,6 +42,7 @@ export default function WarehousesPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingWarehouse, setEditingWarehouse] = useState<WarehouseType | null>(null)
   const [detailWarehouseId, setDetailWarehouseId] = useState<string | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   const { data, isLoading } = useWarehouses({
     pageNumber: page + 1,
@@ -163,7 +165,7 @@ export default function WarehousesPage() {
       </Card>
 
       <WarehouseDialog
-        key={editingWarehouse?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         warehouse={editingWarehouse}

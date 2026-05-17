@@ -31,6 +31,7 @@ import { CustomerType, type Customer } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 export default function CustomersPage() {
   const [search, setSearch] = useState("")
@@ -46,6 +47,7 @@ export default function CustomersPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
   const [detailCustomerId, setDetailCustomerId] = useState<string | null>(null)
 
   // Permission checks
@@ -206,7 +208,7 @@ export default function CustomersPage() {
       </Card>
 
       <CustomerDialog
-        key={editingCustomer?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         customer={editingCustomer}

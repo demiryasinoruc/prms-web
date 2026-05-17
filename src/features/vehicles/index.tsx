@@ -30,6 +30,7 @@ import { VehicleType, VehicleStatus, type Vehicle } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 const vehicleTypeLabels: Record<VehicleType, string> = {
   [VehicleType.Truck]: "Kamyon",
@@ -72,6 +73,7 @@ export default function VehiclesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
   const [detailVehicleId, setDetailVehicleId] = useState<string | null>(null)
 
   const { data, isLoading } = useVehicles({
@@ -266,7 +268,7 @@ export default function VehiclesPage() {
       </Card>
 
       <VehicleDialog
-        key={editingVehicle?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         vehicle={editingVehicle}

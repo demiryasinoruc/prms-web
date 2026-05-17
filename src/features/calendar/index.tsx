@@ -25,6 +25,7 @@ import {
 } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 export default function CalendarPage() {
   const canManage = usePermission(Permissions.Calendar.Manage)
@@ -32,6 +33,7 @@ export default function CalendarPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   const { data: events, isLoading } = useCalendarEvents({
     type: typeFilter || undefined,
@@ -225,7 +227,7 @@ export default function CalendarPage() {
       </Card>
 
       <EventDialog
-        key={editingEvent?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         event={editingEvent}

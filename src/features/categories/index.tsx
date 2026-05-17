@@ -28,6 +28,7 @@ import type { Category } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 export default function CategoriesPage() {
   const canManage = usePermission(Permissions.Category.Update)
@@ -43,6 +44,7 @@ export default function CategoriesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   const { data: parentCategories } = useCategorySelectParent()
 
@@ -179,7 +181,7 @@ export default function CategoriesPage() {
       </Card>
 
       <CategoryDialog
-        key={editingCategory?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         category={editingCategory}

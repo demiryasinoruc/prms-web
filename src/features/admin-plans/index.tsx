@@ -24,6 +24,7 @@ import { useSubscriptionPlans, useDeleteSubscriptionPlan } from "./hooks"
 import { PlanDialog } from "./plan-dialog"
 import type { SubscriptionPlan } from "./api"
 import { createActionButtonsColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 const CYCLE_TYPE_LABELS: Record<number, string> = {
   1: "Gün",
@@ -56,6 +57,7 @@ export default function AdminPlansPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   const { data, isLoading } = useSubscriptionPlans({
     pageNumber: page + 1,
@@ -216,7 +218,7 @@ export default function AdminPlansPage() {
       </Card>
 
       <PlanDialog
-        key={editingPlan?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         plan={editingPlan}

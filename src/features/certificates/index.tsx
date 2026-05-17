@@ -20,6 +20,7 @@ import { CertificateDialog } from "./certificate-dialog"
 import type { Certificate } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
 
 export default function CertificatesPage() {
@@ -41,6 +42,7 @@ export default function CertificatesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   const { data, isLoading } = useCertificates({
     pageNumber: page + 1,
@@ -168,7 +170,7 @@ export default function CertificatesPage() {
       </Card>
 
       <CertificateDialog
-        key={editingCertificate?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         certificate={editingCertificate}

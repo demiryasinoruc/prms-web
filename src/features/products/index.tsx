@@ -24,6 +24,7 @@ import { ProductType, ProductTypeLabels, type Product } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 export default function ProductsPage() {
   const canCreate = usePermission(Permissions.Product.Create)
@@ -48,6 +49,7 @@ export default function ProductsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
   const [detailProductId, setDetailProductId] = useState<string | null>(null)
 
   const { data, isLoading } = useProducts({
@@ -221,7 +223,7 @@ export default function ProductsPage() {
       </Card>
 
       <ProductDialog
-        key={editingProduct?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         product={editingProduct}

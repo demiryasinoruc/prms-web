@@ -24,6 +24,7 @@ import { MaintenanceScheduleDialog } from "./maintenance-schedule-dialog"
 import type { MaintenanceSchedule } from "./api"
 import { MaintenanceTriggerType } from "./api"
 import { usePermission } from "@/hooks/use-permission"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { Permissions } from "@/lib/permissions"
 import { createActionButtonsColumn, createStatusBadgeColumn } from "@/components/shared/column-helpers"
 
@@ -47,6 +48,7 @@ export default function MaintenanceSchedulesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<MaintenanceSchedule | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   const { data, isLoading } = useMaintenanceSchedules({
     pageNumber: page + 1,
@@ -239,7 +241,7 @@ export default function MaintenanceSchedulesPage() {
       </Card>
 
       <MaintenanceScheduleDialog
-        key={editingSchedule?.id ?? "new"}
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         schedule={editingSchedule}
