@@ -194,6 +194,8 @@ export interface Vehicle {
   warehouseId: string
   warehouseName: string
   notes?: string
+  inspectionDate?: string | null
+  insuranceDate?: string | null
 }
 
 export enum VehicleType {
