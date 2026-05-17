@@ -47,7 +47,7 @@ const productSchema = z.object({
   description: z.string().optional().default(""),
   productCode: z.string().min(1, "Ürün kodu zorunlu"),
   minimumStockLevel: z.number().min(0, "Minimum stok 0 veya üzeri olmalı"),
-  basePrice: z.number().min(0, "Fiyat 0 veya üzeri olmalı"),
+  basePrice: z.number().gt(0, "Taban fiyat 0'dan büyük olmalıdır"),
   pricePeriodId: z.number().min(1, "Fiyat periyodu seçiniz"),
   currencyId: z.number().min(1, "Para birimi seçiniz"),
   totalLifespan: z.number().nullable().optional(),

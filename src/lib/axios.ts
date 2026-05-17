@@ -148,7 +148,20 @@ api.interceptors.response.use(
     // Handle 400 Bad Request errors
     if (error.response?.status === 400) {
       const errorData = error.response.data
-      const message = errorData?.message || errorData?.Message || "İşlem gerçekleştirilemedi."
+      let message: string
+
+      if (Array.isArray(errorData)) {
+        // FluentValidation hata formatı: [{ code: "Field", messages: ["..."] }]
+        // Tüm mesajları birleştirip toast'a tek mesaj olarak veriyoruz; field bazlı inline
+        // gösterimi form tarafında yapılır.
+        const messages = errorData
+          .flatMap((e: { messages?: string[]; Messages?: string[] }) => e?.messages ?? e?.Messages ?? [])
+          .filter(Boolean)
+        message = messages.length > 0 ? messages.join("\n") : "Doğrulama hatası."
+      } else {
+        message = errorData?.message || errorData?.Message || "İşlem gerçekleştirilemedi."
+      }
+
       toast.error(message)
     }
 
