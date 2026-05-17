@@ -37,7 +37,7 @@ import { useCompanySettings } from "@/features/settings/hooks"
 const extraServiceSchema = z.object({
   name: z.string().min(1, "Hizmet adı zorunlu"),
   description: z.string().min(1, "Açıklama zorunlu"),
-  price: z.number().min(0, "Fiyat 0 veya daha büyük olmalı"),
+  price: z.number().gt(0, "Fiyat 0'dan büyük olmalıdır"),
   pricePeriodId: z.string().min(1, "Fiyat periyodu seçiniz"),
   currencyId: z.string().min(1, "Para birimi seçiniz"),
   requiredCertificateId: z.string().nullable(),

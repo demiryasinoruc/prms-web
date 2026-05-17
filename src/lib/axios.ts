@@ -9,8 +9,35 @@ const api = axios.create({
   },
 })
 
-// URL pattern to Turkish entity name mapping
+// URL pattern to Turkish entity name mapping.
+// SIRA ÖNEMLİ: en spesifik path'ler (uzun, çoklu kelime) önce gelmeli — `includes`
+// match'i ilk eşleşeni döner; "categoryattribute" "category"den önce yakalanmalı.
 const entityNames: Record<string, string> = {
+  // Çoklu-kelime / spesifik path'ler (önce)
+  "category-attribute": "Kategori Özelliği",
+  categoryattribute: "Kategori Özelliği",
+  "extra-service": "Ek Hizmet",
+  extraservice: "Ek Hizmet",
+  "product-rule": "Ürün Kuralı",
+  productrule: "Ürün Kuralı",
+  "product-variant": "Ürün Varyantı",
+  productvariant: "Ürün Varyantı",
+  "maintenance-schedule": "Bakım Planı",
+  maintenanceschedule: "Bakım Planı",
+  "maintenance-record": "Bakım Kaydı",
+  maintenancerecord: "Bakım Kaydı",
+  "calendar-event": "Takvim Etkinliği",
+  calendarevent: "Takvim Etkinliği",
+  "subscription-plan": "Abonelik Planı",
+  subscriptionplan: "Abonelik Planı",
+  "payment-method": "Kart",
+  paymentmethod: "Kart",
+  certificate: "Sertifika",
+  notification: "Bildirim",
+  invoice: "Fatura",
+  subscription: "Abonelik",
+
+  // Genel single-word path'ler (sonra)
   customer: "Müşteri",
   brand: "Marka",
   category: "Kategori",
