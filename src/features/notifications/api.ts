@@ -13,6 +13,9 @@ export enum NotificationType {
   VehicleInspectionWarning = 10,
   VehicleInsuranceWarning = 11,
   DocumentExpiryWarning = 12,
+  RentalActivated = 13,
+  RentalCompleted = 14,
+  RentalCancelled = 15,
 }
 
 export const NotificationTypeLabels: Record<NotificationType, string> = {
@@ -28,6 +31,9 @@ export const NotificationTypeLabels: Record<NotificationType, string> = {
   [NotificationType.VehicleInspectionWarning]: "Araç Muayene",
   [NotificationType.VehicleInsuranceWarning]: "Araç Sigorta",
   [NotificationType.DocumentExpiryWarning]: "Belge Süresi",
+  [NotificationType.RentalActivated]: "Kiralama Aktif",
+  [NotificationType.RentalCompleted]: "Kiralama Tamamlandı",
+  [NotificationType.RentalCancelled]: "Kiralama İptal",
 }
 
 export enum NotificationStatus {
