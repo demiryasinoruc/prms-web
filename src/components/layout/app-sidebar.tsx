@@ -24,6 +24,7 @@ import {
   Boxes,
   Wrench,
   ClipboardCheck,
+  Receipt,
   Loader2,
   type LucideIcon,
 } from "lucide-react"
@@ -74,6 +75,7 @@ const iconMap: Record<string, LucideIcon> = {
   Boxes,
   Wrench,
   ClipboardCheck,
+  Receipt,
 }
 
 // Fallback icon
