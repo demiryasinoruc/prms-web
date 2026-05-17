@@ -216,6 +216,7 @@ export default function AdminPlansPage() {
       </Card>
 
       <PlanDialog
+        key={editingPlan?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         plan={editingPlan}

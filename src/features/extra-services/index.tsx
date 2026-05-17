@@ -263,6 +263,7 @@ export default function ExtraServicesPage() {
       </Card>
 
       <ExtraServiceDialog
+        key={editingService?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         extraService={editingService}

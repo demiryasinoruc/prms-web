@@ -276,6 +276,7 @@ export default function InventoryPage() {
       </Card>
 
       <InventoryDialog
+        key={editingInventory?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         inventory={editingInventory}

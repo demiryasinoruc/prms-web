@@ -225,6 +225,7 @@ export default function CalendarPage() {
       </Card>
 
       <EventDialog
+        key={editingEvent?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         event={editingEvent}

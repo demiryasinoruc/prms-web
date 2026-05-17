@@ -202,6 +202,7 @@ export default function EmployeesPage() {
       </Card>
 
       <EmployeeDialog
+        key={editingEmployee?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         employee={editingEmployee}

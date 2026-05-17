@@ -168,6 +168,7 @@ export default function CertificatesPage() {
       </Card>
 
       <CertificateDialog
+        key={editingCertificate?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         certificate={editingCertificate}

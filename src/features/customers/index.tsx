@@ -206,6 +206,7 @@ export default function CustomersPage() {
       </Card>
 
       <CustomerDialog
+        key={editingCustomer?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         customer={editingCustomer}

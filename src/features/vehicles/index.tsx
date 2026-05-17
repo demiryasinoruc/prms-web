@@ -266,6 +266,7 @@ export default function VehiclesPage() {
       </Card>
 
       <VehicleDialog
+        key={editingVehicle?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         vehicle={editingVehicle}

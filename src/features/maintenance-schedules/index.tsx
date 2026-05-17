@@ -239,6 +239,7 @@ export default function MaintenanceSchedulesPage() {
       </Card>
 
       <MaintenanceScheduleDialog
+        key={editingSchedule?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         schedule={editingSchedule}

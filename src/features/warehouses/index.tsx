@@ -163,6 +163,7 @@ export default function WarehousesPage() {
       </Card>
 
       <WarehouseDialog
+        key={editingWarehouse?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         warehouse={editingWarehouse}

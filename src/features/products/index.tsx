@@ -221,6 +221,7 @@ export default function ProductsPage() {
       </Card>
 
       <ProductDialog
+        key={editingProduct?.id ?? "new"}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         product={editingProduct}
