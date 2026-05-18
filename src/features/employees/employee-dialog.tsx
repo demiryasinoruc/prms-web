@@ -20,14 +20,14 @@ import { useCreateEmployee, useUpdateEmployee, useEmployeeForEdit } from "./hook
 import { Gender, type Employee } from "@/types/api"
 
 const employeeSchema = z.object({
-  name: z.string().min(1, "Ad zorunlu"),
-  surname: z.string().min(1, "Soyad zorunlu"),
+  name: z.string().min(1, "Ad zorunludur").max(200, "Ad en fazla 200 karakter olabilir"),
+  surname: z.string().min(1, "Soyad zorunludur").max(200, "Soyad en fazla 200 karakter olabilir"),
   gender: z.number(),
   birthDate: z.string().optional(),
-  email: z.string().email("Geçerli bir e-posta giriniz").optional().or(z.literal("")),
-  phone: z.string().optional().default(""),
+  email: z.string().min(1, "E-posta adresi zorunludur").email("Geçerli bir e-posta adresi giriniz").max(256, "E-posta en fazla 256 karakter olabilir"),
+  phone: z.string().min(1, "İletişim numarası zorunludur").max(20, "İletişim numarası en fazla 20 karakter olabilir"),
   isActive: z.boolean().optional().default(true),
-  notes: z.string().optional().default(""),
+  notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").optional().default(""),
 })
 
 type EmployeeFormData = z.infer<typeof employeeSchema>

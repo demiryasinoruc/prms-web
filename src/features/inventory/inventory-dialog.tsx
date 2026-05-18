@@ -39,13 +39,13 @@ const inventorySchema = z.object({
   productVariantId: z.string().nullable().optional(),
   warehouseId: z.string().min(1, "Depo seçiniz"),
   status: z.number().min(1, "Durum seçiniz"),
-  serialNumber: z.string().default(""),
-  quantity: z.number().min(0, "Miktar 0 veya üzeri olmalı"),
+  serialNumber: z.string().min(1, "Seri numarası zorunludur").max(200, "Seri numarası en fazla 200 karakter olabilir"),
+  quantity: z.number().gt(0, "Miktar 0'dan büyük olmalıdır"),
   currentUnitValue: z.number().min(0, "Birim değer 0 veya üzeri olmalı"),
   currentLifespan: z.number().nullable().optional(),
   lastMaintenanceDate: z.string().nullable().optional(),
   expiryDate: z.string().nullable().optional(),
-  notes: z.string().default(""),
+  notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").default(""),
   isActive: z.boolean().default(true),
 })
 

@@ -16,8 +16,8 @@ import { useCreateCertificate, useUpdateCertificate } from "./hooks"
 import type { Certificate } from "./api"
 
 const certificateSchema = z.object({
-  name: z.string().min(1, "Sertifika adı zorunlu"),
-  description: z.string().min(1, "Açıklama zorunlu"),
+  name: z.string().min(1, "Sertifika adı zorunludur").max(200, "Sertifika adı en fazla 200 karakter olabilir"),
+  description: z.string().min(1, "Açıklama zorunlu").max(1000, "Açıklama en fazla 1000 karakter olabilir"),
   isActive: z.boolean(),
 })
 

@@ -35,8 +35,8 @@ import { ServiceType, ServiceTypeLabels } from "./api"
 import { useCompanySettings } from "@/features/settings/hooks"
 
 const extraServiceSchema = z.object({
-  name: z.string().min(1, "Hizmet adı zorunlu"),
-  description: z.string().min(1, "Açıklama zorunlu"),
+  name: z.string().min(1, "Hizmet adı zorunludur").max(200, "Hizmet adı en fazla 200 karakter olabilir"),
+  description: z.string().min(1, "Açıklama zorunlu").max(1000, "Açıklama en fazla 1000 karakter olabilir"),
   price: z.number().gt(0, "Fiyat 0'dan büyük olmalıdır"),
   pricePeriodId: z.string().min(1, "Fiyat periyodu seçiniz"),
   currencyId: z.string().min(1, "Para birimi seçiniz"),
@@ -45,7 +45,7 @@ const extraServiceSchema = z.object({
   serviceType: z.nativeEnum(ServiceType).default(ServiceType.Other),
   requiresVehicle: z.boolean().default(false),
   isActive: z.boolean(),
-  notes: z.string().nullable(),
+  notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").nullable(),
 })
 
 type ExtraServiceFormData = {

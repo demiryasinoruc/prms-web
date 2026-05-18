@@ -35,14 +35,22 @@ import {
 } from "./api"
 
 const eventSchema = z.object({
-  title: z.string().min(1, "Başlık zorunludur"),
-  description: z.string(),
+  title: z.string().min(1, "Başlık zorunludur").max(200, "Başlık en fazla 200 karakter olabilir"),
+  description: z.string().max(1000, "Açıklama en fazla 1000 karakter olabilir"),
   type: z.number().min(1, "Tür seçiniz"),
   startDate: z.string().min(1, "Başlangıç tarihi zorunludur"),
   endDate: z.string().min(1, "Bitiş tarihi zorunludur"),
   isAllDay: z.boolean(),
-  color: z.string(),
+  color: z.string().max(50, "Renk kodu en fazla 50 karakter olabilir"),
   isActive: z.boolean(),
+}).superRefine((data, ctx) => {
+  if (data.startDate && data.endDate && data.endDate <= data.startDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endDate"],
+      message: "Bitiş tarihi başlangıç tarihinden sonra olmalıdır",
+    })
+  }
 })
 
 type EventFormData = {

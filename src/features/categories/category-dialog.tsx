@@ -23,7 +23,7 @@ import { useCreateCategory, useUpdateCategory, useCategoryForEdit, useCategorySe
 import type { Category } from "./api"
 
 const categorySchema = z.object({
-  name: z.string().min(1, "Kategori adı zorunlu"),
+  name: z.string().min(1, "Kategori adı zorunludur").max(50, "Kategori adı en fazla 50 karakter olabilir"),
   parentId: z.string().nullable().optional(),
 })
 

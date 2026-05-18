@@ -42,14 +42,14 @@ const addressSchema = z.object({
 })
 
 const customerSchema = z.object({
-  name: z.string().min(2, "Müşteri adı en az 2 karakter olmalı"),
+  name: z.string().min(2, "Müşteri adı en az 2 karakter olmalı").max(200, "Müşteri adı en fazla 200 karakter olabilir"),
   customerType: z.number(),
-  identityNumber: z.string().optional().default(""),
-  taxNumber: z.string().optional().default(""),
-  taxOffice: z.string().optional().default(""),
-  phone: z.string().optional().default(""),
-  email: z.string().email("Geçerli bir e-posta giriniz").optional().or(z.literal("")).default(""),
-  notes: z.string().optional().default(""),
+  identityNumber: z.string().max(50, "Kimlik numarası en fazla 50 karakter olabilir").optional().default(""),
+  taxNumber: z.string().max(50, "Vergi numarası en fazla 50 karakter olabilir").optional().default(""),
+  taxOffice: z.string().max(200, "Vergi dairesi en fazla 200 karakter olabilir").optional().default(""),
+  phone: z.string().min(1, "İletişim numarası zorunludur").max(20, "İletişim numarası en fazla 20 karakter olabilir"),
+  email: z.string().min(1, "E-posta adresi zorunludur").email("Geçerli bir e-posta adresi giriniz").max(256, "E-posta en fazla 256 karakter olabilir"),
+  notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").optional().default(""),
   isActive: z.boolean().default(true),
   addresses: z.array(addressSchema),
 })

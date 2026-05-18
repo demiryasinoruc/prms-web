@@ -44,9 +44,9 @@ import { ProductVariantManager } from "./product-variant-manager"
 
 const productSchema = z.object({
   type: z.number(),
-  name: z.string().min(1, "Ürün adı zorunlu"),
-  description: z.string().optional().default(""),
-  productCode: z.string().min(1, "Ürün kodu zorunlu"),
+  name: z.string().min(1, "Ürün adı zorunludur").max(200, "Ürün adı en fazla 200 karakter olabilir"),
+  description: z.string().max(1000, "Açıklama en fazla 1000 karakter olabilir").optional().default(""),
+  productCode: z.string().min(1, "Ürün kodu zorunludur").max(100, "Ürün kodu en fazla 100 karakter olabilir"),
   minimumStockLevel: z.number().min(0, "Minimum stok 0 veya üzeri olmalı"),
   basePrice: z.number().gt(0, "Taban fiyat 0'dan büyük olmalıdır"),
   pricePeriodId: z.number().min(1, "Fiyat periyodu seçiniz"),
@@ -57,7 +57,7 @@ const productSchema = z.object({
   unitTypeId: z.number().min(1, "Birim tipi seçiniz"),
   trackExpiryDate: z.boolean().default(false),
   isActive: z.boolean().default(true),
-  notes: z.string().optional().default(""),
+  notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").optional().default(""),
 }).refine(
   (data) => {
     // Ömür birim tipi seçilmişse, toplam ömür zorunlu ve > 0 olmalı
