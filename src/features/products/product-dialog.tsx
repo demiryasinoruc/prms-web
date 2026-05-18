@@ -201,8 +201,9 @@ export function ProductDialog({
     values: open ? formValues : defaultValues,
   })
 
-  // Sekme bazlı navigasyon — submit hatası başka tab'da ise oraya geç
+  // Sekme bazlı navigasyon — tab sırasına göre ilk hatalı sekmeye geç
   const [activeTab, setActiveTab] = useState("general")
+  const tabsOrder = ["general", "pricing", "attributes", "variants"]
   const fieldToTab: Record<string, string> = {
     type: "general",
     name: "general",
@@ -221,10 +222,11 @@ export function ProductDialog({
     lifespanUnitTypeId: "pricing",
   }
   const onInvalid = (formErrors: typeof errors) => {
-    for (const key of Object.keys(formErrors)) {
-      const tab = fieldToTab[key]
-      if (tab && tab !== activeTab) {
-        setActiveTab(tab)
+    const errorKeys = Object.keys(formErrors)
+    for (const tab of tabsOrder) {
+      const hasErrorInTab = errorKeys.some((key) => fieldToTab[key] === tab)
+      if (hasErrorInTab) {
+        if (tab !== activeTab) setActiveTab(tab)
         return
       }
     }
