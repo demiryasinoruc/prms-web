@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/shared/date-picker"
 import {
   Select,
   SelectContent,
@@ -229,7 +230,17 @@ export function EventDialog({ open, onOpenChange, event }: EventDialogProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Başlangıç Tarihi *</Label>
-                <Input type="date" {...register("startDate")} />
+                <Controller
+                  control={control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Başlangıç tarihi seçiniz"
+                    />
+                  )}
+                />
                 {errors.startDate && (
                   <p className="text-sm text-destructive">{errors.startDate.message}</p>
                 )}
@@ -237,7 +248,21 @@ export function EventDialog({ open, onOpenChange, event }: EventDialogProps) {
 
               <div className="space-y-2">
                 <Label>Bitiş Tarihi *</Label>
-                <Input type="date" {...register("endDate")} />
+                <Controller
+                  control={control}
+                  name="endDate"
+                  render={({ field }) => {
+                    const startValue = (control._formValues as { startDate?: string })?.startDate
+                    return (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Bitiş tarihi seçiniz"
+                        minDate={startValue}
+                      />
+                    )
+                  }}
+                />
                 {errors.endDate && (
                   <p className="text-sm text-destructive">{errors.endDate.message}</p>
                 )}

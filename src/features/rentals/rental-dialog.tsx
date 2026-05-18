@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/shared/date-picker"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -1423,7 +1424,17 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
                 <div className="space-y-2">
                   <Label>Başlangıç Tarihi *</Label>
-                  <Input type="date" {...register("plannedStartDate")} />
+                  <Controller
+                    control={control}
+                    name="plannedStartDate"
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Başlangıç tarihi seçiniz"
+                      />
+                    )}
+                  />
                   {errors.plannedStartDate && (
                     <p className="text-sm text-destructive">{errors.plannedStartDate.message}</p>
                   )}
@@ -1431,7 +1442,18 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
                 <div className="space-y-2">
                   <Label>Bitiş Tarihi *</Label>
-                  <Input type="date" {...register("plannedEndDate")} />
+                  <Controller
+                    control={control}
+                    name="plannedEndDate"
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Bitiş tarihi seçiniz"
+                        minDate={watchedPlannedStartDate || undefined}
+                      />
+                    )}
+                  />
                   {errors.plannedEndDate && (
                     <p className="text-sm text-destructive">{errors.plannedEndDate.message}</p>
                   )}

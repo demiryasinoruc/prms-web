@@ -10,9 +10,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
+import { DatePicker } from "@/components/shared/date-picker"
 import { useCreateVehicle, useUpdateVehicle, useVehicleForEdit } from "./hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
 import { VehicleType, VehicleStatus, type Vehicle } from "@/types/api"
@@ -234,17 +236,35 @@ export function VehicleDialog({
               />
             </div>
 
-            <FormField
-              label="Muayene Tarihi"
-              type="date"
-              {...register("inspectionDate")}
-            />
+            <div className="space-y-2">
+              <Label>Muayene Tarihi</Label>
+              <Controller
+                control={control}
+                name="inspectionDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Muayene tarihi seçiniz"
+                  />
+                )}
+              />
+            </div>
 
-            <FormField
-              label="Sigorta Tarihi"
-              type="date"
-              {...register("insuranceDate")}
-            />
+            <div className="space-y-2">
+              <Label>Sigorta Tarihi</Label>
+              <Controller
+                control={control}
+                name="insuranceDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Sigorta tarihi seçiniz"
+                  />
+                )}
+              />
+            </div>
 
             <div className="col-span-2">
               <FormField
