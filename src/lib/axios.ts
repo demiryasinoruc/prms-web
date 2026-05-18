@@ -123,7 +123,7 @@ api.interceptors.response.use(
     // Show success toast for mutating operations
     if (method && ["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
       // Skip toast for certain endpoints (auth, refresh, etc.)
-      const skipToastPatterns = ["/auth/", "/refresh", "/login", "/register", "/profile", "/select", "/get-for"]
+      const skipToastPatterns = ["/auth/", "/refresh", "/login", "/register", "/profile", "/select", "/get-for", "/availability"]
       const shouldSkip = skipToastPatterns.some(pattern => url.toLowerCase().includes(pattern))
 
       if (!shouldSkip) {
