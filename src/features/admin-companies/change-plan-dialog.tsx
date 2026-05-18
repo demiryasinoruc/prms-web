@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { FormField } from "@/components/shared/form-field"
 import { Label } from "@/components/ui/label"
+import { DatePicker } from "@/components/shared/date-picker"
 import {
   Select,
   SelectContent,
@@ -119,19 +120,42 @@ export function ChangePlanDialog({
             )}
           </div>
 
-          <FormField
-            label="Yeni Başlangıç Tarihi *"
-            type="date"
-            {...register("newStartDate")}
-            error={errors.newStartDate?.message}
-          />
+          <div className="space-y-2">
+            <Label>Yeni Başlangıç Tarihi *</Label>
+            <Controller
+              control={control}
+              name="newStartDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Başlangıç tarihi seçiniz"
+                />
+              )}
+            />
+            {errors.newStartDate?.message && (
+              <p className="text-sm text-destructive">{errors.newStartDate.message}</p>
+            )}
+          </div>
 
-          <FormField
-            label="Yeni Bitiş Tarihi *"
-            type="date"
-            {...register("newEndDate")}
-            error={errors.newEndDate?.message}
-          />
+          <div className="space-y-2">
+            <Label>Yeni Bitiş Tarihi *</Label>
+            <Controller
+              control={control}
+              name="newEndDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Bitiş tarihi seçiniz"
+                  minDate={(control._formValues as { newStartDate?: string })?.newStartDate}
+                />
+              )}
+            />
+            {errors.newEndDate?.message && (
+              <p className="text-sm text-destructive">{errors.newEndDate.message}</p>
+            )}
+          </div>
 
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -10,10 +10,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
+import { DatePicker } from "@/components/shared/date-picker"
 import { useCreateEmployee, useUpdateEmployee, useEmployeeForEdit } from "./hooks"
 import { Gender, type Employee } from "@/types/api"
 
@@ -136,11 +138,20 @@ export function EmployeeDialog({
               ]}
             />
 
-            <FormField
-              label="Doğum Tarihi"
-              type="date"
-              {...register("birthDate")}
-            />
+            <div className="space-y-2">
+              <Label>Doğum Tarihi</Label>
+              <Controller
+                control={control}
+                name="birthDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Doğum tarihi seçiniz"
+                  />
+                )}
+              />
+            </div>
 
             <FormField
               label="E-posta"

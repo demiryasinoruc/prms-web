@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
@@ -10,7 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { FormField } from "@/components/shared/form-field"
+import { Label } from "@/components/ui/label"
+import { DatePicker } from "@/components/shared/date-picker"
 import { useExtendSubscription } from "./hooks"
 
 const schema = z.object({
@@ -41,6 +42,7 @@ export function ExtendSubscriptionDialog({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: formResolver<FormData>(schema),
@@ -73,12 +75,23 @@ export function ExtendSubscriptionDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            label="Yeni Bitiş Tarihi *"
-            type="date"
-            {...register("newEndDate")}
-            error={errors.newEndDate?.message}
-          />
+          <div className="space-y-2">
+            <Label>Yeni Bitiş Tarihi *</Label>
+            <Controller
+              control={control}
+              name="newEndDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Yeni bitiş tarihi seçiniz"
+                />
+              )}
+            />
+            {errors.newEndDate?.message && (
+              <p className="text-sm text-destructive">{errors.newEndDate.message}</p>
+            )}
+          </div>
 
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
+import { DatePicker } from "@/components/shared/date-picker"
 import {
   Select,
   SelectContent,
@@ -343,23 +344,50 @@ export function MaintenanceRecordDialog({
 
           {/* Dates */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <FormField
-              label="Planlanan Tarih"
-              type="date"
-              {...register("scheduledDate")}
-            />
+            <div className="space-y-2">
+              <Label>Planlanan Tarih</Label>
+              <Controller
+                control={control}
+                name="scheduledDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Planlanan tarih"
+                  />
+                )}
+              />
+            </div>
 
-            <FormField
-              label="Başlangıç Tarihi"
-              type="date"
-              {...register("startDate")}
-            />
+            <div className="space-y-2">
+              <Label>Başlangıç Tarihi</Label>
+              <Controller
+                control={control}
+                name="startDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Başlangıç tarihi"
+                  />
+                )}
+              />
+            </div>
 
-            <FormField
-              label="Tamamlanma Tarihi"
-              type="date"
-              {...register("completedDate")}
-            />
+            <div className="space-y-2">
+              <Label>Tamamlanma Tarihi</Label>
+              <Controller
+                control={control}
+                name="completedDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Tamamlanma tarihi"
+                  />
+                )}
+              />
+            </div>
           </div>
 
           {/* Performer */}
@@ -472,11 +500,20 @@ export function MaintenanceRecordDialog({
           {/* Next Schedule */}
           {status === MaintenanceStatus.Completed && (
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                label="Sonraki Bakım Tarihi"
-                type="date"
-                {...register("nextScheduledDate")}
-              />
+              <div className="space-y-2">
+                <Label>Sonraki Bakım Tarihi</Label>
+                <Controller
+                  control={control}
+                  name="nextScheduledDate"
+                  render={({ field }) => (
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Sonraki bakım tarihi"
+                    />
+                  )}
+                />
+              </div>
 
               {hasLifespanTracking && (
                 <FormField

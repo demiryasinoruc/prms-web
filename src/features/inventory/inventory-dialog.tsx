@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
+import { DatePicker } from "@/components/shared/date-picker"
 import { Badge } from "@/components/ui/badge"
 import { useCreateInventory, useUpdateInventory } from "./hooks"
 import { InventoryStatus, InventoryStatusLabels, type Inventory } from "./api"
@@ -417,21 +418,41 @@ export function InventoryDialog({
                 )}
               </div>
 
-              <FormField
-                label="Son Bakım Tarihi"
-                type="date"
-                {...register("lastMaintenanceDate")}
-              />
+              <div className="space-y-2">
+                <Label>Son Bakım Tarihi</Label>
+                <Controller
+                  control={control}
+                  name="lastMaintenanceDate"
+                  render={({ field }) => (
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Son bakım tarihi seçiniz"
+                    />
+                  )}
+                />
+              </div>
             </div>
           )}
 
           {showExpiryDate && (
-            <FormField
-              label="Son Kullanma Tarihi *"
-              type="date"
-              {...register("expiryDate")}
-              error={errors.expiryDate?.message}
-            />
+            <div className="space-y-2">
+              <Label>Son Kullanma Tarihi *</Label>
+              <Controller
+                control={control}
+                name="expiryDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Son kullanma tarihi seçiniz"
+                  />
+                )}
+              />
+              {errors.expiryDate?.message && (
+                <p className="text-sm text-destructive">{errors.expiryDate.message}</p>
+              )}
+            </div>
           )}
 
           <FormField
