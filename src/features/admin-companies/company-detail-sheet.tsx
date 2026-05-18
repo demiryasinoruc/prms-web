@@ -20,6 +20,7 @@ import { useSubscriptionHistory } from "./hooks"
 import { ExtendSubscriptionDialog } from "./extend-subscription-dialog"
 import { ChangePlanDialog } from "./change-plan-dialog"
 import { CreateSubscriptionDialog } from "./create-subscription-dialog"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import type { AdminCompanyListItem } from "./api"
 
 interface CompanyDetailSheetProps {
@@ -46,6 +47,9 @@ export function CompanyDetailSheet({
   const [extendOpen, setExtendOpen] = useState(false)
   const [changePlanOpen, setChangePlanOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const extendKey = useDialogResetKey(extendOpen)
+  const changePlanKey = useDialogResetKey(changePlanOpen)
+  const createKey = useDialogResetKey(createOpen)
 
   return (
     <>
@@ -166,6 +170,7 @@ export function CompanyDetailSheet({
       {company && (
         <>
           <ExtendSubscriptionDialog
+            key={extendKey}
             open={extendOpen}
             onOpenChange={setExtendOpen}
             companyId={company.id}
@@ -173,12 +178,14 @@ export function CompanyDetailSheet({
             currentEndDate={company.activeSubscription?.endDate ?? null}
           />
           <ChangePlanDialog
+            key={changePlanKey}
             open={changePlanOpen}
             onOpenChange={setChangePlanOpen}
             companyId={company.id}
             companyName={company.name}
           />
           <CreateSubscriptionDialog
+            key={createKey}
             open={createOpen}
             onOpenChange={setCreateOpen}
             companyId={company.id}

@@ -31,6 +31,7 @@ import { useRoleSelect } from "@/features/roles/hooks"
 import { UserDialog } from "./user-dialog"
 import type { User as UserType } from "./api"
 import { usePermission } from "@/hooks/use-permission"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { Permissions } from "@/lib/permissions"
 
 export default function UsersPage() {
@@ -46,6 +47,7 @@ export default function UsersPage() {
   })
 
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const dialogKey = useDialogResetKey(!!editingUserId)
 
   const { data: roles } = useRoleSelect()
 
@@ -200,6 +202,7 @@ export default function UsersPage() {
       </Card>
 
       <UserDialog
+        key={dialogKey}
         open={!!editingUserId}
         onOpenChange={handleDialogClose}
         userId={editingUserId}

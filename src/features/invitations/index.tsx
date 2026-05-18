@@ -25,6 +25,7 @@ import { useInvitations, useRevokeInvitation } from "./hooks"
 import { InvitationDialog } from "./invitation-dialog"
 import { InvitationStatus, type Invitation } from "./api"
 import { usePermission } from "@/hooks/use-permission"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { Permissions } from "@/lib/permissions"
 import { confirm } from "@/lib/confirm"
 import { toast } from "sonner"
@@ -49,6 +50,7 @@ export default function InvitationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("pending")
 
   const [dialogOpen, setDialogOpen] = useState(false)
+  const dialogKey = useDialogResetKey(dialogOpen)
 
   const canManage = usePermission(Permissions.User.Manage)
 
@@ -232,6 +234,7 @@ export default function InvitationsPage() {
       </Card>
 
       <InvitationDialog
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={(open) => {
           if (!open) setDialogOpen(false)

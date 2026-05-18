@@ -38,6 +38,7 @@ import {
 } from "./api"
 import { DeliveryType } from "@/features/company/api"
 import { usePermission } from "@/hooks/use-permission"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { Permissions } from "@/lib/permissions"
 
 export default function RentalsPage() {
@@ -57,6 +58,7 @@ export default function RentalsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
+  const dialogKey = useDialogResetKey(dialogOpen)
   const [detailRentalId, setDetailRentalId] = useState<string | null>(null)
 
   const { data, isLoading } = useRentals({
@@ -337,6 +339,7 @@ export default function RentalsPage() {
       </Card>
 
       <RentalDialog
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open)

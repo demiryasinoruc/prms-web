@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { useDebounce } from "@/hooks/use-debounce"
 import { CategoryFilterSelect } from "@/components/shared/category-filter-select"
 import { confirmDelete } from "@/lib/confirm"
+import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { useCategoryAttributes, useDeleteCategoryAttribute } from "./hooks"
 import { CategoryAttributeDialog } from "./category-attribute-dialog"
 import type { CategoryAttribute } from "./api"
@@ -42,6 +43,7 @@ export default function CategoryAttributesPage() {
   const debouncedSearch = useDebounce(searchTerm, 300)
 
   const [dialogOpen, setDialogOpen] = useState(false)
+  const dialogKey = useDialogResetKey(dialogOpen)
   const [editAttribute, setEditAttribute] = useState<CategoryAttribute | null>(
     null
   )
@@ -293,6 +295,7 @@ export default function CategoryAttributesPage() {
       </Card>
 
       <CategoryAttributeDialog
+        key={dialogKey}
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open)
