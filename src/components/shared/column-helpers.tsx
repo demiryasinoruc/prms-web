@@ -2,8 +2,10 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { confirmDelete } from "@/lib/confirm"
 
+// Sil onayı axios interceptor'unda merkezi olarak yönetiliyor (DELETE istekleri
+// için confirmDelete otomatik açılır + URL'den entity adı çıkarılır). Burada
+// ek bir confirm açmak duplicate modal yaratır; sadece onDelete'i çağırıyoruz.
 interface ActionButtonsOptions<T> {
   onEdit?: (row: T) => void
   onDelete?: (id: string) => Promise<unknown>
@@ -16,12 +18,6 @@ interface ActionButtonsOptions<T> {
 export function createActionButtonsColumn<T>(
   options: ActionButtonsOptions<T>
 ): ColumnDef<T> {
-  const handleDelete = async (id: string) => {
-    const confirmed = await confirmDelete(options.entityName || null)
-    if (!confirmed) return
-    await options.onDelete!(id)
-  }
-
   return {
     id: "actions",
     enableSorting: false,
@@ -44,7 +40,7 @@ export function createActionButtonsColumn<T>(
             size="icon"
             className="h-8 w-8 text-destructive hover:text-destructive"
             title="Sil"
-            onClick={() => handleDelete(options.getId(row.original))}
+            onClick={() => options.onDelete!(options.getId(row.original))}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

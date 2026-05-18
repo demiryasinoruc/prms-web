@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { confirmDelete } from "@/lib/confirm"
 import {
   ProductRuleType,
   ProductRuleTypeLabels,
@@ -234,11 +233,7 @@ export default function ProductRulesPage() {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
                           title="Sil"
-                          onClick={async () => {
-                            const confirmed = await confirmDelete("Ürün Kuralı")
-                            if (!confirmed) return
-                            await deleteRule.mutateAsync(rule.id)
-                          }}
+                          onClick={() => deleteRule.mutateAsync(rule.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

@@ -22,7 +22,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useDebounce } from "@/hooks/use-debounce"
 import { CategoryFilterSelect } from "@/components/shared/category-filter-select"
-import { confirmDelete } from "@/lib/confirm"
 import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 import { useCategoryAttributes, useDeleteCategoryAttribute } from "./hooks"
 import { CategoryAttributeDialog } from "./category-attribute-dialog"
@@ -245,11 +244,7 @@ export default function CategoryAttributesPage() {
                             size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive"
                             title="Sil"
-                            onClick={async () => {
-                              const confirmed = await confirmDelete("Kategori Özelliği")
-                              if (!confirmed) return
-                              await deleteMutation.mutateAsync(attr.id)
-                            }}
+                            onClick={() => deleteMutation.mutateAsync(attr.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
