@@ -1327,7 +1327,11 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Kiralama Düzenle" : "Yeni Kiralama"}</DialogTitle>
           <DialogDescription>Kiralama bilgilerini girin</DialogDescription>
