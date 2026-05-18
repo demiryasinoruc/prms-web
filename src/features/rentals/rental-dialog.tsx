@@ -123,14 +123,43 @@ const rentalSchema = z.object({
   deliveryVehicleId: z.string().nullable().optional(),
   deliveryEmployeeId: z.string().nullable().optional(),
   currencyId: z.number().nullable().optional(),
-  exchangeRate: z.number().gt(0, "Döviz kuru 0'dan büyük olmalıdır").default(1),
+  exchangeRate: z.number().gt(0, "Döviz kuru 0'dan büyük olmalıdır").lte(999999, "Döviz kuru geçerli bir aralıkta olmalıdır").default(1),
   discountType: z.nativeEnum(DiscountType).default(DiscountType.Percent),
-  discountValue: z.number().default(0),
-  depositAmount: z.number().default(0),
-  notes: z.string().default(""),
+  discountValue: z.number().min(0, "İndirim değeri 0 veya daha büyük olmalıdır").default(0),
+  depositAmount: z.number().min(0, "Depozito tutarı 0 veya daha büyük olmalıdır").default(0),
+  notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").default(""),
   items: z.array(rentalItemSchema).default([]),
   services: z.array(rentalServiceSchema).default([]),
 }).superRefine((data, ctx) => {
+  // Backend RentalCreateValidator ile birebir aynı kontroller:
+
+  // PlannedEndDate > PlannedStartDate
+  if (data.plannedStartDate && data.plannedEndDate && data.plannedEndDate <= data.plannedStartDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["plannedEndDate"],
+      message: "Bitiş tarihi başlangıç tarihinden sonra olmalıdır",
+    })
+  }
+
+  // Items en az 1 zorunlu (en az bir kiralama kalemi)
+  if (data.items.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["items"],
+      message: "En az bir kiralama kalemi eklenmelidir",
+    })
+  }
+
+  // Yüzde indirimi maksimum 100
+  if (data.discountType === DiscountType.Percent && data.discountValue > 100) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountValue"],
+      message: "Yüzde indirimi 100'den büyük olamaz",
+    })
+  }
+
   // Aynı personel veya aynı araç birden fazla hizmete atanmışsa ve
   // zaman aralıkları çakışıyorsa Zod hatası ekle (submit'i engeller).
   const services = data.services ?? []
