@@ -17,9 +17,9 @@ import { useCreateWarehouse, useUpdateWarehouse, useWarehouseForEdit } from "./h
 import type { Warehouse } from "@/types/api"
 
 const warehouseSchema = z.object({
-  name: z.string().min(1, "Depo adı zorunlu"),
-  address: z.string().optional().default(""),
-  contactInfo: z.string().optional().default(""),
+  name: z.string().min(1, "Depo adı zorunludur").max(200, "Depo adı en fazla 200 karakter olabilir"),
+  address: z.string().min(1, "Adres zorunludur").max(500, "Adres en fazla 500 karakter olabilir"),
+  contactInfo: z.string().max(500, "İletişim bilgisi en fazla 500 karakter olabilir").optional().default(""),
   isActive: z.boolean().default(true),
 })
 
