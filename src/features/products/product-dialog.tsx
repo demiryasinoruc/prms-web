@@ -3,6 +3,7 @@ import { useForm, Controller } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2, HelpCircle, Package, Layers, Droplets, Timer, AlertTriangle, RefreshCw, Tag, Calculator, Users, FolderTree, Boxes, Ruler, SquareStack } from "lucide-react"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -341,6 +342,21 @@ export function ProductDialog({
   }
 
   const onSubmit = async (data: ProductFormData) => {
+    // Kategorinin zorunlu özellikleri client-side kontrol (backend
+    // ProductCreateCommandHandler ile birebir aynı kural).
+    const missingRequired = (categoryAttributes ?? []).filter((attr) => {
+      if (!attr.isRequired) return false
+      const value = attributeValues.find((v) => v.categoryAttributeId === attr.id)
+      const stringValue = value?.stringValue
+      return !stringValue || stringValue.trim() === ""
+    })
+    if (missingRequired.length > 0) {
+      setActiveTab("attributes")
+      const names = missingRequired.map((a) => `'${a.displayName}'`).join(", ")
+      toast.error(`${names} alanı zorunludur.`)
+      return
+    }
+
     try {
       if (product) {
         await updateProduct.mutateAsync({
