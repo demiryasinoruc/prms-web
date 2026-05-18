@@ -1,11 +1,14 @@
 import { useState } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
+import { Link } from "react-router-dom"
 import {
   Search,
   Pencil,
   User,
   Shield,
+  MailPlus,
+  ArrowRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -139,6 +142,25 @@ export default function UsersPage() {
         title="Kullanıcılar"
         description="Şirket kullanıcılarını yönetin"
       />
+
+      <div className="flex items-start gap-3 rounded-md border border-primary/20 bg-primary/5 p-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <MailPlus className="h-4 w-4" />
+        </div>
+        <div className="flex-1 space-y-1">
+          <p className="text-sm font-medium">Yeni kullanıcı eklemek mi istiyorsunuz?</p>
+          <p className="text-sm text-muted-foreground">
+            Bu sayfadan yeni kullanıcı oluşturulamaz. Kullanıcılar yalnızca e-posta daveti
+            kabul ettiğinde sisteme katılır. Davet göndermek için Davetler sayfasını kullanın.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="shrink-0">
+          <Link to="/settings/invitations">
+            Davetler
+            <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          </Link>
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
