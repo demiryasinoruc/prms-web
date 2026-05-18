@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
@@ -133,6 +134,30 @@ export function CustomerDialog({
     values: open ? formValues : defaultValues,
   })
 
+  // Sekme bazlı navigasyon — submit hatası başka tab'da ise oraya geç
+  const [activeTab, setActiveTab] = useState("info")
+  const fieldToTab: Record<string, string> = {
+    name: "info",
+    customerType: "info",
+    identityNumber: "info",
+    taxNumber: "info",
+    taxOffice: "info",
+    phone: "info",
+    email: "info",
+    notes: "info",
+    isActive: "info",
+    addresses: "addresses",
+  }
+  const onInvalid = (formErrors: typeof errors) => {
+    for (const key of Object.keys(formErrors)) {
+      const tab = fieldToTab[key]
+      if (tab && tab !== activeTab) {
+        setActiveTab(tab)
+        return
+      }
+    }
+  }
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "addresses",
@@ -184,8 +209,8 @@ export function CustomerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Tabs defaultValue="info" className="w-full">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="info">Genel Bilgiler</TabsTrigger>
               <TabsTrigger value="addresses">

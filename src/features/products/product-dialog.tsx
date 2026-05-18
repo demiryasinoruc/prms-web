@@ -201,6 +201,35 @@ export function ProductDialog({
     values: open ? formValues : defaultValues,
   })
 
+  // Sekme bazlı navigasyon — submit hatası başka tab'da ise oraya geç
+  const [activeTab, setActiveTab] = useState("general")
+  const fieldToTab: Record<string, string> = {
+    type: "general",
+    name: "general",
+    description: "general",
+    productCode: "general",
+    categoryId: "general",
+    unitTypeId: "general",
+    trackExpiryDate: "general",
+    isActive: "general",
+    notes: "general",
+    minimumStockLevel: "pricing",
+    basePrice: "pricing",
+    pricePeriodId: "pricing",
+    currencyId: "pricing",
+    totalLifespan: "pricing",
+    lifespanUnitTypeId: "pricing",
+  }
+  const onInvalid = (formErrors: typeof errors) => {
+    for (const key of Object.keys(formErrors)) {
+      const tab = fieldToTab[key]
+      if (tab && tab !== activeTab) {
+        setActiveTab(tab)
+        return
+      }
+    }
+  }
+
   const productType = watch("type")
   const watchedLifespanUnitTypeId = watch("lifespanUnitTypeId")
   const watchedCategoryId = watch("categoryId")
@@ -356,8 +385,8 @@ export function ProductDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Tabs defaultValue="general" className="w-full">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className={`grid w-full ${
               product && hasVariantAttributes
                 ? (categoryAttributes && categoryAttributes.length > 0 ? "grid-cols-4" : "grid-cols-3")

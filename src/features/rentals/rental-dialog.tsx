@@ -446,6 +446,36 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     values: open ? formValues : defaultValues,
   })
 
+  // Sekme bazlı navigasyon — submit hatası başka tab'da ise oraya geç
+  const [activeTab, setActiveTab] = useState("general")
+  const fieldToTab: Record<string, string> = {
+    customerId: "general",
+    plannedStartDate: "general",
+    plannedEndDate: "general",
+    currencyId: "general",
+    exchangeRate: "general",
+    discountType: "general",
+    discountValue: "general",
+    depositAmount: "general",
+    notes: "general",
+    deliveryType: "delivery",
+    deliveryAddressId: "delivery",
+    sourceWarehouseId: "delivery",
+    deliveryVehicleId: "delivery",
+    deliveryEmployeeId: "delivery",
+    items: "items",
+    services: "services",
+  }
+  const onInvalid = (formErrors: typeof errors) => {
+    for (const key of Object.keys(formErrors)) {
+      const tab = fieldToTab[key]
+      if (tab && tab !== activeTab) {
+        setActiveTab(tab)
+        return
+      }
+    }
+  }
+
   const {
     fields: itemFields,
     append: appendItem,
@@ -1299,7 +1329,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
           <DialogDescription>Kiralama bilgilerini girin</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
           {availabilityError && (
             <div
               role="alert"
@@ -1311,7 +1341,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
               </span>
             </div>
           )}
-          <Tabs defaultValue="general" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="general">Genel</TabsTrigger>
               <TabsTrigger value="delivery">Teslimat</TabsTrigger>
