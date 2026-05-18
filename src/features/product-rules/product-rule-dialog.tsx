@@ -258,6 +258,7 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
                 name="type"
                 render={({ field }) => (
                   <Select
+                    key={`type-${field.value}`}
                     value={String(field.value)}
                     onValueChange={(value) => field.onChange(Number(value))}
                   >
@@ -284,6 +285,7 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
                 name="behavior"
                 render={({ field }) => (
                   <Select
+                    key={`behavior-${field.value}`}
                     value={String(field.value)}
                     onValueChange={(value) => field.onChange(Number(value))}
                   >

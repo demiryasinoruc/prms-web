@@ -1332,6 +1332,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                     name="currencyId"
                     render={({ field }) => (
                       <Select
+                        key={`currencyId-${field.value}`}
                         value={field.value ? String(field.value) : "none"}
                         onValueChange={(value) => {
                           field.onChange(value === "none" ? null : Number(value))
@@ -1410,6 +1411,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                     name="discountType"
                     render={({ field }) => (
                       <Select
+                        key={`discountType-${field.value}`}
                         value={String(field.value)}
                         onValueChange={(value) => field.onChange(Number(value))}
                       >
@@ -1461,6 +1463,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                       name="deliveryType"
                       render={({ field }) => (
                         <Select
+                          key={`deliveryType-${field.value}`}
                           value={String(field.value)}
                           onValueChange={(value) => field.onChange(Number(value))}
                         >
@@ -1808,6 +1811,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                   name={`items.${index}.pricePeriodId`}
                                   render={({ field }) => (
                                     <Select
+                                      key={`item-pricePeriod-${index}-${field.value}`}
                                       value={field.value ? String(field.value) : "none"}
                                       onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
                                     >
@@ -1885,6 +1889,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                       name={`items.${index}.discountType`}
                                       render={({ field }) => (
                                         <Select
+                                          key={`item-discountType-${index}-${field.value}`}
                                           value={String(field.value)}
                                           onValueChange={(value) => field.onChange(Number(value))}
                                         >
@@ -2452,6 +2457,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                   name={`services.${index}.pricePeriodId`}
                                   render={({ field }) => (
                                     <Select
+                                      key={`service-pricePeriod-${index}-${field.value}`}
                                       value={field.value ? String(field.value) : "none"}
                                       onValueChange={(value) => field.onChange(value === "none" ? null : Number(value))}
                                     >
@@ -2652,6 +2658,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                       name={`services.${index}.discountType`}
                                       render={({ field }) => (
                                         <Select
+                                          key={`service-discountType-${index}-${field.value}`}
                                           value={String(field.value)}
                                           onValueChange={(value) => field.onChange(Number(value))}
                                         >
