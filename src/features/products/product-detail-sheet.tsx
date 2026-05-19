@@ -1,4 +1,4 @@
-import { Package, Pencil, Tag, DollarSign, Calendar, Clock, Boxes } from "lucide-react"
+import { Package, Pencil, Tag, DollarSign, Calendar, Clock, Boxes, Settings2, Check, X } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -16,6 +16,8 @@ import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { useInventoryStatsByProduct } from "@/features/inventory/hooks"
 import { InventoryStatus, InventoryStatusLabels } from "@/features/inventory/api"
+import { AttributeDataType } from "@/features/category-attributes/api"
+import type { ProductDetailAttribute } from "./api"
 
 interface ProductDetailSheetProps {
   open: boolean
@@ -33,6 +35,41 @@ export function ProductDetailSheet({
   const canUpdate = usePermission(Permissions.Product.Update)
   const { data: product, isLoading } = useProductDetail(productId)
   const { data: invStats } = useInventoryStatsByProduct(open ? productId : null)
+
+  /**
+   * Kategori özelliği değerini human-readable formata çevirir.
+   * dataType'a göre doğru field'dan okunur ve TR locale ile formatlanır.
+   */
+  const formatAttributeValue = (attr: ProductDetailAttribute): React.ReactNode => {
+    switch (attr.dataType) {
+      case AttributeDataType.String:
+      case AttributeDataType.Select:
+      case AttributeDataType.MultiSelect:
+        return attr.stringValue || <span className="text-muted-foreground">—</span>
+      case AttributeDataType.Integer:
+      case AttributeDataType.Decimal:
+        return attr.numericValue !== null
+          ? attr.numericValue.toLocaleString("tr-TR")
+          : <span className="text-muted-foreground">—</span>
+      case AttributeDataType.Boolean:
+        if (attr.boolValue === null) return <span className="text-muted-foreground">—</span>
+        return attr.boolValue ? (
+          <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400">
+            <Check className="h-3.5 w-3.5" /> Evet
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-muted-foreground">
+            <X className="h-3.5 w-3.5" /> Hayır
+          </span>
+        )
+      case AttributeDataType.Date:
+        return attr.dateValue
+          ? new Date(attr.dateValue).toLocaleDateString("tr-TR")
+          : <span className="text-muted-foreground">—</span>
+      default:
+        return attr.stringValue || <span className="text-muted-foreground">—</span>
+    }
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("tr-TR", {
@@ -110,6 +147,32 @@ export function ProductDetailSheet({
               <p className="text-sm text-muted-foreground">
                 {product.description}
               </p>
+            )}
+
+            {/* Kategori Özellikleri (U9) — sektör bağımsız generic attribute görüntüsü */}
+            {product.attributeValues && product.attributeValues.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    Özellikler
+                    <Badge variant="outline" className="ml-auto">{product.attributeValues.length} alan</Badge>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 rounded-md border bg-muted/20 p-3">
+                    {product.attributeValues.map((attr) => (
+                      <div key={attr.categoryAttributeId} className="flex items-baseline justify-between gap-3 py-1">
+                        <span className="text-sm text-muted-foreground truncate">
+                          {attr.displayName}
+                        </span>
+                        <span className="text-sm font-medium text-right">
+                          {formatAttributeValue(attr)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Envanter Özeti (P2-4) — sadece envanter kaydı varsa göster */}

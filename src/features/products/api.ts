@@ -29,6 +29,18 @@ export interface Product {
   variantCount: number
 }
 
+export interface ProductDetailAttribute {
+  categoryAttributeId: string
+  name: string
+  displayName: string
+  dataType: number
+  displayOrder: number
+  stringValue: string | null
+  numericValue: number | null
+  dateValue: string | null
+  boolValue: boolean | null
+}
+
 export interface ProductDetail {
   id: string
   type: ProductType
@@ -47,6 +59,7 @@ export interface ProductDetail {
   notes: string | null
   createdDate: string
   variantCount: number
+  attributeValues: ProductDetailAttribute[]
 }
 
 export interface ProductAttributeValue {
