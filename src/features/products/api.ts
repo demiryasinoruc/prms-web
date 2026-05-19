@@ -283,6 +283,11 @@ export interface SelectItemInt {
   text: string
 }
 
+export interface PricePeriodSelectItem extends SelectItemInt {
+  hours: number
+  code: string
+}
+
 export const lookupApi = {
   getCategories: async () => {
     const response = await api.get<SelectItem[]>("/category/select")
@@ -295,7 +300,7 @@ export const lookupApi = {
   },
 
   getPricePeriods: async () => {
-    const response = await api.get<SelectItemInt[]>("/priceperiod/select")
+    const response = await api.get<PricePeriodSelectItem[]>("/priceperiod/select")
     return response.data
   },
 

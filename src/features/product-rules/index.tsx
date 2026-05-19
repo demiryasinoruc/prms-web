@@ -80,6 +80,8 @@ export default function ProductRulesPage() {
         return <span className="text-xs">📁</span>
       case ProductRuleType.Ratio:
         return <span className="text-xs">⚖️</span>
+      case ProductRuleType.RequiresService:
+        return <span className="text-xs">🔧</span>
       default:
         return null
     }
@@ -171,6 +173,10 @@ export default function ProductRulesPage() {
                       {rule.type === ProductRuleType.FromGroup ? (
                         <span className="text-muted-foreground">
                           📁 {rule.targetCategoryName}
+                        </span>
+                      ) : rule.type === ProductRuleType.RequiresService ? (
+                        <span className="text-muted-foreground">
+                          🔧 {rule.targetServiceName}
                         </span>
                       ) : (
                         rule.targetProductName

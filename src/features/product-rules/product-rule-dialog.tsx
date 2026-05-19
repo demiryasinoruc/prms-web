@@ -31,6 +31,7 @@ import {
 import { useCreateProductRule, useUpdateProductRule, useProductRuleDetail } from "./hooks"
 import { useProductSelect } from "@/features/products/hooks"
 import { useCategorySelect } from "@/features/categories/hooks"
+import { useExtraServiceSelect } from "@/features/extra-services/hooks"
 
 const productRuleSchema = z.object({
   sourceProductId: z.string().min(1, "Kaynak ürün seçiniz"),
@@ -38,23 +39,37 @@ const productRuleSchema = z.object({
   behavior: z.nativeEnum(ProductRuleBehavior),
   targetProductId: z.string().nullable().optional(),
   targetCategoryId: z.string().nullable().optional(),
+  targetServiceId: z.string().nullable().optional(),
   quantity: z.number().min(0.01, "Miktar en az 0.01 olmalı"),
   description: z.string().nullable().optional(),
   isActive: z.boolean().default(true),
   ruleGroupId: z.string().nullable().optional(),
-}).refine((data) => {
-  // Direct veya Ratio tipinde targetProductId zorunlu
+}).superRefine((data, ctx) => {
   if (data.type === ProductRuleType.Direct || data.type === ProductRuleType.Ratio) {
-    return !!data.targetProductId
+    if (!data.targetProductId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["targetProductId"],
+        message: "Hedef ürün seçiniz",
+      })
+    }
+  } else if (data.type === ProductRuleType.FromGroup) {
+    if (!data.targetCategoryId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["targetCategoryId"],
+        message: "Hedef kategori seçiniz",
+      })
+    }
+  } else if (data.type === ProductRuleType.RequiresService) {
+    if (!data.targetServiceId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["targetServiceId"],
+        message: "Hedef ek hizmet seçiniz",
+      })
+    }
   }
-  // FromGroup tipinde targetCategoryId zorunlu
-  if (data.type === ProductRuleType.FromGroup) {
-    return !!data.targetCategoryId
-  }
-  return true
-}, {
-  message: "Hedef ürün veya kategori seçiniz",
-  path: ["targetProductId"],
 })
 
 type ProductRuleFormData = z.infer<typeof productRuleSchema>
@@ -71,6 +86,7 @@ const defaultValues: ProductRuleFormData = {
   behavior: ProductRuleBehavior.Suggested,
   targetProductId: null,
   targetCategoryId: null,
+  targetServiceId: null,
   quantity: 1,
   description: "",
   isActive: true,
@@ -86,8 +102,9 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
   // Lookup data
   const { data: products, isLoading: isLoadingProducts } = useProductSelect()
   const { data: categories, isLoading: isLoadingCategories } = useCategorySelect()
+  const { data: extraServices, isLoading: isLoadingServices } = useExtraServiceSelect()
 
-  const isLoadingLookups = isLoadingProducts || isLoadingCategories
+  const isLoadingLookups = isLoadingProducts || isLoadingCategories || isLoadingServices
 
   const formValues: ProductRuleFormData = (open && isEditMode && editData) ? {
     sourceProductId: editData.sourceProductId,
@@ -95,6 +112,7 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
     behavior: editData.behavior,
     targetProductId: editData.targetProductId,
     targetCategoryId: editData.targetCategoryId,
+    targetServiceId: editData.targetServiceId,
     quantity: editData.quantity,
     description: editData.description || "",
     isActive: editData.isActive,
@@ -116,12 +134,19 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
   const watchedType = watch("type")
   const watchedSourceProductId = watch("sourceProductId")
 
-  // Tip değiştiğinde hedef alanlarını temizle
+  // Tip değiştiğinde diğer hedef alanlarını temizle
   useEffect(() => {
     if (watchedType === ProductRuleType.FromGroup) {
       setValue("targetProductId", null)
+      setValue("targetServiceId", null)
+    } else if (watchedType === ProductRuleType.RequiresService) {
+      setValue("targetProductId", null)
+      setValue("targetCategoryId", null)
+      // RequiresService için miktar gerekmiyor, sabit 1 olarak gönderilir
+      setValue("quantity", 1)
     } else {
       setValue("targetCategoryId", null)
+      setValue("targetServiceId", null)
     }
   }, [watchedType, setValue])
 
@@ -156,6 +181,7 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
             behavior: data.behavior,
             targetProductId: data.targetProductId,
             targetCategoryId: data.targetCategoryId,
+            targetServiceId: data.targetServiceId,
             quantity: data.quantity,
             description: data.description,
             isActive: data.isActive,
@@ -169,6 +195,7 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
           behavior: data.behavior,
           targetProductId: data.targetProductId,
           targetCategoryId: data.targetCategoryId,
+          targetServiceId: data.targetServiceId,
           quantity: data.quantity,
           description: data.description,
           ruleGroupId: data.ruleGroupId || null,
@@ -340,6 +367,44 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
             </div>
           )}
 
+          {/* Hedef Ek Hizmet (RequiresService için) */}
+          {watchedType === ProductRuleType.RequiresService && (
+            <div className="space-y-2">
+              <Label>Hedef Ek Hizmet *</Label>
+              <Controller
+                control={control}
+                name="targetServiceId"
+                render={({ field }) => (
+                  <Select
+                    key={`target-service-${field.value}`}
+                    value={field.value || "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Ek hizmet seçiniz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" disabled>
+                        Ek hizmet seçiniz
+                      </SelectItem>
+                      {extraServices?.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.targetServiceId && (
+                <p className="text-sm text-destructive">{errors.targetServiceId.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Kaynak ürün kiralandığında bu ek hizmetin de seçilmesi gerekli olacak
+              </p>
+            </div>
+          )}
+
           {/* Hedef Kategori (FromGroup için) */}
           {watchedType === ProductRuleType.FromGroup && (
             <div className="space-y-2">
@@ -378,25 +443,27 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
             </div>
           )}
 
-          {/* Miktar */}
-          <div className="space-y-2">
-            <Label>
-              {watchedType === ProductRuleType.Ratio ? "Oran (Kaynak başına)" : "Miktar"} *
-            </Label>
-            <Input
-              type="number"
-              step="0.01"
-              {...register("quantity", { valueAsNumber: true })}
-            />
-            {errors.quantity && (
-              <p className="text-sm text-destructive">{errors.quantity.message}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              {watchedType === ProductRuleType.Ratio
-                ? "Her 1 kaynak ürün için kaç hedef ürün gerekli"
-                : "Eklenmesi gereken miktar"}
-            </p>
-          </div>
+          {/* Miktar — RequiresService dışındaki tipler için */}
+          {watchedType !== ProductRuleType.RequiresService && (
+            <div className="space-y-2">
+              <Label>
+                {watchedType === ProductRuleType.Ratio ? "Oran (Kaynak başına)" : "Miktar"} *
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                {...register("quantity", { valueAsNumber: true })}
+              />
+              {errors.quantity && (
+                <p className="text-sm text-destructive">{errors.quantity.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {watchedType === ProductRuleType.Ratio
+                  ? "Her 1 kaynak ürün için kaç hedef ürün gerekli"
+                  : "Eklenmesi gereken miktar"}
+              </p>
+            </div>
+          )}
 
           {/* Açıklama */}
           <div className="space-y-2">
@@ -468,13 +535,25 @@ export function ProductRuleDialog({ open, onOpenChange, editId }: ProductRuleDia
           <div className="rounded-lg bg-muted/50 p-3 text-sm">
             <p className="font-medium mb-1">Kural Özeti:</p>
             <p className="text-muted-foreground">
-              {watchedSourceProductId && products?.find(p => p.id === watchedSourceProductId)?.name || "[Kaynak Ürün]"}
+              {(watchedSourceProductId && products?.find(p => p.id === watchedSourceProductId)?.name) || "[Kaynak Ürün]"}
               {" "}eklendiğinde,{" "}
-              {watchedType === ProductRuleType.FromGroup
-                ? `${watch("targetCategoryId") && categories?.find(c => c.id === watch("targetCategoryId"))?.name || "[Kategori]"} kategorisinden`
-                : `${watch("targetProductId") && filteredProducts?.find(p => p.id === watch("targetProductId"))?.name || "[Hedef Ürün]"}`
-              }
-              {" "}{watch("quantity") || 0} adet{" "}
+              {watchedType === ProductRuleType.RequiresService ? (
+                <>
+                  {(watch("targetServiceId") && extraServices?.find(s => s.id === watch("targetServiceId"))?.name) || "[Hizmet]"}
+                  {" "}ek hizmeti{" "}
+                </>
+              ) : watchedType === ProductRuleType.FromGroup ? (
+                <>
+                  {(watch("targetCategoryId") && categories?.find(c => c.id === watch("targetCategoryId"))?.name) || "[Kategori]"}
+                  {" "}kategorisinden{" "}
+                  {watch("quantity") || 0} adet{" "}
+                </>
+              ) : (
+                <>
+                  {(watch("targetProductId") && filteredProducts?.find(p => p.id === watch("targetProductId"))?.name) || "[Hedef Ürün]"}
+                  {" "}{watch("quantity") || 0} adet{" "}
+                </>
+              )}
               {watch("behavior") === ProductRuleBehavior.Required && "zorunlu olarak eklenmeli"}
               {watch("behavior") === ProductRuleBehavior.Suggested && "önerilecek"}
               {watch("behavior") === ProductRuleBehavior.Automatic && "otomatik eklenecek"}

@@ -54,12 +54,22 @@ export function useCreateRental() {
     mutationFn: (data: RentalCreateRequest) => rentalApi.create(data),
     onSuccess: (data) => {
       if (data.warnings?.length) {
-        data.warnings.forEach((w) => {
-          const msg = w.serialNumber
-            ? `${w.productName} (${w.serialNumber}): ${w.rentalNumber} ile çakışıyor (${w.startDate} - ${w.endDate})`
-            : `${w.productName}: ${w.requestedQuantity} talep, ${w.availableQuantity} müsait`
-          toast.warning(msg)
-        })
+        // Çakışma uyarılarını tek persistent toast'a topluyoruz; warn modunda
+        // kullanıcının gözden kaçırmaması kritik. Auto-dismiss yok, kullanıcı
+        // kapatana kadar kalır.
+        const lines = data.warnings.map((w) =>
+          w.serialNumber
+            ? `• ${w.productName} (${w.serialNumber}) — ${w.rentalNumber} ile çakışıyor (${w.startDate} - ${w.endDate})`
+            : `• ${w.productName} — ${w.requestedQuantity} talep, ${w.availableQuantity} müsait`,
+        )
+        toast.warning(
+          `Kiralama oluşturuldu ancak ${data.warnings.length} çakışma tespit edildi`,
+          {
+            description: lines.join("\n"),
+            duration: Infinity,
+            closeButton: true,
+          },
+        )
       }
       queryClient.invalidateQueries({ queryKey: rentalKeys.lists() })
     },
@@ -72,7 +82,22 @@ export function useUpdateRental() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: RentalUpdateRequest }) =>
       rentalApi.update(id, data),
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
+      if (data?.warnings?.length) {
+        const lines = data.warnings.map((w) =>
+          w.serialNumber
+            ? `• ${w.productName} (${w.serialNumber}) — ${w.rentalNumber} ile çakışıyor (${w.startDate} - ${w.endDate})`
+            : `• ${w.productName} — ${w.requestedQuantity} talep, ${w.availableQuantity} müsait`,
+        )
+        toast.warning(
+          `Kiralama güncellendi ancak ${data.warnings.length} çakışma tespit edildi`,
+          {
+            description: lines.join("\n"),
+            duration: Infinity,
+            closeButton: true,
+          },
+        )
+      }
       queryClient.invalidateQueries({ queryKey: rentalKeys.lists() })
       queryClient.invalidateQueries({ queryKey: rentalKeys.detail(variables.id) })
       queryClient.invalidateQueries({ queryKey: rentalKeys.forEdit(variables.id) })

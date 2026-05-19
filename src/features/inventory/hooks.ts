@@ -43,15 +43,66 @@ export function useInventorySelect() {
   })
 }
 
+/**
+ * Bir ürünün envanter durum dağılımı (kaç adet müsait, kirada, bakımda vb).
+ * Product detail kart'ı için kullanılır.
+ */
+export function useInventoryStatsByProduct(productId: string | null) {
+  return useQuery({
+    queryKey: [...inventoryKeys.all, "stats", productId] as const,
+    queryFn: async () => {
+      const result = await inventoryApi.getAll({
+        productId: productId!,
+        pageNumber: 1,
+        pageSize: 500,
+      })
+      const counts: Record<number, number> = {}
+      for (const inv of result.data) {
+        counts[inv.status] = (counts[inv.status] ?? 0) + 1
+      }
+      return {
+        total: result.totalCount,
+        counts,
+      }
+    },
+    enabled: !!productId,
+    staleTime: 30 * 1000,
+  })
+}
+
 export function useInventorySelectByProduct(
   productId: string,
   productVariantId?: string | null,
   warehouseId?: string | null,
+  startDate?: string | null,
+  endDate?: string | null,
+  excludeRentalId?: string | null,
+  includeConflicting?: boolean,
 ) {
   return useQuery({
-    queryKey: [...inventoryKeys.all, "selectByProduct", productId, productVariantId, warehouseId] as const,
-    queryFn: () => inventoryApi.getSelectByProduct(productId, productVariantId || undefined, warehouseId || undefined),
+    queryKey: [
+      ...inventoryKeys.all,
+      "selectByProduct",
+      productId,
+      productVariantId,
+      warehouseId,
+      startDate,
+      endDate,
+      excludeRentalId,
+      includeConflicting,
+    ] as const,
+    queryFn: () =>
+      inventoryApi.getSelectByProduct(
+        productId,
+        productVariantId || undefined,
+        warehouseId || undefined,
+        startDate || undefined,
+        endDate || undefined,
+        excludeRentalId || undefined,
+        includeConflicting,
+      ),
     enabled: !!productId,
+    staleTime: 0,
   })
 }
 

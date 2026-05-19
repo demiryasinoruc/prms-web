@@ -87,7 +87,16 @@ export default function RolesPage() {
       header: "İzinler",
       enableSorting: true,
       cell: ({ row }) => (
-        <Badge variant="secondary" className="gap-1">
+        <Badge
+          variant="secondary"
+          className="gap-1 cursor-pointer hover:bg-secondary/70"
+          title="İzin matrisini görüntülemek ve değiştirmek için Düzenle'ye tıklayın"
+          onClick={() => {
+            if (!canManage) return
+            setEditingRole(row.original)
+            setSheetOpen(true)
+          }}
+        >
           <Shield className="h-3 w-3" />
           {row.original.permissionCount} izin
         </Badge>

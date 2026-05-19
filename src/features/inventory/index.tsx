@@ -85,24 +85,24 @@ export default function InventoryPage() {
     return new Intl.NumberFormat("tr-TR").format(value)
   }
 
-  const getStatusVariant = (status: InventoryStatus) => {
+  const getStatusClasses = (status: InventoryStatus): string => {
     switch (status) {
       case InventoryStatus.Available:
-        return "default"
+        return "bg-green-100 text-green-800 hover:bg-green-100 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
       case InventoryStatus.Rented:
-        return "secondary"
-      case InventoryStatus.Maintenance:
-        return "outline"
-      case InventoryStatus.Broken:
-        return "destructive"
-      case InventoryStatus.Lost:
-        return "destructive"
-      case InventoryStatus.Disposed:
-        return "secondary"
+        return "bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
       case InventoryStatus.Reserved:
-        return "outline"
+        return "bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800"
+      case InventoryStatus.Maintenance:
+        return "bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800"
+      case InventoryStatus.Broken:
+        return "bg-red-100 text-red-800 hover:bg-red-100 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+      case InventoryStatus.Lost:
+        return "bg-rose-100 text-rose-800 hover:bg-rose-100 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800"
+      case InventoryStatus.Disposed:
+        return "bg-zinc-200 text-zinc-700 hover:bg-zinc-200 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
       default:
-        return "default"
+        return "bg-secondary text-secondary-foreground"
     }
   }
 
@@ -144,7 +144,7 @@ export default function InventoryPage() {
       header: "Durum",
       enableSorting: true,
       cell: ({ row }) => (
-        <Badge variant={getStatusVariant(row.original.status)}>
+        <Badge variant="outline" className={getStatusClasses(row.original.status)}>
           {InventoryStatusLabels[row.original.status]}
         </Badge>
       ),

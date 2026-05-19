@@ -1,7 +1,7 @@
 "use client"
 
 import { CalendarIcon } from "lucide-react"
-import { format, parse } from "date-fns"
+import { addDays, format, parse } from "date-fns"
 import { tr } from "date-fns/locale"
 
 import { cn } from "@/lib/utils"
@@ -71,6 +71,36 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
+        <div className="flex flex-wrap gap-1 border-b p-2">
+          {(() => {
+            const today = new Date()
+            const tomorrow = addDays(today, 1)
+            const nextWeek = addDays(today, 7)
+            const isDisabled = (d: Date) => {
+              if (min && d < min) return true
+              if (max && d > max) return true
+              return false
+            }
+            const quicks = [
+              { label: "Bugün", date: today },
+              { label: "Yarın", date: tomorrow },
+              { label: "Haftaya", date: nextWeek },
+            ]
+            return quicks.map((q) => (
+              <Button
+                key={q.label}
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                disabled={isDisabled(q.date)}
+                onClick={() => onChange(dateToIso(q.date))}
+              >
+                {q.label}
+              </Button>
+            ))
+          })()}
+        </div>
         <Calendar
           mode="single"
           selected={selected}

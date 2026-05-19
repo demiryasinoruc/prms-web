@@ -4,12 +4,14 @@ export enum ProductRuleType {
   Direct = 1,
   FromGroup = 2,
   Ratio = 3,
+  RequiresService = 4,
 }
 
 export const ProductRuleTypeLabels: Record<ProductRuleType, string> = {
   [ProductRuleType.Direct]: "Birebir",
   [ProductRuleType.FromGroup]: "Kategoriden",
   [ProductRuleType.Ratio]: "Oransal",
+  [ProductRuleType.RequiresService]: "Ek Hizmet",
 }
 
 export enum ProductRuleBehavior {
@@ -34,6 +36,8 @@ export interface ProductRule {
   targetProductName: string | null
   targetCategoryId: string | null
   targetCategoryName: string | null
+  targetServiceId: string | null
+  targetServiceName: string | null
   quantity: number
   isActive: boolean
   ruleGroupId: string | null
@@ -49,6 +53,8 @@ export interface ProductRuleDetail {
   targetProductName: string | null
   targetCategoryId: string | null
   targetCategoryName: string | null
+  targetServiceId: string | null
+  targetServiceName: string | null
   quantity: number
   description: string | null
   isActive: boolean
@@ -66,6 +72,7 @@ export interface ProductRuleCreateRequest {
   behavior: ProductRuleBehavior
   targetProductId?: string | null
   targetCategoryId?: string | null
+  targetServiceId?: string | null
   quantity: number
   description?: string | null
   ruleGroupId?: string | null
@@ -77,6 +84,7 @@ export interface ProductRuleUpdateRequest {
   behavior: ProductRuleBehavior
   targetProductId?: string | null
   targetCategoryId?: string | null
+  targetServiceId?: string | null
   quantity: number
   description?: string | null
   isActive: boolean
@@ -105,6 +113,7 @@ export const productRuleApi = {
       Behavior: data.behavior,
       TargetProductId: data.targetProductId || null,
       TargetCategoryId: data.targetCategoryId || null,
+      TargetServiceId: data.targetServiceId || null,
       Quantity: data.quantity,
       Description: data.description || null,
       RuleGroupId: data.ruleGroupId || null,
@@ -119,6 +128,7 @@ export const productRuleApi = {
       Behavior: data.behavior,
       TargetProductId: data.targetProductId || null,
       TargetCategoryId: data.targetCategoryId || null,
+      TargetServiceId: data.targetServiceId || null,
       Quantity: data.quantity,
       Description: data.description || null,
       IsActive: data.isActive,

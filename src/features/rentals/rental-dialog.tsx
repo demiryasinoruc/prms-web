@@ -3,7 +3,7 @@ import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { cn } from "@/lib/utils"
 import { z } from "zod"
-import { Loader2, Plus, Trash2, ChevronDown, ChevronRight, Settings2, ChevronUp, Receipt, AlertCircle } from "lucide-react"
+import { Loader2, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Settings2, ChevronUp, Receipt, AlertCircle, Info } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { DatePicker } from "@/components/shared/date-picker"
+import { DateTimePicker } from "@/components/shared/date-time-picker"
+import { MoneyInput } from "@/components/shared/money-input"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -254,20 +256,35 @@ function RentalItemInventorySelect({
   productId,
   productVariantId,
   warehouseId,
+  startDate,
+  endDate,
+  excludeRentalId,
+  isWarnMode,
   value,
   onChange,
 }: {
   productId: string
   productVariantId: string | null | undefined
   warehouseId: string | null | undefined
+  startDate: string | null | undefined
+  endDate: string | null | undefined
+  excludeRentalId: string | null | undefined
+  isWarnMode: boolean
   value: string | null | undefined
   onChange: (value: string | null) => void
 }) {
+  // Warn modunda çakışan envanter de listede gösterilir (badge ile)
   const { data: inventories } = useInventorySelectByProduct(
     productId,
     productVariantId,
     warehouseId,
+    startDate,
+    endDate,
+    excludeRentalId,
+    isWarnMode,
   )
+
+  const selectedConflict = inventories?.find((i) => i.id === value && i.isConflicting)
 
   return (
     <div className="space-y-2">
@@ -284,13 +301,28 @@ function RentalItemInventorySelect({
           <SelectItem value="none" disabled>Envanter seçiniz</SelectItem>
           {inventories?.map((inv) => (
             <SelectItem key={inv.id} value={inv.id}>
-              {inv.name}
+              <span className="flex items-center gap-2">
+                <span>{inv.name}</span>
+                {inv.isConflicting && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                    Çakışıyor{inv.conflictRentalNumber ? ` · ${inv.conflictRentalNumber}` : ""}
+                  </span>
+                )}
+              </span>
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
+      {selectedConflict && (
+        <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Bu envanter {selectedConflict.conflictRentalNumber || "başka bir kiralama"} ile çakışıyor — kayıt sırasında uyarı verilecek
+        </p>
+      )}
       {inventories && inventories.length === 0 && (
-        <p className="text-xs text-muted-foreground">Müsait envanter bulunamadı</p>
+        <p className="text-xs text-muted-foreground">
+          {isWarnMode ? "Bu ürün için tanımlı envanter yok" : "Müsait envanter bulunamadı"}
+        </p>
       )}
     </div>
   )
@@ -317,6 +349,9 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const { data: pricePeriods, isLoading: isLoadingPricePeriods } = usePricePeriodSelect()
   const { data: extraServices, isLoading: isLoadingExtraServices } = useExtraServiceSelectForRental()
   const { data: companySettings } = useCompanySettings()
+  const allowHourlyRental = companySettings?.allowHourlyRental ?? false
+  // AvailabilityCheckMode: 1 = Warn, 2 = Block. Default Warn.
+  const isWarnMode = (companySettings?.availabilityCheckMode ?? 1) === 1
   const { data: productRules } = useAllProductRules()
 
   // Lookup veriler yüklenene kadar loading göster
@@ -334,6 +369,9 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
   // Fiyat özeti footer açık/kapalı
   const [isPriceSummaryOpen, setIsPriceSummaryOpen] = useState(true)
+
+  // Döviz kuru bilgi dialog'u
+  const [isExchangeRateInfoOpen, setIsExchangeRateInfoOpen] = useState(false)
 
   // Nakliye banner state'i (CompanyDelivery + Transport hizmeti yoksa gösterilir)
   const [transportBannerDismissed, setTransportBannerDismissed] = useState(false)
@@ -397,8 +435,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     customerId: editData.customerId,
     deliveryAddressId: editData.deliveryAddressId,
     deliveryType: editData.deliveryType,
-    plannedStartDate: editData.plannedStartDate.split("T")[0],
-    plannedEndDate: editData.plannedEndDate.split("T")[0],
+    plannedStartDate: allowHourlyRental
+      ? editData.plannedStartDate.slice(0, 16)
+      : editData.plannedStartDate.split("T")[0],
+    plannedEndDate: allowHourlyRental
+      ? editData.plannedEndDate.slice(0, 16)
+      : editData.plannedEndDate.split("T")[0],
     sourceWarehouseId: editData.sourceWarehouseId,
     deliveryVehicleId: editData.deliveryVehicleId,
     deliveryEmployeeId: editData.deliveryEmployeeId,
@@ -581,8 +623,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const availabilityRequest = useMemo<BatchAvailabilityRequest | null>(() => {
     if (!watchedPlannedStartDate || !watchedPlannedEndDate) return null
 
-    const defaultStartDate = `${watchedPlannedStartDate}T00:00:00`
-    const defaultEndDate = `${watchedPlannedEndDate}T23:59:59`
+    // Hourly modda watchedPlannedStartDate zaten "yyyy-MM-ddTHH:mm" formatında olabilir;
+    // o zaman saatleri kullan. Aksi halde günün başı/sonuna sabitlenir.
+    const startHasTime = /T\d{2}:\d{2}/.test(watchedPlannedStartDate)
+    const endHasTime = /T\d{2}:\d{2}/.test(watchedPlannedEndDate)
+    const defaultStartDate = startHasTime
+      ? `${watchedPlannedStartDate}:00`
+      : `${watchedPlannedStartDate}T00:00:00`
+    const defaultEndDate = endHasTime
+      ? `${watchedPlannedEndDate}:00`
+      : `${watchedPlannedEndDate}T23:59:59`
 
     const items = (watchedItems || [])
       .filter((item) => !!item?.productId)
@@ -702,18 +752,58 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const selectedCurrency = currencies?.find(c => c.value === watchedCurrencyId)
   const isTRY = !watchedCurrencyId || selectedCurrency?.text?.includes("TL") || selectedCurrency?.text?.includes("TRY")
 
+  // Tarih + saat (veya sadece tarih) string'lerinden başlangıç/bitiş tarihlerini
+  // Date'e çevirir. Tarih-only durumunda start gün başına, end gün sonuna alınır.
+  const parseRentalRangeToDates = (
+    startStr: string | null | undefined,
+    endStr: string | null | undefined,
+  ): { start: Date; end: Date } | null => {
+    if (!startStr || !endStr) return null
+    const hasTimeStart = /T\d{2}:\d{2}/.test(startStr)
+    const hasTimeEnd = /T\d{2}:\d{2}/.test(endStr)
+    const startIso = hasTimeStart ? startStr : `${startStr}T00:00:00`
+    const endIso = hasTimeEnd ? endStr : `${endStr}T23:59:59`
+    const start = new Date(startIso)
+    const end = new Date(endIso)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+    return { start, end }
+  }
+
+  // Süre × birim fiyat hesaplaması için periyot sayısını döndürür.
+  // Periyot sayısı = ceil(toplam_saat / periyot_saati), en az 1.
+  // pricePeriodId boş veya hours bulunamazsa 1 döner (eski davranış).
+  const calculatePeriodCount = (
+    startStr: string | null | undefined,
+    endStr: string | null | undefined,
+    pricePeriodId: number | null | undefined,
+  ): number => {
+    if (!pricePeriodId) return 1
+    const period = pricePeriods?.find((p) => p.value === pricePeriodId)
+    if (!period?.hours || period.hours <= 0) return 1
+    const range = parseRentalRangeToDates(startStr, endStr)
+    if (!range) return 1
+    const diffHours = (range.end.getTime() - range.start.getTime()) / (1000 * 60 * 60)
+    if (diffHours <= 0) return 1
+    return Math.max(1, Math.ceil(diffHours / period.hours))
+  }
+
   // Ürün tutarı hesaplama fonksiyonu
   const calculateItemTotal = (index: number) => {
     const item = watchedItems?.[index]
-    if (!item) return { lineTotal: 0 }
+    if (!item) return { lineTotal: 0, periodCount: 1 }
 
     const quantity = item.quantity || 0
     const unitPrice = item.unitPrice || 0
     const discountType = item.discountType || DiscountType.Percent
     const discountValue = item.discountValue || 0
 
-    // Brüt tutar
-    const grossTotal = quantity * unitPrice
+    // Süre hesabı: item'ın kendi tarih aralığı varsa o, yoksa kiralamanın ana tarihleri
+    const itemStart = item.startDateTime || watchedPlannedStartDate
+    const itemEnd = item.endDateTime || watchedPlannedEndDate
+    const periodCount = calculatePeriodCount(itemStart, itemEnd, item.pricePeriodId)
+
+    // Brüt tutar (süre × adet × birim fiyat)
+    const grossTotal = periodCount * quantity * unitPrice
 
     // Ürün indirimi
     let discountAmount = 0
@@ -726,21 +816,26 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     // Ürün indirimi sonrası tutar
     const lineTotal = Math.max(0, grossTotal - discountAmount)
 
-    return { grossTotal, discountAmount, lineTotal }
+    return { grossTotal, discountAmount, lineTotal, periodCount }
   }
 
   // Hizmet tutarı hesaplama fonksiyonu
   const calculateServiceTotal = (index: number) => {
     const service = watchedServices?.[index]
-    if (!service) return { lineTotal: 0 }
+    if (!service) return { lineTotal: 0, periodCount: 1 }
 
     const quantity = service.quantity || 0
     const unitPrice = service.unitPrice || 0
     const discountType = service.discountType || DiscountType.Percent
     const discountValue = service.discountValue || 0
 
-    // Brüt tutar
-    const grossTotal = quantity * unitPrice
+    // Süre hesabı
+    const serviceStart = service.startDateTime || watchedPlannedStartDate
+    const serviceEnd = service.endDateTime || watchedPlannedEndDate
+    const periodCount = calculatePeriodCount(serviceStart, serviceEnd, service.pricePeriodId)
+
+    // Brüt tutar (süre × adet × birim fiyat)
+    const grossTotal = periodCount * quantity * unitPrice
 
     // Hizmet indirimi
     let discountAmount = 0
@@ -753,7 +848,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     // Hizmet indirimi sonrası tutar
     const lineTotal = Math.max(0, grossTotal - discountAmount)
 
-    return { grossTotal, discountAmount, lineTotal }
+    return { grossTotal, discountAmount, lineTotal, periodCount }
   }
 
   // Tüm toplamları hesapla
@@ -871,6 +966,21 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedSourceWarehouseId])
 
+  // Tarih aralığı değiştiğinde tracked ürünlerin inventoryId'sini temizle.
+  // Aksi halde kullanıcı önce farklı tarih seçip envanter belirleyip tarihi geri çekerek
+  // filtre kontrolünü bypass edebiliyor (UX-3).
+  useEffect(() => {
+    if (!watchedItems || !products) return
+    watchedItems.forEach((item, index) => {
+      if (!item.productId || !item.inventoryId) return
+      const product = products.find((p) => p.id === item.productId)
+      if (product?.type === ProductType.Tracked) {
+        setValue(`items.${index}.inventoryId`, null)
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedPlannedStartDate, watchedPlannedEndDate])
+
   // Ürün kuralına göre hedef ürün ekleme fonksiyonu
   const addProductByRule = (targetProductId: string, quantity: number) => {
     const targetProduct = products?.find((p) => p.id === targetProductId)
@@ -911,13 +1021,14 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const processProductRules = (sourceProductId: string, sourceQuantity: number) => {
     if (!productRules || !sourceProductId) return
 
-    // Bu ürün için otomatik kuralları bul
+    // Bu ürün için otomatik kuralları bul (sadece ürün hedefliler — hizmet kuralları otomatik eklenemez)
     const automaticRules = productRules.filter(
       (rule) =>
         rule.sourceProductId === sourceProductId &&
         rule.isActive &&
         rule.behavior === ProductRuleBehavior.Automatic &&
-        rule.targetProductId
+        rule.targetProductId &&
+        rule.type !== ProductRuleType.RequiresService
     )
 
     automaticRules.forEach((rule) => {
@@ -1047,11 +1158,13 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       if (!sourceProduct) return
 
       // Bu kaynak için aktif kuralları bul
+      // RequiresService kuralları öneri akışına dahil değil — enforcement backend tarafında
       const applicableRules = productRules.filter(
         (rule) =>
           rule.sourceProductId === productId &&
           rule.isActive &&
-          rule.behavior !== ProductRuleBehavior.Automatic
+          rule.behavior !== ProductRuleBehavior.Automatic &&
+          rule.type !== ProductRuleType.RequiresService
       )
 
       applicableRules.forEach((rule) => {
@@ -1326,6 +1439,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-4xl max-h-[90vh] overflow-y-auto"
@@ -1347,6 +1461,42 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
               <span>
                 Müsaitlik kontrolü şu an yapılamıyor. Kaydetme sırasında sunucu kontrolü yine yapılacak.
               </span>
+            </div>
+          )}
+          {Object.keys(errors).length > 0 && (
+            <div
+              role="alert"
+              className="rounded-md border border-red-300 bg-red-50 p-3 text-red-900 text-sm dark:bg-red-950/40 dark:border-red-900 dark:text-red-200"
+            >
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium">Lütfen aşağıdaki hataları düzeltin:</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-xs">
+                    {Object.entries(errors).flatMap(([key, err]) => {
+                      // FieldArray hataları (items/services) için iç içe mesajları aç.
+                      // Mesajın kendisi açıklayıcı (örn. "Birim fiyat 0'dan büyük olmalıdır")
+                      // olduğu için raw field adını (örn. "unitPrice") göstermiyoruz.
+                      if (Array.isArray(err)) {
+                        return err.flatMap((subErr, idx) =>
+                          subErr && typeof subErr === "object"
+                            ? Object.entries(subErr as Record<string, { message?: string }>).map(
+                                ([subKey, subFieldErr]) =>
+                                  subFieldErr?.message ? (
+                                    <li key={`${key}-${idx}-${subKey}`}>
+                                      {key === "items" ? "Ürün" : "Hizmet"} {idx + 1}: {subFieldErr.message}
+                                    </li>
+                                  ) : null,
+                              )
+                            : [],
+                        )
+                      }
+                      const message = (err as { message?: string })?.message
+                      return message ? [<li key={key}>{message}</li>] : []
+                    })}
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -1427,16 +1577,24 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Başlangıç Tarihi *</Label>
+                  <Label>{allowHourlyRental ? "Başlangıç Tarihi ve Saati *" : "Başlangıç Tarihi *"}</Label>
                   <Controller
                     control={control}
                     name="plannedStartDate"
                     render={({ field }) => (
-                      <DatePicker
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Başlangıç tarihi seçiniz"
-                      />
+                      allowHourlyRental ? (
+                        <DateTimePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Başlangıç tarih/saat seçiniz"
+                        />
+                      ) : (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Başlangıç tarihi seçiniz"
+                        />
+                      )
                     )}
                   />
                   {errors.plannedStartDate && (
@@ -1445,17 +1603,26 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Bitiş Tarihi *</Label>
+                  <Label>{allowHourlyRental ? "Bitiş Tarihi ve Saati *" : "Bitiş Tarihi *"}</Label>
                   <Controller
                     control={control}
                     name="plannedEndDate"
                     render={({ field }) => (
-                      <DatePicker
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Bitiş tarihi seçiniz"
-                        minDate={watchedPlannedStartDate || undefined}
-                      />
+                      allowHourlyRental ? (
+                        <DateTimePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Bitiş tarih/saat seçiniz"
+                          minDate={watchedPlannedStartDate || undefined}
+                        />
+                      ) : (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Bitiş tarihi seçiniz"
+                          minDate={watchedPlannedStartDate || undefined}
+                        />
+                      )
                     )}
                   />
                   {errors.plannedEndDate && (
@@ -1465,8 +1632,17 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
                 {!isTRY && (
                   <div className="space-y-2">
-                    <Label>
-                      Döviz Kuru (1 {selectedCurrency?.text} = ? TL)
+                    <Label className="flex items-center gap-1.5">
+                      <span>Döviz Kuru (1 {selectedCurrency?.text} = ? TL)</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsExchangeRateInfoOpen(true)}
+                        className="inline-flex text-muted-foreground hover:text-foreground transition-colors"
+                        title="Döviz kuru hakkında bilgi"
+                        aria-label="Döviz kuru hakkında bilgi"
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
                     </Label>
                     <Input
                       type="number"
@@ -1484,11 +1660,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
                 <div className="space-y-2">
                   <Label>Depozito</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...register("depositAmount", { valueAsNumber: true })}
+                  <Controller
+                    control={control}
+                    name="depositAmount"
+                    render={({ field }) => (
+                      <MoneyInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="0,00"
+                      />
+                    )}
                   />
                 </div>
 
@@ -1865,6 +2046,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                         productId={watchedItems?.[index]?.productId || ""}
                                         productVariantId={watchedItems?.[index]?.productVariantId}
                                         warehouseId={watchedSourceWarehouseId}
+                                        startDate={watchedItems?.[index]?.startDateTime || watchedPlannedStartDate}
+                                        endDate={watchedItems?.[index]?.endDateTime || watchedPlannedEndDate}
+                                        excludeRentalId={isEditMode ? editData?.id : null}
+                                        isWarnMode={isWarnMode}
                                         value={inventoryField.value}
                                         onChange={inventoryField.onChange}
                                       />
@@ -2606,7 +2791,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                               <SelectValue placeholder="Personel seçiniz" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                              <SelectItem value="none" disabled>Personel seçiniz</SelectItem>
+                                              <SelectItem value="none">— Seçim yok —</SelectItem>
                                               {employees?.map((employee) => (
                                                 <SelectItem key={employee.id} value={employee.id}>
                                                   {employee.name}
@@ -2656,7 +2841,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                               <SelectValue placeholder="Araç seçiniz" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                              <SelectItem value="none" disabled>Araç seçiniz</SelectItem>
+                                              <SelectItem value="none">— Seçim yok —</SelectItem>
                                               {vehicles?.map((vehicle) => (
                                                 <SelectItem key={vehicle.id} value={vehicle.id}>
                                                   {vehicle.plate}
@@ -2815,8 +3000,64 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                 const summaryCurrencyCode = selectedCurrency?.text || "TL"
                 const formatCurrency = (val: number) => val.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+                // Tüm çakışmaları availabilityMap'ten konsolide et
+                const allConflicts: { source: string; conflicts: BatchAvailabilityItemResult["conflicts"] }[] = []
+                if (availabilityData?.results) {
+                  for (const r of availabilityData.results) {
+                    if (!r.isAvailable && r.conflicts.length > 0) {
+                      let label = r.itemKey
+                      if (r.itemKey.startsWith("item-")) {
+                        const idx = parseInt(r.itemKey.slice(5), 10)
+                        const productId = watchedItems?.[idx]?.productId
+                        label = `Ürün ${idx + 1}${productId ? ` — ${getProductName(productId)}` : ""}`
+                      } else if (r.itemKey === "delivery-vehicle") {
+                        label = "Teslimat aracı"
+                      } else if (r.itemKey === "delivery-employee") {
+                        label = "Teslimat personeli"
+                      } else if (r.itemKey.startsWith("service-vehicle-")) {
+                        const idx = parseInt(r.itemKey.slice("service-vehicle-".length), 10)
+                        label = `Hizmet ${idx + 1} — atanan araç`
+                      } else if (r.itemKey.startsWith("service-employee-")) {
+                        const idx = parseInt(r.itemKey.slice("service-employee-".length), 10)
+                        label = `Hizmet ${idx + 1} — atanan personel`
+                      }
+                      allConflicts.push({ source: label, conflicts: r.conflicts })
+                    }
+                  }
+                }
+
                 return (
                   <div className="space-y-6">
+                    {/* Toplu Çakışma Banner'ı (U6) */}
+                    {allConflicts.length > 0 && (
+                      <div
+                        role="alert"
+                        className="rounded-md border border-amber-300 bg-amber-50 p-4 dark:bg-amber-950/30 dark:border-amber-800"
+                      >
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-700 dark:text-amber-400" />
+                          <div className="flex-1 space-y-2">
+                            <p className="font-medium text-amber-900 dark:text-amber-200">
+                              {allConflicts.length} çakışma tespit edildi
+                            </p>
+                            <ul className="space-y-1 text-sm text-amber-900 dark:text-amber-200">
+                              {allConflicts.map((c, idx) => (
+                                <li key={idx}>
+                                  <span className="font-medium">{c.source}:</span>{" "}
+                                  {c.conflicts.map((cd, ci) => (
+                                    <span key={ci} className="text-amber-800 dark:text-amber-300">
+                                      {cd.rentalNumber ? `${cd.rentalNumber} ile çakışıyor` : `${cd.requestedQuantity ?? "?"} talep, ${cd.availableQuantity ?? "?"} müsait`}
+                                      {ci < c.conflicts.length - 1 ? "; " : ""}
+                                    </span>
+                                  ))}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Ürünler Listesi */}
                     {watchedItems && watchedItems.length > 0 && (
                       <div className="space-y-3">
@@ -3013,53 +3254,174 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="px-4 pb-4 pt-0 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div className="space-y-1">
-                    <span className="text-muted-foreground">Ürünler</span>
-                    <p className="font-medium">
-                      {totals.itemsLineTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-muted-foreground">Hizmetler</span>
-                    <p className="font-medium">
-                      {totals.servicesLineTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
-                    </p>
-                  </div>
-                  {totals.generalDiscountAmount > 0 && (
-                    <div className="space-y-1">
-                      <span className="text-muted-foreground">
-                        Genel İndirim {watchedRentalDiscountType === DiscountType.Percent ? `(%${watchedRentalDiscountValue})` : ""}
-                      </span>
-                      <p className="font-medium text-orange-600">
-                        -{totals.generalDiscountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
-                      </p>
+                <div className="px-4 pb-4 pt-0 space-y-4 text-sm">
+                  {/* Satır bazlı hesaplama dökümü — mixed-periyot durumlarda
+                      kullanıcı "neden bu rakam" diye anlayabilsin diye qty × period × price gösteriyoruz */}
+                  {((watchedItems && watchedItems.length > 0) || (watchedServices && watchedServices.length > 0)) && (
+                    <div className="rounded-md bg-background/60 p-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Hesaplama Dökümü</p>
+                      <div className="divide-y">
+                        {watchedItems?.map((item, idx) => {
+                          if (!item?.productId) return null
+                          const calc = calculateItemTotal(idx)
+                          const product = products?.find((p) => p.id === item.productId)
+                          const period = pricePeriods?.find((p) => p.value === item.pricePeriodId)
+                          return (
+                            <div key={`item-row-${idx}`} className="flex items-center justify-between gap-3 py-1.5">
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate font-medium">{product?.name || `Ürün ${idx + 1}`}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.quantity || 0} adet × {calc.periodCount} {period?.text?.toLowerCase() || "periyot"} × {(item.unitPrice || 0).toLocaleString("tr-TR")} ₺
+                                  {calc.discountAmount && calc.discountAmount > 0 ? (
+                                    <span className="text-orange-600"> − {calc.discountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ind.</span>
+                                  ) : null}
+                                </p>
+                              </div>
+                              <p className="font-medium tabular-nums shrink-0">
+                                {(calc.lineTotal || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                              </p>
+                            </div>
+                          )
+                        })}
+                        {watchedServices?.map((service, idx) => {
+                          if (!service?.extraServiceId) return null
+                          const calc = calculateServiceTotal(idx)
+                          const svc = extraServices?.find((s) => s.id === service.extraServiceId)
+                          const period = pricePeriods?.find((p) => p.value === service.pricePeriodId)
+                          return (
+                            <div key={`svc-row-${idx}`} className="flex items-center justify-between gap-3 py-1.5">
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate font-medium">
+                                  {svc?.name || `Hizmet ${idx + 1}`} <span className="text-xs text-muted-foreground">(hizmet)</span>
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {service.quantity || 0} adet × {calc.periodCount} {period?.text?.toLowerCase() || "periyot"} × {(service.unitPrice || 0).toLocaleString("tr-TR")} ₺
+                                  {calc.discountAmount && calc.discountAmount > 0 ? (
+                                    <span className="text-orange-600"> − {calc.discountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ind.</span>
+                                  ) : null}
+                                </p>
+                              </div>
+                              <p className="font-medium tabular-nums shrink-0">
+                                {(calc.lineTotal || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                              </p>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
                   )}
-                  {totals.depositAmount > 0 && (
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1">
-                      <span className="text-muted-foreground">Depozito</span>
+                      <span className="text-muted-foreground">Ürünler Toplamı</span>
                       <p className="font-medium">
-                        {totals.depositAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                        {totals.itemsLineTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
                       </p>
                     </div>
-                  )}
+                    <div className="space-y-1">
+                      <span className="text-muted-foreground">Hizmetler Toplamı</span>
+                      <p className="font-medium">
+                        {totals.servicesLineTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                      </p>
+                    </div>
+                    {totals.generalDiscountAmount > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground">
+                          Genel İndirim {watchedRentalDiscountType === DiscountType.Percent ? `(%${watchedRentalDiscountValue})` : ""}
+                        </span>
+                        <p className="font-medium text-orange-600">
+                          -{totals.generalDiscountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                        </p>
+                      </div>
+                    )}
+                    {totals.depositAmount > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground">Depozito</span>
+                        <p className="font-medium">
+                          {totals.depositAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CollapsibleContent>
             </div>
           </Collapsible>
 
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              İptal
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Kaydet
-            </Button>
-          </div>
+          {(() => {
+            const currentIndex = tabsOrder.indexOf(activeTab)
+            const isFirstTab = currentIndex <= 0
+            const isLastTab = currentIndex >= tabsOrder.length - 1
+            const goPrev = () => setActiveTab(tabsOrder[currentIndex - 1])
+            const goNext = () => setActiveTab(tabsOrder[currentIndex + 1])
+            return (
+              <div className="sticky bottom-0 -mx-6 -mb-6 mt-2 flex items-center justify-between gap-3 border-t bg-background px-6 py-3">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  İptal
+                </Button>
+                <div className="flex items-center gap-3">
+                  {!isFirstTab && (
+                    <Button type="button" variant="outline" onClick={goPrev}>
+                      <ChevronLeft className="mr-1 h-4 w-4" /> Geri
+                    </Button>
+                  )}
+                  {!isLastTab ? (
+                    <Button type="button" onClick={goNext}>
+                      İleri <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Kaydet
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
         </form>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={isExchangeRateInfoOpen} onOpenChange={setIsExchangeRateInfoOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Döviz Kuru Nedir?</DialogTitle>
+          <DialogDescription>
+            Kiralama tutarlarının TL karşılığına nasıl çevrildiğini belirler.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <p>
+            Döviz kuru, kiralama için seçtiğiniz para biriminin{" "}
+            <strong>1 birimi kaç TL'ye karşılık geliyor</strong> sorusunun cevabıdır.
+            Bu değer, kiralama oluşturulurken sabitlenir ve fatura/raporlamada bu kur
+            esas alınır.
+          </p>
+          <div className="rounded-md border bg-muted/40 p-3">
+            <p className="font-medium">Ne zaman değiştirmeli?</p>
+            <p className="mt-1 text-muted-foreground">
+              Bazı müşteriler kiralama süresince kuru sabitlemek isteyebilir
+              (örn. anlaşma tarihindeki kuru korumak için). Bu durumda istediğiniz
+              değeri girebilirsiniz.
+            </p>
+          </div>
+          <div className="rounded-md border bg-muted/40 p-3">
+            <p className="font-medium">Ne zaman 1 bırakmalı?</p>
+            <p className="mt-1 text-muted-foreground">
+              Kendi para biriminizde (TL) işlem yapıyorsanız veya dönüşüm istemiyorsanız
+              kuru <strong>1</strong> olarak bırakmanız önerilir. Bu, tutarların olduğu
+              gibi kullanılacağı anlamına gelir.
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button type="button" onClick={() => setIsExchangeRateInfoOpen(false)}>
+            Anladım
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

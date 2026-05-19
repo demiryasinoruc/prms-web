@@ -33,6 +33,7 @@ const MaintenanceSchedulesPage = lazy(() => import("@/features/maintenance-sched
 const MaintenanceRecordsPage = lazy(() => import("@/features/maintenance-records"))
 const InvitationsPage = lazy(() => import("@/features/invitations"))
 const ProfilePage = lazy(() => import("@/features/profile"))
+const NotificationsPage = lazy(() => import("@/features/notifications"))
 const AdminPlansPage = lazy(() => import("@/features/admin-plans"))
 const AdminCompaniesPage = lazy(() => import("@/features/admin-companies"))
 
@@ -155,6 +156,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <CalendarPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "notifications",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <NotificationsPage />
           </Suspense>
         ),
       },

@@ -31,6 +31,7 @@ export interface CompanyForEdit {
   availabilityCheckMode: number
   productRuleCheckMode: number
   autoMaintenanceOnDamagedReturn: boolean
+  allowHourlyRental: boolean
 }
 
 export interface CompanyUpdateRequest {
@@ -44,6 +45,7 @@ export interface CompanyUpdateRequest {
   availabilityCheckMode: number
   productRuleCheckMode: number
   autoMaintenanceOnDamagedReturn: boolean
+  allowHourlyRental: boolean
 }
 
 export const companyApi = {
@@ -74,6 +76,7 @@ export const companyApi = {
       availabilityCheckMode: number
       productRuleCheckMode: number
       autoMaintenanceOnDamagedReturn: boolean
+      allowHourlyRental: boolean
     }>(`/company/edit/${id}`)
     return {
       name: response.data.name,
@@ -86,6 +89,7 @@ export const companyApi = {
       availabilityCheckMode: response.data.availabilityCheckMode,
       productRuleCheckMode: response.data.productRuleCheckMode,
       autoMaintenanceOnDamagedReturn: response.data.autoMaintenanceOnDamagedReturn,
+      allowHourlyRental: response.data.allowHourlyRental,
     } as CompanyForEdit
   },
 
@@ -101,6 +105,7 @@ export const companyApi = {
       availabilityCheckMode: data.availabilityCheckMode,
       productRuleCheckMode: data.productRuleCheckMode,
       autoMaintenanceOnDamagedReturn: data.autoMaintenanceOnDamagedReturn,
+      allowHourlyRental: data.allowHourlyRental,
     })
   },
 }

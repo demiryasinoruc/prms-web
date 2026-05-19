@@ -1,4 +1,4 @@
-import { Package, Pencil, Tag, DollarSign, Calendar, Clock } from "lucide-react"
+import { Package, Pencil, Tag, DollarSign, Calendar, Clock, Boxes } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -14,6 +14,8 @@ import { useProductDetail } from "./hooks"
 import { ProductType, ProductTypeLabels, type ProductDetail } from "./api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { useInventoryStatsByProduct } from "@/features/inventory/hooks"
+import { InventoryStatus, InventoryStatusLabels } from "@/features/inventory/api"
 
 interface ProductDetailSheetProps {
   open: boolean
@@ -30,6 +32,7 @@ export function ProductDetailSheet({
 }: ProductDetailSheetProps) {
   const canUpdate = usePermission(Permissions.Product.Update)
   const { data: product, isLoading } = useProductDetail(productId)
+  const { data: invStats } = useInventoryStatsByProduct(open ? productId : null)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("tr-TR", {
@@ -107,6 +110,41 @@ export function ProductDetailSheet({
               <p className="text-sm text-muted-foreground">
                 {product.description}
               </p>
+            )}
+
+            {/* Envanter Özeti (P2-4) — sadece envanter kaydı varsa göster */}
+            {invStats && invStats.total > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <Boxes className="h-4 w-4" />
+                    Envanter Durumu
+                    <Badge variant="outline" className="ml-auto">{invStats.total} adet</Badge>
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { status: InventoryStatus.Available, classes: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+                      { status: InventoryStatus.Rented, classes: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+                      { status: InventoryStatus.Reserved, classes: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
+                      { status: InventoryStatus.Maintenance, classes: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300" },
+                      { status: InventoryStatus.Broken, classes: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
+                      { status: InventoryStatus.Lost, classes: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300" },
+                      { status: InventoryStatus.Disposed, classes: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300" },
+                    ]
+                      .filter((s) => (invStats.counts[s.status] ?? 0) > 0)
+                      .map((s) => (
+                        <div
+                          key={s.status}
+                          className={`rounded-md p-2 text-center ${s.classes}`}
+                        >
+                          <div className="text-xs font-medium">{InventoryStatusLabels[s.status]}</div>
+                          <div className="text-lg font-bold mt-0.5">{invStats.counts[s.status]}</div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </>
             )}
 
             <Separator />

@@ -154,17 +154,34 @@ export const inventoryApi = {
     }))
   },
 
-  getSelectByProduct: async (productId: string, productVariantId?: string, warehouseId?: string) => {
-    const response = await api.get<{ value: string; text: string }[]>("/inventory/select-by-product", {
-      params: {
-        productId,
-        productVariantId: productVariantId || undefined,
-        warehouseId: warehouseId || undefined,
+  getSelectByProduct: async (
+    productId: string,
+    productVariantId?: string,
+    warehouseId?: string,
+    startDate?: string,
+    endDate?: string,
+    excludeRentalId?: string,
+    includeConflicting?: boolean,
+  ) => {
+    const response = await api.get<{ id: string; serialNumber: string; isConflicting: boolean; conflictRentalNumber: string | null }[]>(
+      "/inventory/select-by-product",
+      {
+        params: {
+          productId,
+          productVariantId: productVariantId || undefined,
+          warehouseId: warehouseId || undefined,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+          excludeRentalId: excludeRentalId || undefined,
+          includeConflicting: includeConflicting ? true : undefined,
+        },
       },
-    })
+    )
     return response.data.map((item) => ({
-      id: item.value,
-      name: item.text,
+      id: item.id,
+      name: item.serialNumber,
+      isConflicting: item.isConflicting,
+      conflictRentalNumber: item.conflictRentalNumber,
     }))
   },
 

@@ -218,12 +218,16 @@ api.interceptors.response.use(
     }
 
     // Handle 404 Not Found errors
+    // GET isteklerinde 404 = "kayıt yok"; sayfanın empty state'i bunu zaten gösterir.
+    // Toast SADECE yazma işlemlerinde (POST/PUT/PATCH/DELETE) anlamlı: kullanıcı
+    // mevcut olmayan bir kaynağa işlem yapmaya çalışmıştır.
     if (error.response?.status === 404) {
+      const method = (error.config?.method || "get").toLowerCase()
+      const isWriteRequest = method !== "get"
       const errorData = error.response.data
       const code = errorData?.code || errorData?.Code
-      // Sayfaların kendi empty state'i yeterli olan code'lar için toast atla
       const silentCodes = ["NoActiveSubscription"]
-      if (!silentCodes.includes(code)) {
+      if (isWriteRequest && !silentCodes.includes(code)) {
         const message = errorData?.message || errorData?.Message || "Kayıt bulunamadı."
         toast.error(message)
       }

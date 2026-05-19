@@ -402,6 +402,10 @@ export interface RentalCreateResponse {
   warnings?: AvailabilityWarning[]
 }
 
+export interface RentalUpdateResponse {
+  warnings?: AvailabilityWarning[]
+}
+
 // API Response type from backend
 interface ApiRentalListResponse {
   totalCount: number
@@ -499,8 +503,8 @@ export const rentalApi = {
     return response.data
   },
 
-  update: async (id: string, data: RentalUpdateRequest) => {
-    await api.put(`/rental/${id}`, {
+  update: async (id: string, data: RentalUpdateRequest): Promise<RentalUpdateResponse> => {
+    const response = await api.put<RentalUpdateResponse>(`/rental/${id}`, {
       CustomerId: data.customerId,
       DeliveryAddressId: data.deliveryAddressId || null,
       DeliveryType: data.deliveryType,
@@ -544,6 +548,7 @@ export const rentalApi = {
         Notes: service.notes || "",
       })),
     })
+    return response.data
   },
 
   updateStatus: async (id: string, data: RentalUpdateStatusRequest) => {

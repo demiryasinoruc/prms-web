@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   ChevronLeft,
   ChevronRight,
@@ -48,6 +49,17 @@ interface DataTableProps<TData, TValue> {
     onSortChange: (sortBy: string | null, sortDir: "asc" | "desc" | null) => void
   }
   emptyMessage?: string
+  /**
+   * Çoklu seçim modu. Verilirse her satıra checkbox eklenir, seçilenler
+   * dışarıya selection callback'iyle bildirilir. getRowId ile satır kimliği belirlenir.
+   * Toplu işlem bar'ı `bulkActions` ile sağlanır.
+   */
+  rowSelection?: {
+    getRowId: (row: TData) => string
+    selectedIds: string[]
+    onSelectionChange: (ids: string[]) => void
+    bulkActions?: (selectedIds: string[]) => React.ReactNode
+  }
 }
 
 export function DataTable<TData, TValue>({
@@ -57,7 +69,37 @@ export function DataTable<TData, TValue>({
   pagination,
   sorting,
   emptyMessage = "Kayıt bulunamadı",
+  rowSelection,
 }: DataTableProps<TData, TValue>) {
+  // Seçim modunda mevcut data'daki ID'leri ve hangileri seçili olduğunu hesapla
+  const visibleIds = rowSelection ? data.map((row) => rowSelection.getRowId(row)) : []
+  const selectedVisibleCount = rowSelection
+    ? visibleIds.filter((id) => rowSelection.selectedIds.includes(id)).length
+    : 0
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length
+  const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected
+
+  const toggleAllVisible = () => {
+    if (!rowSelection) return
+    if (allVisibleSelected) {
+      // Bu sayfadaki tüm ID'leri seçimden çıkar
+      rowSelection.onSelectionChange(
+        rowSelection.selectedIds.filter((id) => !visibleIds.includes(id)),
+      )
+    } else {
+      const newIds = Array.from(new Set([...rowSelection.selectedIds, ...visibleIds]))
+      rowSelection.onSelectionChange(newIds)
+    }
+  }
+
+  const toggleRow = (id: string) => {
+    if (!rowSelection) return
+    if (rowSelection.selectedIds.includes(id)) {
+      rowSelection.onSelectionChange(rowSelection.selectedIds.filter((x) => x !== id))
+    } else {
+      rowSelection.onSelectionChange([...rowSelection.selectedIds, id])
+    }
+  }
   // TanStack Table - sorting tamamen dışarıdan kontrol ediliyor (manualSorting)
   // State'i table'a VERMIYORUZ çünkü kendi handleSort fonksiyonumuzu kullanıyoruz
   const table = useReactTable({
@@ -131,11 +173,40 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
+      {/* Toplu işlem bar'ı — seçim varsa görünür */}
+      {rowSelection && rowSelection.selectedIds.length > 0 && (
+        <div className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2">
+          <p className="text-sm">
+            <span className="font-medium">{rowSelection.selectedIds.length}</span> kayıt seçildi
+          </p>
+          <div className="flex items-center gap-2">
+            {rowSelection.bulkActions?.(rowSelection.selectedIds)}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => rowSelection.onSelectionChange([])}
+            >
+              Seçimi temizle
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
+                {rowSelection && (
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allVisibleSelected || (someVisibleSelected && "indeterminate")}
+                      onCheckedChange={toggleAllVisible}
+                      aria-label="Tüm satırları seç"
+                    />
+                  </TableHead>
+                )}
                 {headerGroup.headers.map((header) => {
                   const columnId = header.column.id
                   const canSort = sorting && header.column.columnDef.enableSorting === true
@@ -167,25 +238,38 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const rowId = rowSelection ? rowSelection.getRowId(row.original as TData) : null
+                const isChecked = rowId ? rowSelection!.selectedIds.includes(rowId) : false
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={isChecked ? "selected" : undefined}
+                  >
+                    {rowSelection && (
+                      <TableCell className="w-10">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => rowId && toggleRow(rowId)}
+                          aria-label="Satırı seç"
+                        />
+                      </TableCell>
+                    )}
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columns.length + (rowSelection ? 1 : 0)}
                   className="h-24 text-center text-muted-foreground"
                 >
                   {emptyMessage}

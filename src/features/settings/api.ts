@@ -9,6 +9,7 @@ export interface CompanySettings {
   availabilityCheckMode: number
   productRuleCheckMode: number
   autoMaintenanceOnDamagedReturn: boolean
+  allowHourlyRental: boolean
 }
 
 export const settingsApi = {

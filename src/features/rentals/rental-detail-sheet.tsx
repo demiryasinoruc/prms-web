@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import {
   FileText,
   User,
@@ -12,6 +13,7 @@ import {
   CreditCard,
   DollarSign,
   AlertTriangle,
+  AlertCircle,
 } from "lucide-react"
 import {
   Sheet,
@@ -42,6 +44,8 @@ import {
   DiscountType,
 } from "./api"
 import { DeliveryType } from "@/features/company/api"
+import { useAvailabilityBatch } from "@/features/availability/hooks"
+import type { BatchAvailabilityRequest } from "@/features/availability/api"
 
 interface RentalDetailSheetProps {
   open: boolean
@@ -55,6 +59,97 @@ export function RentalDetailSheet({
   rentalId,
 }: RentalDetailSheetProps) {
   const { data: rental, isLoading } = useRentalDetail(rentalId)
+
+  // Detay açıldığında bu kiralamanın current çakışmalarını sorgula.
+  // excludeRentalId ile bu kiralama kendi içeriğiyle çakışıyor sayılmaz.
+  const availabilityRequest = useMemo<BatchAvailabilityRequest | null>(() => {
+    if (!open || !rental) return null
+    const items = rental.items
+      .filter((i) => !i.isReturned)
+      .map((i, idx) => ({
+        itemKey: `item-${idx}`,
+        productId: i.productId,
+        productVariantId: i.productVariantId || undefined,
+        inventoryId: i.inventoryId || undefined,
+        quantity: i.quantity,
+        startDateTime: i.startDateTime || undefined,
+        endDateTime: i.endDateTime || undefined,
+      }))
+    const vehicles: BatchAvailabilityRequest["vehicles"] = []
+    if (rental.deliveryVehicleId) {
+      vehicles.push({
+        itemKey: "delivery-vehicle",
+        vehicleId: rental.deliveryVehicleId,
+        startDate: rental.plannedStartDate,
+        endDate: rental.plannedStartDate,
+      })
+    }
+    const employees: BatchAvailabilityRequest["employees"] = []
+    if (rental.deliveryEmployeeId) {
+      employees.push({
+        itemKey: "delivery-employee",
+        employeeId: rental.deliveryEmployeeId,
+        startDate: rental.plannedStartDate,
+        endDate: rental.plannedStartDate,
+      })
+    }
+    rental.services.forEach((s, idx) => {
+      if (s.assignedVehicleId) {
+        vehicles.push({
+          itemKey: `service-vehicle-${idx}`,
+          vehicleId: s.assignedVehicleId,
+          startDate: s.startDateTime || rental.plannedStartDate,
+          endDate: s.endDateTime || rental.plannedEndDate,
+        })
+      }
+      if (s.assignedEmployeeId) {
+        employees.push({
+          itemKey: `service-employee-${idx}`,
+          employeeId: s.assignedEmployeeId,
+          startDate: s.startDateTime || rental.plannedStartDate,
+          endDate: s.endDateTime || rental.plannedEndDate,
+        })
+      }
+    })
+    return {
+      excludeRentalId: rental.id,
+      defaultStartDate: rental.plannedStartDate,
+      defaultEndDate: rental.plannedEndDate,
+      warehouseId: rental.sourceWarehouseId,
+      items,
+      vehicles,
+      employees,
+    }
+  }, [open, rental])
+
+  const { data: availabilityData } = useAvailabilityBatch(availabilityRequest)
+
+  const detailConflicts = useMemo(() => {
+    if (!availabilityData?.results || !rental) return [] as { label: string; rentalNumber?: string }[]
+    const result: { label: string; rentalNumber?: string }[] = []
+    for (const r of availabilityData.results) {
+      if (r.isAvailable || r.conflicts.length === 0) continue
+      let label = r.itemKey
+      if (r.itemKey.startsWith("item-")) {
+        const idx = parseInt(r.itemKey.slice(5), 10)
+        label = `Ürün — ${rental.items[idx]?.productName ?? `${idx + 1}`}`
+      } else if (r.itemKey === "delivery-vehicle") {
+        label = `Teslimat aracı (${rental.deliveryVehiclePlate || ""})`
+      } else if (r.itemKey === "delivery-employee") {
+        label = `Teslimat personeli (${rental.deliveryEmployeeName || ""})`
+      } else if (r.itemKey.startsWith("service-vehicle-")) {
+        const idx = parseInt(r.itemKey.slice("service-vehicle-".length), 10)
+        label = `Hizmet aracı (${rental.services[idx]?.assignedVehiclePlate || ""})`
+      } else if (r.itemKey.startsWith("service-employee-")) {
+        const idx = parseInt(r.itemKey.slice("service-employee-".length), 10)
+        label = `Hizmet personeli (${rental.services[idx]?.assignedEmployeeName || ""})`
+      }
+      for (const c of r.conflicts) {
+        result.push({ label, rentalNumber: c.rentalNumber })
+      }
+    }
+    return result
+  }, [availabilityData, rental])
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-"
@@ -130,6 +225,35 @@ export function RentalDetailSheet({
                 </div>
               </div>
             </SheetHeader>
+
+            {/* Çakışma Banner (U7) — sadece çakışma varsa görünür */}
+            {detailConflicts.length > 0 && (
+              <div
+                role="alert"
+                className="rounded-md border border-amber-300 bg-amber-50 p-4 dark:bg-amber-950/30 dark:border-amber-800"
+              >
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-700 dark:text-amber-400" />
+                  <div className="flex-1 space-y-2">
+                    <p className="font-medium text-amber-900 dark:text-amber-200">
+                      Bu kiralamada {detailConflicts.length} çakışma tespit edildi
+                    </p>
+                    <ul className="space-y-1 text-sm text-amber-900 dark:text-amber-200">
+                      {detailConflicts.map((c, idx) => (
+                        <li key={idx}>
+                          <span className="font-medium">{c.label}</span>
+                          {c.rentalNumber ? (
+                            <span className="text-amber-800 dark:text-amber-300">
+                              {" "}— {c.rentalNumber} ile çakışıyor
+                            </span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Durum ve Bayraklar */}
             <div className="flex items-center gap-2 flex-wrap">

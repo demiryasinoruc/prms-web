@@ -38,6 +38,7 @@ const companySchema = z.object({
   availabilityCheckMode: z.number().default(1),
   productRuleCheckMode: z.number().default(1),
   autoMaintenanceOnDamagedReturn: z.boolean(),
+  allowHourlyRental: z.boolean(),
 })
 
 type CompanyFormData = z.infer<typeof companySchema>
@@ -61,6 +62,7 @@ export default function CompanySettingsPage() {
     availabilityCheckMode: 1,
     productRuleCheckMode: 1,
     autoMaintenanceOnDamagedReturn: false,
+    allowHourlyRental: false,
   }
 
   const formValues: CompanyFormData = companyForEdit ? {
@@ -74,6 +76,7 @@ export default function CompanySettingsPage() {
     availabilityCheckMode: companyForEdit.availabilityCheckMode,
     productRuleCheckMode: companyForEdit.productRuleCheckMode,
     autoMaintenanceOnDamagedReturn: companyForEdit.autoMaintenanceOnDamagedReturn,
+    allowHourlyRental: companyForEdit.allowHourlyRental,
   } : defaultValues
 
   const {
@@ -103,6 +106,7 @@ export default function CompanySettingsPage() {
           availabilityCheckMode: data.availabilityCheckMode,
           productRuleCheckMode: data.productRuleCheckMode,
           autoMaintenanceOnDamagedReturn: data.autoMaintenanceOnDamagedReturn,
+          allowHourlyRental: data.allowHourlyRental,
         },
       })
       toast.success("Firma bilgileri güncellendi")
@@ -287,6 +291,26 @@ export default function CompanySettingsPage() {
                     <Controller
                       control={control}
                       name="autoMaintenanceOnDamagedReturn"
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!canManage}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label>Saatlik / Aynı Gün Kiralama</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Açıksa kiralama tarihlerinde saat seçimi de yapılır ve başlangıç/bitiş aynı gün olabilir
+                      </p>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="allowHourlyRental"
                       render={({ field }) => (
                         <Switch
                           checked={field.value}
