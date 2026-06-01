@@ -42,6 +42,7 @@ import {
 } from "./api"
 import { useInventorySelect, useInventoryDetail } from "@/features/inventory/hooks"
 import { useEmployeeSelect } from "@/features/employees/hooks"
+import { AttachmentSection } from "@/features/attachments/attachment-section"
 
 const maintenanceRecordSchema = z.object({
   inventoryId: z.string().min(1, "Envanter seçimi zorunlu"),
@@ -543,6 +544,14 @@ export function MaintenanceRecordDialog({
             multiline
             rows={2}
           />
+
+          {record && (
+            <AttachmentSection
+              entityType="MaintenanceRecord"
+              entityId={record.id}
+              description="Bakım faturası, fotoğraflar, rapor (jpg, png, webp, pdf — max 10 MB)"
+            />
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <Button

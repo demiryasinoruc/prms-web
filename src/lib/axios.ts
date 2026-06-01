@@ -32,6 +32,7 @@ const entityNames: Record<string, string> = {
   subscriptionplan: "Abonelik Planı",
   "payment-method": "Kart",
   paymentmethod: "Kart",
+  attachment: "Ek",
   certificate: "Sertifika",
   notification: "Bildirim",
   invoice: "Fatura",

@@ -40,8 +40,13 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
+// Backend int.MaxValue (~2.1B) gönderiyor; eşik altı sayı olarak gösterilir.
+// 0 değeri "bloklu" demek (current < 0 hiç olamaz → her zaman LimitReached).
+const UNLIMITED_THRESHOLD = 2_000_000_000
+
 function formatLimit(value: number): string {
-  return value === 0 ? "Sınırsız" : value.toLocaleString("tr-TR")
+  if (value >= UNLIMITED_THRESHOLD) return "Sınırsız"
+  return value.toLocaleString("tr-TR")
 }
 
 export default function AdminPlansPage() {
@@ -117,6 +122,18 @@ export default function AdminPlansPage() {
       header: "Ürün",
       enableSorting: true,
       cell: ({ row }) => formatLimit(row.original.maxProductCount),
+    },
+    {
+      accessorKey: "maxMonthlyRentalCount",
+      header: "Aylık Kiralama",
+      enableSorting: true,
+      cell: ({ row }) => formatLimit(row.original.maxMonthlyRentalCount),
+    },
+    {
+      accessorKey: "maxAttachmentCount",
+      header: "Dosya Eki",
+      enableSorting: true,
+      cell: ({ row }) => formatLimit(row.original.maxAttachmentCount),
     },
     {
       id: "cycle",

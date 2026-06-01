@@ -10,6 +10,8 @@ export interface CompanySettings {
   productRuleCheckMode: number
   autoMaintenanceOnDamagedReturn: boolean
   allowHourlyRental: boolean
+  defaultVatRate: number
+  pricesIncludeVat: boolean
 }
 
 export const settingsApi = {

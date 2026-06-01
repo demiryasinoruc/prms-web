@@ -3,23 +3,17 @@ import { DeliveryType } from "@/features/company/api"
 
 // Enums
 export enum RentalStatus {
-  Draft = 1,
-  Reservation = 2,
+  Pending = 1,
+  Confirmed = 2,
   Active = 3,
-  PartialReturn = 4,
-  Waiting = 5,
-  Completed = 6,
-  Cancelled = 7,
+  Completed = 4,
 }
 
 export const RentalStatusLabels: Record<RentalStatus, string> = {
-  [RentalStatus.Draft]: "Taslak",
-  [RentalStatus.Reservation]: "Rezervasyon",
+  [RentalStatus.Pending]: "Onay Bekliyor",
+  [RentalStatus.Confirmed]: "Onaylandı",
   [RentalStatus.Active]: "Aktif",
-  [RentalStatus.PartialReturn]: "Kısmi İade",
-  [RentalStatus.Waiting]: "Beklemede",
   [RentalStatus.Completed]: "Tamamlandı",
-  [RentalStatus.Cancelled]: "İptal Edildi",
 }
 
 export enum RentalFlag {
@@ -84,6 +78,8 @@ export interface Rental {
   rentalNumber: string
   customerName: string
   status: RentalStatus
+  isCancelled: boolean
+  hasPartialReturn: boolean
   deliveryType: DeliveryType
   flags: RentalFlag
   plannedStartDate: string
@@ -108,6 +104,8 @@ export interface RentalDetail {
   deliveryAddressId: string | null
   deliveryAddressLine: string
   status: RentalStatus
+  isCancelled: boolean
+  hasPartialReturn: boolean
   deliveryType: DeliveryType
   flags: RentalFlag
   plannedStartDate: string
@@ -252,7 +250,7 @@ export interface RentalItemRequest {
   endDateTime?: string | null
   discountType: DiscountType
   discountValue: number
-
+  applyRentalDiscount: boolean
 }
 
 export interface RentalServiceRequest {
@@ -266,7 +264,7 @@ export interface RentalServiceRequest {
   endDateTime?: string | null
   discountType: DiscountType
   discountValue: number
-
+  applyRentalDiscount: boolean
   notes: string
 }
 
@@ -329,7 +327,7 @@ export interface RentalItemForEdit {
   endDateTime: string | null
   discountType: DiscountType
   discountValue: number
-
+  applyRentalDiscount: boolean
 }
 
 export interface RentalServiceForEdit {
@@ -344,7 +342,7 @@ export interface RentalServiceForEdit {
   endDateTime: string | null
   discountType: DiscountType
   discountValue: number
-
+  applyRentalDiscount: boolean
   notes: string
 }
 
@@ -483,7 +481,7 @@ export const rentalApi = {
         EndDateTime: item.endDateTime || null,
         DiscountType: item.discountType,
         DiscountValue: item.discountValue,
-        ApplyRentalDiscount: true,
+        ApplyRentalDiscount: item.applyRentalDiscount,
       })),
       Services: data.services.map((service) => ({
         ExtraServiceId: service.extraServiceId,
@@ -496,7 +494,7 @@ export const rentalApi = {
         EndDateTime: service.endDateTime || null,
         DiscountType: service.discountType,
         DiscountValue: service.discountValue,
-        ApplyRentalDiscount: true,
+        ApplyRentalDiscount: service.applyRentalDiscount,
         Notes: service.notes || "",
       })),
     })
@@ -531,7 +529,7 @@ export const rentalApi = {
         EndDateTime: item.endDateTime || null,
         DiscountType: item.discountType,
         DiscountValue: item.discountValue,
-        ApplyRentalDiscount: true,
+        ApplyRentalDiscount: item.applyRentalDiscount,
       })),
       Services: data.services.map((service) => ({
         ExtraServiceId: service.extraServiceId,
@@ -544,7 +542,7 @@ export const rentalApi = {
         EndDateTime: service.endDateTime || null,
         DiscountType: service.discountType,
         DiscountValue: service.discountValue,
-        ApplyRentalDiscount: true,
+        ApplyRentalDiscount: service.applyRentalDiscount,
         Notes: service.notes || "",
       })),
     })
@@ -557,6 +555,10 @@ export const rentalApi = {
       ActualStartDate: data.actualStartDate || null,
       ActualEndDate: data.actualEndDate || null,
     })
+  },
+
+  cancel: async (id: string) => {
+    await api.post(`/rental/${id}/cancel`)
   },
 
   addPayment: async (id: string, data: RentalPaymentRequest) => {

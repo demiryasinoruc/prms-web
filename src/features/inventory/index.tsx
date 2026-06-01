@@ -1,10 +1,14 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
 import {
   Package,
   Warehouse,
+  QrCode,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { QrPrintDialog } from "./qr-print-dialog"
+import type { QrLabelData } from "./qr-label"
 import {
   Card,
   CardContent,
@@ -58,6 +62,8 @@ export default function InventoryPage() {
   const [editingInventory, setEditingInventory] = useState<Inventory | null>(null)
   const dialogKey = useDialogResetKey(dialogOpen)
   const [detailInventoryId, setDetailInventoryId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [qrPrintOpen, setQrPrintOpen] = useState(false)
 
   const { data, isLoading } = useInventory({
     pageNumber: page + 1,
@@ -68,6 +74,23 @@ export default function InventoryPage() {
     sortBy: sorting.sortBy || undefined,
     sortDir: sorting.sortDir || undefined,
   })
+
+  // Mevcut sayfanın seçili envanterlerini QR data'sına çevir.
+  // Not: Seçim sayfalar arası kalır ama print sadece mevcut sayfadakileri
+  // gösterir — daha çok yazdırmak için page size artırılabilir.
+  const printableItems = useMemo<QrLabelData[]>(() => {
+    const rows = data?.data ?? []
+    const selectedSet = new Set(selectedIds)
+    return rows
+      .filter((r) => selectedSet.has(r.id))
+      .map((r) => ({
+        id: r.id,
+        serialNumber: r.serialNumber,
+        productName: r.productName,
+        productCode: r.productCode,
+        variantSku: r.productVariantSku,
+      }))
+  }, [data, selectedIds])
 
   const deleteInventory = useDeleteInventory()
 
@@ -273,6 +296,22 @@ export default function InventoryPage() {
                 setPage(0)
               },
             }}
+            rowSelection={{
+              getRowId: (row) => row.id,
+              selectedIds,
+              onSelectionChange: setSelectedIds,
+              bulkActions: (ids) => (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setQrPrintOpen(true)}
+                  disabled={ids.length === 0}
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Seçilenlere QR Yazdır ({ids.length})
+                </Button>
+              ),
+            }}
           />
         </CardContent>
       </Card>
@@ -282,6 +321,12 @@ export default function InventoryPage() {
         open={dialogOpen}
         onOpenChange={handleDialogClose}
         inventory={editingInventory}
+      />
+
+      <QrPrintDialog
+        open={qrPrintOpen}
+        onOpenChange={setQrPrintOpen}
+        items={printableItems}
       />
 
       <InventoryDetailSheet

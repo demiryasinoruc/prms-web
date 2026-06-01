@@ -16,6 +16,8 @@ export const CalendarEventTypeLabels: Record<CalendarEventType, string> = {
   [CalendarEventType.Custom]: "Özel",
 }
 
+export type CalendarEventKind = "Event" | "Rental"
+
 export interface CalendarEvent {
   id: string
   title: string
@@ -29,6 +31,8 @@ export interface CalendarEvent {
   employeeName: string | null
   color: string
   isActive: boolean
+  /** "Event" — kullanıcı eklediği; "Rental" — Rental tablosundan üretilmiş. */
+  kind: CalendarEventKind
 }
 
 export interface CalendarEventDetail {

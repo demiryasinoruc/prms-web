@@ -20,6 +20,7 @@ import { useCustomer } from "./hooks"
 import { CustomerType, type Customer } from "@/types/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { AttachmentSection } from "@/features/attachments/attachment-section"
 
 interface CustomerDetailSheetProps {
   open: boolean
@@ -193,6 +194,13 @@ export function CustomerDetailSheet({
                   </CardContent>
                 </Card>
               )}
+
+              <AttachmentSection
+                entityType="Customer"
+                entityId={customer.id}
+                description="Sözleşmeler, kimlik kopyaları, yetki belgesi (jpg, png, webp, pdf — max 10 MB)"
+                notice="KVKK: Kimlik ve sözleşme gibi kişisel veriler kanun gerektirdiği süre boyunca tutulmalı; gereksiz belgeleri yüklemekten kaçının."
+              />
             </div>
           </div>
         ) : (

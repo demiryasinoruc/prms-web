@@ -82,6 +82,7 @@ interface PlanPublicPayload {
   maxInventoryCount: number
   maxVehicleCount: number
   maxMonthlyRentalCount: number
+  maxAttachmentCount: number
 }
 
 // int.MaxValue civarı sınırsızdır (subscription-usage'da da bu sınır var).
@@ -97,6 +98,7 @@ function mapPlan(payload: PlanPublicPayload): PlanOption {
     { label: "Depo", value: formatLimit(payload.maxWarehouseCount) },
     { label: "Araç", value: formatLimit(payload.maxVehicleCount) },
     { label: "Aylık kiralama", value: formatLimit(payload.maxMonthlyRentalCount) },
+    { label: "Dosya eki", value: formatLimit(payload.maxAttachmentCount) },
     { label: "Kullanıcı", value: formatLimit(payload.maxUserCount) },
   ]
 

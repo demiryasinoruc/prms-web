@@ -23,8 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -100,6 +100,7 @@ const rentalItemSchema = z.object({
   endDateTime: z.string().nullable().optional(),
   discountType: z.nativeEnum(DiscountType).default(DiscountType.Percent),
   discountValue: z.number().default(0),
+  applyRentalDiscount: z.boolean().default(true),
 })
 
 const rentalServiceSchema = z.object({
@@ -113,6 +114,7 @@ const rentalServiceSchema = z.object({
   endDateTime: z.string().nullable().optional(),
   discountType: z.nativeEnum(DiscountType).default(DiscountType.Percent),
   discountValue: z.number().default(0),
+  applyRentalDiscount: z.boolean().default(true),
   notes: z.string().default(""),
 })
 
@@ -461,6 +463,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       endDateTime: item.endDateTime ? item.endDateTime.slice(0, 16) : null,
       discountType: item.discountType || DiscountType.Percent,
       discountValue: item.discountValue || 0,
+      applyRentalDiscount: item.applyRentalDiscount ?? true,
     })),
     services: editData.services.map((service) => ({
       extraServiceId: service.extraServiceId,
@@ -473,6 +476,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       endDateTime: service.endDateTime ? service.endDateTime.slice(0, 16) : null,
       discountType: service.discountType || DiscountType.Percent,
       discountValue: service.discountValue || 0,
+      applyRentalDiscount: service.applyRentalDiscount ?? true,
       notes: service.notes || "",
     })),
   } : defaultValues
@@ -857,12 +861,15 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     let itemsGrossTotal = 0
     let itemsDiscountTotal = 0
     let itemsLineTotal = 0
+    // Genel indirimin uygulanacağı taban (yalnızca applyRentalDiscount=true satırlar)
+    let discountableBase = 0
 
-    watchedItems?.forEach((_, index) => {
+    watchedItems?.forEach((item, index) => {
       const calc = calculateItemTotal(index)
       itemsGrossTotal += calc.grossTotal || 0
       itemsDiscountTotal += calc.discountAmount || 0
       itemsLineTotal += calc.lineTotal || 0
+      if (item?.applyRentalDiscount !== false) discountableBase += calc.lineTotal || 0
     })
 
     // Hizmet toplamları
@@ -870,26 +877,43 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     let servicesDiscountTotal = 0
     let servicesLineTotal = 0
 
-    watchedServices?.forEach((_, index) => {
+    watchedServices?.forEach((service, index) => {
       const calc = calculateServiceTotal(index)
       servicesGrossTotal += calc.grossTotal || 0
       servicesDiscountTotal += calc.discountAmount || 0
       servicesLineTotal += calc.lineTotal || 0
+      if (service?.applyRentalDiscount !== false) discountableBase += calc.lineTotal || 0
     })
 
     // Ara toplam (ürün + hizmet indirimleri uygulanmış)
     const subtotal = itemsLineTotal + servicesLineTotal
 
-    // Genel indirim SubTotal üzerinden hesaplanır
+    // Genel indirim yalnızca indirilebilir taban üzerinden hesaplanır (muaf satırlar hariç)
     let generalDiscountAmount = 0
     if (watchedRentalDiscountType === DiscountType.Percent) {
-      generalDiscountAmount = subtotal * ((watchedRentalDiscountValue || 0) / 100)
+      generalDiscountAmount = discountableBase * ((watchedRentalDiscountValue || 0) / 100)
     } else {
-      generalDiscountAmount = watchedRentalDiscountValue || 0
+      // Sabit tutar indirilebilir tabanı aşamaz
+      generalDiscountAmount = Math.min(watchedRentalDiscountValue || 0, discountableBase)
     }
 
-    // Genel toplam = Ara toplam - Genel indirim
-    const grandTotal = subtotal - generalDiscountAmount
+    // İndirim sonrası matrah temeli
+    const afterDiscount = subtotal - generalDiscountAmount
+
+    // KDV (önizleme): firma varsayılan oranı ile. Kayıt sırasında backend satır bazında
+    // kesin hesaplar; burada gösterilen indikatiftir.
+    const vatRate = companySettings?.defaultVatRate ?? 20
+    const pricesIncludeVat = companySettings?.pricesIncludeVat ?? false
+    const rate = vatRate / 100
+    let taxAmount = 0
+    if (vatRate > 0 && afterDiscount > 0) {
+      taxAmount = pricesIncludeVat
+        ? afterDiscount * rate / (1 + rate)
+        : afterDiscount * rate
+    }
+
+    // Genel toplam: KDV hariç ise üzerine eklenir; dahil ise zaten matrahın içinde
+    const grandTotal = pricesIncludeVat ? afterDiscount : afterDiscount + taxAmount
 
     // Depozito (ayrı gösterilir, toplama dahil değil - iade edilecek güvence bedeli)
     const depositAmount = watch("depositAmount") || 0
@@ -903,6 +927,9 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       servicesLineTotal,
       subtotal,
       generalDiscountAmount,
+      vatRate,
+      pricesIncludeVat,
+      taxAmount,
       grandTotal,
       depositAmount,
     }
@@ -1010,6 +1037,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       endDateTime: null,
       discountType: lastItem?.discountType ?? DiscountType.Percent,
       discountValue: 0,
+      applyRentalDiscount: true,
     })
 
     // Yeni eklenen kalemi otomatik aç
@@ -1403,7 +1431,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
           id: editId,
           data: {
             ...payload,
-            status: editData?.status || RentalStatus.Draft,
+            status: editData?.status || RentalStatus.Pending,
           },
         })
       } else {
@@ -1885,6 +1913,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                       endDateTime: null,
                       discountType: lastItem?.discountType ?? DiscountType.Percent,
                       discountValue: 0,
+                      applyRentalDiscount: true,
                     })
 
                     // Yeni eklenen kalemi otomatik aç
@@ -2195,6 +2224,24 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                     )}
                                   />
 
+                                  <Controller
+                                    control={control}
+                                    name={`items.${index}.applyRentalDiscount`}
+                                    render={({ field }) => (
+                                      <div className="space-y-2">
+                                        <Label>Genel İndirim</Label>
+                                        <div className="flex items-center gap-2 h-9">
+                                          <Switch
+                                            checked={field.value !== false}
+                                            onCheckedChange={field.onChange}
+                                          />
+                                          <span className="text-sm text-muted-foreground">
+                                            {field.value !== false ? "Uygulanır" : "Muaf"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )}
+                                  />
                                 </div>
                               </CollapsibleContent>
                             </Collapsible>
@@ -2418,6 +2465,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                 endDateTime: null,
                                 discountType: lastService?.discountType ?? DiscountType.Percent,
                                 discountValue: 0,
+                                applyRentalDiscount: true,
                                 notes: "",
                               })
 
@@ -2481,6 +2529,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                       endDateTime: null,
                       discountType: lastService?.discountType ?? DiscountType.Percent,
                       discountValue: 0,
+                      applyRentalDiscount: true,
                       notes: "",
                     })
 
@@ -2571,6 +2620,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                         endDateTime: null,
                         discountType: lastService?.discountType ?? DiscountType.Percent,
                         discountValue: 0,
+                        applyRentalDiscount: true,
                         notes: "",
                       })
                     }
@@ -2964,6 +3014,24 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                     )}
                                   />
 
+                                  <Controller
+                                    control={control}
+                                    name={`services.${index}.applyRentalDiscount`}
+                                    render={({ field }) => (
+                                      <div className="space-y-2">
+                                        <Label>Genel İndirim</Label>
+                                        <div className="flex items-center gap-2 h-9">
+                                          <Switch
+                                            checked={field.value !== false}
+                                            onCheckedChange={field.onChange}
+                                          />
+                                          <span className="text-sm text-muted-foreground">
+                                            {field.value !== false ? "Uygulanır" : "Muaf"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )}
+                                  />
                                 </div>
                               </CollapsibleContent>
                             </Collapsible>
@@ -2997,7 +3065,6 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
             {/* Özet */}
             <TabsContent value="summary" className="space-y-4 mt-4">
               {(() => {
-                const summaryCurrencyCode = selectedCurrency?.text || "TL"
                 const formatCurrency = (val: number) => val.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
                 // Tüm çakışmaları availabilityMap'ten konsolide et
@@ -3180,41 +3247,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                       </div>
                     )}
 
-                    {/* Genel Toplam */}
-                    <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Ürün Toplamı:</span>
-                        <span>{formatCurrency(totals.itemsLineTotal)} {summaryCurrencyCode}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Hizmet Toplamı:</span>
-                        <span>{formatCurrency(totals.servicesLineTotal)} {summaryCurrencyCode}</span>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="flex justify-between text-sm font-medium">
-                        <span className="text-muted-foreground">Ara Toplam:</span>
-                        <span>{formatCurrency(totals.subtotal)} {summaryCurrencyCode}</span>
-                      </div>
-                      {totals.generalDiscountAmount > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Genel İndirim {watchedRentalDiscountType === DiscountType.Percent ? `(%${watchedRentalDiscountValue})` : ""}:
-                          </span>
-                          <span className="text-orange-600">-{formatCurrency(totals.generalDiscountAmount)} {summaryCurrencyCode}</span>
-                        </div>
-                      )}
-                      <Separator className="my-2" />
-                      <div className="flex justify-between text-base font-bold">
-                        <span>Genel Toplam:</span>
-                        <span className="text-primary">{formatCurrency(totals.grandTotal)} {summaryCurrencyCode}</span>
-                      </div>
-                      {totals.depositAmount > 0 && (
-                        <div className="flex justify-between text-sm pt-2 border-t mt-2">
-                          <span className="text-muted-foreground">Depozito (Güvence Bedeli):</span>
-                          <span className="text-muted-foreground">{formatCurrency(totals.depositAmount)} {summaryCurrencyCode}</span>
-                        </div>
-                      )}
-                    </div>
+                    {/* Genel Toplam bloğu kaldırıldı — aynı toplamlar her zaman görünen
+                        alttaki "Fiyat Özeti" footer'ında gösteriliyor (tekrarı önlemek için). */}
 
                     {/* Boş durum */}
                     {(!watchedItems || watchedItems.length === 0) && (!watchedServices || watchedServices.length === 0) && (
@@ -3331,6 +3365,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                         </span>
                         <p className="font-medium text-orange-600">
                           -{totals.generalDiscountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
+                        </p>
+                      </div>
+                    )}
+                    {totals.taxAmount > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground">
+                          KDV (%{totals.vatRate}){totals.pricesIncludeVat ? " · dahil" : ""}
+                        </span>
+                        <p className="font-medium">
+                          {totals.taxAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedCurrency?.text || "TL"}
                         </p>
                       </div>
                     )}

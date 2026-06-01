@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import {
   FileText,
   User,
@@ -14,6 +14,9 @@ import {
   DollarSign,
   AlertTriangle,
   AlertCircle,
+  PackageCheck,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react"
 import {
   Sheet,
@@ -33,7 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useRentalDetail } from "./hooks"
+import { useRentalDetail, useUpdateRentalStatus, useCancelRental } from "./hooks"
 import {
   RentalStatus,
   RentalStatusLabels,
@@ -46,6 +49,9 @@ import {
 import { DeliveryType } from "@/features/company/api"
 import { useAvailabilityBatch } from "@/features/availability/hooks"
 import type { BatchAvailabilityRequest } from "@/features/availability/api"
+import { AttachmentSection } from "@/features/attachments/attachment-section"
+import { Button } from "@/components/ui/button"
+import { RentalReturnDialog } from "./rental-return-dialog"
 
 interface RentalDetailSheetProps {
   open: boolean
@@ -59,6 +65,43 @@ export function RentalDetailSheet({
   rentalId,
 }: RentalDetailSheetProps) {
   const { data: rental, isLoading } = useRentalDetail(rentalId)
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false)
+  const updateStatus = useUpdateRentalStatus()
+  const cancelRental = useCancelRental()
+
+  // İade butonu sadece Aktif + iade edilmemiş kalem varsa (iptal değilse).
+  const canReturn =
+    rental != null &&
+    !rental.isCancelled &&
+    rental.status === RentalStatus.Active &&
+    rental.items.some((i) => !i.isReturned)
+
+  // Statü geçiş aksiyonları — iptal edilmemiş kiralamalar için.
+  const canConfirm = rental != null && !rental.isCancelled && rental.status === RentalStatus.Pending
+  const canDeliver = rental != null && !rental.isCancelled && rental.status === RentalStatus.Confirmed
+  const canCancel =
+    rental != null && !rental.isCancelled && rental.status !== RentalStatus.Completed
+
+  const handleConfirm = () => {
+    if (!rental) return
+    updateStatus.mutate({ id: rental.id, data: { status: RentalStatus.Confirmed } })
+  }
+  const handleDeliver = () => {
+    if (!rental) return
+    updateStatus.mutate({
+      id: rental.id,
+      data: { status: RentalStatus.Active, actualStartDate: new Date().toISOString() },
+    })
+  }
+  const handleCancel = () => {
+    if (!rental) return
+    if (!window.confirm(`${rental.rentalNumber} numaralı kiralamayı iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+      return
+    }
+    cancelRental.mutate(rental.id)
+  }
+
+  const statusBusy = updateStatus.isPending || cancelRental.isPending
 
   // Detay açıldığında bu kiralamanın current çakışmalarını sorgula.
   // excludeRentalId ile bu kiralama kendi içeriğiyle çakışıyor sayılmaz.
@@ -180,20 +223,14 @@ export function RentalDetailSheet({
 
   const getStatusVariant = (status: RentalStatus) => {
     switch (status) {
-      case RentalStatus.Draft:
+      case RentalStatus.Pending:
         return "secondary"
-      case RentalStatus.Reservation:
+      case RentalStatus.Confirmed:
         return "outline"
       case RentalStatus.Active:
         return "default"
-      case RentalStatus.PartialReturn:
-        return "outline"
-      case RentalStatus.Waiting:
-        return "secondary"
       case RentalStatus.Completed:
         return "default"
-      case RentalStatus.Cancelled:
-        return "destructive"
       default:
         return "default"
     }
@@ -222,6 +259,38 @@ export function RentalDetailSheet({
                       {rental.customerName}
                     </SheetDescription>
                   </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+                  {canConfirm && (
+                    <Button size="sm" onClick={handleConfirm} disabled={statusBusy}>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Onayla
+                    </Button>
+                  )}
+                  {canDeliver && (
+                    <Button size="sm" onClick={handleDeliver} disabled={statusBusy}>
+                      <Truck className="mr-2 h-4 w-4" />
+                      Teslim Et
+                    </Button>
+                  )}
+                  {canReturn && (
+                    <Button size="sm" onClick={() => setReturnDialogOpen(true)} disabled={statusBusy}>
+                      <PackageCheck className="mr-2 h-4 w-4" />
+                      İade Et
+                    </Button>
+                  )}
+                  {canCancel && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancel}
+                      disabled={statusBusy}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      İptal Et
+                    </Button>
+                  )}
                 </div>
               </div>
             </SheetHeader>
@@ -257,9 +326,16 @@ export function RentalDetailSheet({
 
             {/* Durum ve Bayraklar */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant={getStatusVariant(rental.status)}>
-                {RentalStatusLabels[rental.status]}
-              </Badge>
+              {rental.isCancelled ? (
+                <Badge variant="destructive">İptal Edildi</Badge>
+              ) : (
+                <Badge variant={getStatusVariant(rental.status)}>
+                  {RentalStatusLabels[rental.status]}
+                </Badge>
+              )}
+              {!rental.isCancelled && rental.hasPartialReturn && (
+                <Badge variant="outline">Kısmi İade</Badge>
+              )}
               {hasFlag(rental.flags, RentalFlag.StartDelayed) && (
                 <Badge variant="destructive" className="flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
@@ -520,7 +596,7 @@ export function RentalDetailSheet({
                 )}
                 {rental.taxAmount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Vergi</span>
+                    <span className="text-muted-foreground">KDV</span>
                     <span>{formatPrice(rental.taxAmount, rental.currencyCode)}</span>
                   </div>
                 )}
@@ -619,6 +695,14 @@ export function RentalDetailSheet({
               </>
             )}
 
+            {/* Ekler */}
+            <Separator />
+            <AttachmentSection
+              entityType="Rental"
+              entityId={rental.id}
+              description="Sözleşme, teslim tutanağı, hasar fotoğrafları (jpg, png, webp, pdf — max 10 MB)"
+            />
+
             <Separator />
 
             {/* Meta Bilgiler */}
@@ -637,6 +721,11 @@ export function RentalDetailSheet({
           <DetailSheetEmptyState title="Kiralama Detayları" message="Kiralama bulunamadı" />
         )}
       </SheetContent>
+      <RentalReturnDialog
+        open={returnDialogOpen}
+        onOpenChange={setReturnDialogOpen}
+        rental={rental ?? null}
+      />
     </Sheet>
   )
 }

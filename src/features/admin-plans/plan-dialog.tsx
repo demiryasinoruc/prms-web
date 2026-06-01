@@ -36,7 +36,11 @@ const planSchema = z.object({
   yearlyPrice: z.coerce.number().min(0, "Yıllık fiyat 0 veya daha büyük olmalı"),
   maxUserCount: z.coerce.number().int().min(0),
   maxProductCount: z.coerce.number().int().min(0),
-  maxProjectCount: z.coerce.number().int().min(0),
+  maxWarehouseCount: z.coerce.number().int().min(0),
+  maxInventoryCount: z.coerce.number().int().min(0),
+  maxVehicleCount: z.coerce.number().int().min(0),
+  maxMonthlyRentalCount: z.coerce.number().int().min(0),
+  maxAttachmentCount: z.coerce.number().int().min(0),
   cycleType: z.coerce.number().refine(
     (v) => v === CYCLE_TYPE_DAY || v === CYCLE_TYPE_MONTH,
     "Periyot tipi seçiniz"
@@ -60,7 +64,11 @@ const defaultValues: PlanFormData = {
   yearlyPrice: 0,
   maxUserCount: 0,
   maxProductCount: 0,
-  maxProjectCount: 0,
+  maxWarehouseCount: 0,
+  maxInventoryCount: 0,
+  maxVehicleCount: 0,
+  maxMonthlyRentalCount: 0,
+  maxAttachmentCount: 0,
   cycleType: CYCLE_TYPE_MONTH,
   cycleValue: 1,
   isDemo: false,
@@ -77,7 +85,11 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
     yearlyPrice: plan.yearlyPrice,
     maxUserCount: plan.maxUserCount,
     maxProductCount: plan.maxProductCount,
-    maxProjectCount: plan.maxProjectCount,
+    maxWarehouseCount: plan.maxWarehouseCount,
+    maxInventoryCount: plan.maxInventoryCount,
+    maxVehicleCount: plan.maxVehicleCount,
+    maxMonthlyRentalCount: plan.maxMonthlyRentalCount,
+    maxAttachmentCount: plan.maxAttachmentCount,
     cycleType: plan.cycleType,
     cycleValue: plan.cycleValue,
     isDemo: plan.isDemo,
@@ -106,7 +118,11 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
         yearlyPrice: data.yearlyPrice,
         maxUserCount: data.maxUserCount,
         maxProductCount: data.maxProductCount,
-        maxProjectCount: data.maxProjectCount,
+        maxWarehouseCount: data.maxWarehouseCount,
+        maxInventoryCount: data.maxInventoryCount,
+        maxVehicleCount: data.maxVehicleCount,
+        maxMonthlyRentalCount: data.maxMonthlyRentalCount,
+        maxAttachmentCount: data.maxAttachmentCount,
         cycleType: data.cycleType,
         cycleValue: data.cycleValue,
         isDemo: data.isDemo,
@@ -126,11 +142,13 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{plan ? "Plan Düzenle" : "Yeni Plan"}</DialogTitle>
           <DialogDescription>
-            Subscription plan bilgilerini girin. Limit değerleri 0 ise bu sınır uygulanmaz.
+            Plan bilgilerini girin. Limit alanlarına 0 girilirse o kaynak için
+            hiçbir oluşturmaya izin verilmez. Sınırsız için yüksek bir değer
+            girin (örn. 2.000.000.000).
           </DialogDescription>
         </DialogHeader>
 
@@ -169,25 +187,57 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <FormField
-              label="Max Kullanıcı"
-              type="number"
-              {...register("maxUserCount")}
-              error={errors.maxUserCount?.message}
-            />
-            <FormField
-              label="Max Ürün"
-              type="number"
-              {...register("maxProductCount")}
-              error={errors.maxProductCount?.message}
-            />
-            <FormField
-              label="Max Proje"
-              type="number"
-              {...register("maxProjectCount")}
-              error={errors.maxProjectCount?.message}
-            />
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm font-medium">Limitler</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Her kaynak için ayrı limit. Sınırsız için 2.000.000.000 girin.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <FormField
+                label="Kullanıcı"
+                type="number"
+                {...register("maxUserCount")}
+                error={errors.maxUserCount?.message}
+              />
+              <FormField
+                label="Ürün"
+                type="number"
+                {...register("maxProductCount")}
+                error={errors.maxProductCount?.message}
+              />
+              <FormField
+                label="Depo"
+                type="number"
+                {...register("maxWarehouseCount")}
+                error={errors.maxWarehouseCount?.message}
+              />
+              <FormField
+                label="Envanter"
+                type="number"
+                {...register("maxInventoryCount")}
+                error={errors.maxInventoryCount?.message}
+              />
+              <FormField
+                label="Araç"
+                type="number"
+                {...register("maxVehicleCount")}
+                error={errors.maxVehicleCount?.message}
+              />
+              <FormField
+                label="Aylık Kiralama"
+                type="number"
+                {...register("maxMonthlyRentalCount")}
+                error={errors.maxMonthlyRentalCount?.message}
+              />
+              <FormField
+                label="Dosya Eki"
+                type="number"
+                {...register("maxAttachmentCount")}
+                error={errors.maxAttachmentCount?.message}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -46,6 +46,29 @@ export function useRentalForEdit(id: string | null) {
   })
 }
 
+// Çakışma satırı format'lar — 3 senaryo:
+// - serialNumber varsa: tracked envanter (ürün + seri no)
+// - quantity'ler varsa: countable/consumable ürün (X talep, Y müsait)
+// - ikisi de null: araç/personel çakışması (productName zaten "Teslimat: ..." formatında)
+function formatWarning(w: import("./api").AvailabilityWarning): string {
+  if (w.serialNumber) {
+    return `• ${w.productName} (${w.serialNumber}) — ${w.rentalNumber} ile çakışıyor (${formatRange(w.startDate, w.endDate)})`
+  }
+  if (w.requestedQuantity != null && w.availableQuantity != null) {
+    return `• ${w.productName} — ${w.requestedQuantity} talep, ${w.availableQuantity} müsait`
+  }
+  return `• ${w.productName} — ${w.rentalNumber} ile çakışıyor (${formatRange(w.startDate, w.endDate)})`
+}
+
+function formatRange(start: string, end: string): string {
+  const opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit", year: "numeric" }
+  const s = new Date(start)
+  const e = new Date(end)
+  const sStr = s.toLocaleDateString("tr-TR", opts)
+  const eStr = e.toLocaleDateString("tr-TR", opts)
+  return sStr === eStr ? sStr : `${sStr} – ${eStr}`
+}
+
 // Mutation Hooks
 export function useCreateRental() {
   const queryClient = useQueryClient()
@@ -57,11 +80,7 @@ export function useCreateRental() {
         // Çakışma uyarılarını tek persistent toast'a topluyoruz; warn modunda
         // kullanıcının gözden kaçırmaması kritik. Auto-dismiss yok, kullanıcı
         // kapatana kadar kalır.
-        const lines = data.warnings.map((w) =>
-          w.serialNumber
-            ? `• ${w.productName} (${w.serialNumber}) — ${w.rentalNumber} ile çakışıyor (${w.startDate} - ${w.endDate})`
-            : `• ${w.productName} — ${w.requestedQuantity} talep, ${w.availableQuantity} müsait`,
-        )
+        const lines = data.warnings.map(formatWarning)
         toast.warning(
           `Kiralama oluşturuldu ancak ${data.warnings.length} çakışma tespit edildi`,
           {
@@ -84,11 +103,7 @@ export function useUpdateRental() {
       rentalApi.update(id, data),
     onSuccess: (data, variables) => {
       if (data?.warnings?.length) {
-        const lines = data.warnings.map((w) =>
-          w.serialNumber
-            ? `• ${w.productName} (${w.serialNumber}) — ${w.rentalNumber} ile çakışıyor (${w.startDate} - ${w.endDate})`
-            : `• ${w.productName} — ${w.requestedQuantity} talep, ${w.availableQuantity} müsait`,
-        )
+        const lines = data.warnings.map(formatWarning)
         toast.warning(
           `Kiralama güncellendi ancak ${data.warnings.length} çakışma tespit edildi`,
           {
@@ -114,6 +129,18 @@ export function useUpdateRentalStatus() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: rentalKeys.lists() })
       queryClient.invalidateQueries({ queryKey: rentalKeys.detail(variables.id) })
+    },
+  })
+}
+
+export function useCancelRental() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => rentalApi.cancel(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: rentalKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: rentalKeys.detail(id) })
     },
   })
 }

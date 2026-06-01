@@ -1,7 +1,10 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useDebounce } from "@/hooks/use-debounce"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Building2 } from "lucide-react"
+import { Building2, Eye } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useAuthStore } from "@/stores/auth"
 import {
   Card,
   CardContent,
@@ -47,6 +50,13 @@ export default function AdminCompaniesPage() {
 
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<AdminCompanyListItem | null>(null)
+  const navigate = useNavigate()
+  const impersonate = useAuthStore((s) => s.impersonate)
+
+  const handleImpersonate = (company: AdminCompanyListItem) => {
+    impersonate({ id: company.id, name: company.name })
+    navigate("/")
+  }
 
   const { data, isLoading } = useAdminCompanies({
     pageNumber: page + 1,
@@ -138,6 +148,22 @@ export default function AdminCompaniesPage() {
       header: "Kayıt Tarihi",
       enableSorting: true,
       cell: ({ row }) => formatDate(row.original.createdDate),
+    },
+    {
+      id: "actions",
+      header: "",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => handleImpersonate(row.original)}
+          title="Bu firmayı yönetici modunda aç"
+        >
+          <Eye className="mr-1.5 h-3.5 w-3.5" />
+          Olarak Gör
+        </Button>
+      ),
     },
   ]
 

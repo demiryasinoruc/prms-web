@@ -38,6 +38,7 @@ import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { Gender, type Employee } from "@/types/api"
 import { toast } from "sonner"
+import { AttachmentSection } from "@/features/attachments/attachment-section"
 
 const genderLabels: Record<Gender, string> = {
   [Gender.Male]: "Erkek",
@@ -275,6 +276,13 @@ export function EmployeeDetailSheet({
                   </CardContent>
                 </Card>
               )}
+
+              <AttachmentSection
+                entityType="Employee"
+                entityId={employee.id}
+                description="Sertifika kopyası, ehliyet, sözleşme (jpg, png, webp, pdf — max 10 MB)"
+                notice="KVKK: Kimlik, SGK ve diploma gibi kişisel veriler kanun gerektirdiği süre boyunca tutulmalı; gereksiz belgeleri yüklemekten kaçının."
+              />
             </div>
           </div>
         ) : (

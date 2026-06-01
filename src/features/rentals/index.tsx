@@ -90,20 +90,14 @@ export default function RentalsPage() {
 
   const getStatusVariant = (status: RentalStatus) => {
     switch (status) {
-      case RentalStatus.Draft:
+      case RentalStatus.Pending:
         return "secondary"
-      case RentalStatus.Reservation:
+      case RentalStatus.Confirmed:
         return "outline"
       case RentalStatus.Active:
         return "default"
-      case RentalStatus.PartialReturn:
-        return "outline"
-      case RentalStatus.Waiting:
-        return "secondary"
       case RentalStatus.Completed:
         return "default"
-      case RentalStatus.Cancelled:
-        return "destructive"
       default:
         return "default"
     }
@@ -138,9 +132,16 @@ export default function RentalsPage() {
         enableSorting: true,
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-1">
-            <Badge variant={getStatusVariant(row.original.status)}>
-              {RentalStatusLabels[row.original.status]}
-            </Badge>
+            {row.original.isCancelled ? (
+              <Badge variant="destructive">İptal Edildi</Badge>
+            ) : (
+              <Badge variant={getStatusVariant(row.original.status)}>
+                {RentalStatusLabels[row.original.status]}
+              </Badge>
+            )}
+            {!row.original.isCancelled && row.original.hasPartialReturn && (
+              <Badge variant="outline">Kısmi İade</Badge>
+            )}
             {hasFlag(row.original.flags, RentalFlag.StartDelayed) && (
               <Badge variant="destructive" className="flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3" />
@@ -244,7 +245,7 @@ export default function RentalsPage() {
             >
               <Eye className="h-4 w-4" />
             </Button>
-            {canUpdate && (row.original.status === RentalStatus.Draft || row.original.status === RentalStatus.Reservation) && (
+            {canUpdate && !row.original.isCancelled && (row.original.status === RentalStatus.Pending || row.original.status === RentalStatus.Confirmed) && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -258,7 +259,7 @@ export default function RentalsPage() {
                 <Pencil className="h-4 w-4" />
               </Button>
             )}
-            {canDelete && (row.original.status === RentalStatus.Draft || row.original.status === RentalStatus.Cancelled) && (
+            {canDelete && (row.original.status === RentalStatus.Pending || row.original.isCancelled) && (
               <Button
                 variant="ghost"
                 size="icon"

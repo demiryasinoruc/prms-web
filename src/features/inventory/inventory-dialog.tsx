@@ -26,7 +26,7 @@ import { FormSelectField } from "@/components/shared/form-select-field"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { DatePicker } from "@/components/shared/date-picker"
 import { Badge } from "@/components/ui/badge"
-import { useCreateInventory, useUpdateInventory } from "./hooks"
+import { useCreateInventory, useUpdateInventory, useInventoryDetail } from "./hooks"
 import { InventoryStatus, InventoryStatusLabels, type Inventory } from "./api"
 import { useProductSelectWithType } from "@/features/products/hooks"
 import { ProductType, ProductTypeLabels } from "@/features/products/api"
@@ -93,23 +93,29 @@ export function InventoryDialog({
   // Info dialog state
   const [showUnitCostInfo, setShowUnitCostInfo] = useState(false)
 
-  const formValues: InventoryFormData = (open && inventory) ? {
-    productId: inventory.productId,
-    productVariantId: inventory.productVariantId || null,
-    warehouseId: inventory.warehouseId,
-    status: inventory.status,
-    serialNumber: inventory.serialNumber || "",
-    quantity: inventory.quantity,
-    currentUnitValue: inventory.currentUnitValue,
-    currentLifespan: inventory.currentLifespan,
-    lastMaintenanceDate: inventory.lastMaintenanceDate
-      ? inventory.lastMaintenanceDate.split("T")[0]
+  // Edit modunda tam kaydı çek (liste DTO'su "notes" içermez; ondan doldurursak
+  // kayıtlı not sıfırlanır). Detail gelince `values` prop'u formu otomatik senkronlar.
+  const { data: inventoryDetail } = useInventoryDetail(open && inventory ? inventory.id : null)
+
+  const editSource = inventoryDetail ?? inventory
+
+  const formValues: InventoryFormData = (open && editSource) ? {
+    productId: editSource.productId,
+    productVariantId: editSource.productVariantId || null,
+    warehouseId: editSource.warehouseId,
+    status: editSource.status,
+    serialNumber: editSource.serialNumber || "",
+    quantity: editSource.quantity,
+    currentUnitValue: editSource.currentUnitValue,
+    currentLifespan: editSource.currentLifespan,
+    lastMaintenanceDate: editSource.lastMaintenanceDate
+      ? editSource.lastMaintenanceDate.split("T")[0]
       : null,
-    expiryDate: inventory.expiryDate
-      ? inventory.expiryDate.split("T")[0]
+    expiryDate: editSource.expiryDate
+      ? editSource.expiryDate.split("T")[0]
       : null,
-    notes: "",
-    isActive: inventory.isActive,
+    notes: inventoryDetail?.notes ?? "",
+    isActive: editSource.isActive,
   } : defaultValues
 
   const {

@@ -48,6 +48,7 @@ function PageLoader() {
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const isSystemAdmin = useAuthStore((state) => state.isSystemAdmin())
+  const impersonatedCompany = useAuthStore((state) => state.impersonatedCompany)
   const { isLoading } = useRefreshProfile()
 
   // Show loading while refreshing profile
@@ -59,8 +60,9 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  // Sistem admin firma akışına giremez, admin paneline yönlenir
-  if (isSystemAdmin) {
+  // Sistem admin normalde firma akışına giremez — admin paneline yönlenir.
+  // İSTİSNA: impersonation modunda ("Olarak Gör"), seçili firmanın akışına izin verilir.
+  if (isSystemAdmin && !impersonatedCompany) {
     return <Navigate to="/admin" replace />
   }
 

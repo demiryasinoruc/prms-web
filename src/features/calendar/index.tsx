@@ -1,48 +1,113 @@
-import { useState } from "react"
-import { type ColumnDef } from "@tanstack/react-table"
-import {
-  Plus,
-  Calendar,
-  Pencil,
-  Trash2,
-} from "lucide-react"
+import { useMemo, useRef, useState } from "react"
+import FullCalendar from "@fullcalendar/react"
+import dayGridPlugin from "@fullcalendar/daygrid"
+import timeGridPlugin from "@fullcalendar/timegrid"
+import listPlugin from "@fullcalendar/list"
+import interactionPlugin from "@fullcalendar/interaction"
+import trLocale from "@fullcalendar/core/locales/tr"
+import type {
+  EventClickArg,
+  EventInput,
+  DateSelectArg,
+} from "@fullcalendar/core"
+import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { DataTable } from "@/components/data-table"
-import { useCalendarEvents, useDeleteCalendarEvent } from "./hooks"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { useCalendarEvents } from "./hooks"
 import { EventDialog } from "./event-dialog"
 import {
   CalendarEventType,
   CalendarEventTypeLabels,
   type CalendarEvent,
 } from "./api"
+import { RentalDetailSheet } from "@/features/rentals/rental-detail-sheet"
+import { useEmployeeSelect } from "@/features/employees/hooks"
+import { useProductSelect } from "@/features/products/hooks"
+import { useInventorySelect } from "@/features/inventory/hooks"
+import { useWarehouseSelect } from "@/features/warehouses/hooks"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
 import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
+const NONE = "__none__"
+
 export default function CalendarPage() {
   const canManage = usePermission(Permissions.Calendar.Manage)
-  const [typeFilter, setTypeFilter] = useState<CalendarEventType | null>(null)
+  const calendarRef = useRef<FullCalendar>(null)
 
+  // Filter state
+  const [typeFilter, setTypeFilter] = useState<CalendarEventType | null>(null)
+  const [employeeFilter, setEmployeeFilter] = useState<string | null>(null)
+  const [productFilter, setProductFilter] = useState<string | null>(null)
+  const [inventoryFilter, setInventoryFilter] = useState<string | null>(null)
+  const [warehouseFilter, setWarehouseFilter] = useState<string | null>(null)
+
+  // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null)
   const dialogKey = useDialogResetKey(dialogOpen)
+  // Rental detail sheet — calendar'daki "Kiralama" satırına tıklayınca açılır
+  const [rentalDetailId, setRentalDetailId] = useState<string | null>(null)
 
-  const { data: events, isLoading } = useCalendarEvents({
+  // Data
+  const { data: events = [] } = useCalendarEvents({
     type: typeFilter || undefined,
+    employeeId: employeeFilter || undefined,
+    productId: productFilter || undefined,
+    inventoryId: inventoryFilter || undefined,
+    warehouseId: warehouseFilter || undefined,
   })
-  const deleteEvent = useDeleteCalendarEvent()
 
-  const handleEdit = (event: CalendarEvent) => {
-    setEditingEvent(event)
+  // Selects for filter dropdowns
+  const { data: employees = [] } = useEmployeeSelect()
+  const { data: products = [] } = useProductSelect()
+  const { data: inventories = [] } = useInventorySelect()
+  const { data: warehouses = [] } = useWarehouseSelect()
+
+  // FullCalendar event shape — uses startDate/endDate from API, color from event.
+  const fcEvents: EventInput[] = useMemo(
+    () =>
+      events.map((e) => ({
+        id: e.id,
+        title: e.title,
+        start: e.startDate,
+        end: e.endDate,
+        allDay: e.isAllDay,
+        backgroundColor: e.color || undefined,
+        borderColor: e.color || undefined,
+        extendedProps: { source: e },
+      })),
+    [events],
+  )
+
+  const handleEventClick = (info: EventClickArg) => {
+    const source = info.event.extendedProps.source as CalendarEvent | undefined
+    if (!source) return
+    if (source.kind === "Rental") {
+      setRentalDetailId(source.id)
+    } else {
+      setEditingEvent(source)
+      setDialogOpen(true)
+    }
+  }
+
+  const handleDateSelect = (sel: DateSelectArg) => {
+    if (!canManage) return
+    // Yeni etkinlik: tıklanan tarih aralığını dialog'a önceden geçir — şimdilik
+    // EventDialog default state ile açılıyor; ileride preselected start/end propsları eklenebilir.
+    setEditingEvent(null)
     setDialogOpen(true)
+    // Seçimi temizle
+    calendarRef.current?.getApi().unselect()
+    void sel
   }
 
   const handleDialogClose = () => {
@@ -50,127 +115,29 @@ export default function CalendarPage() {
     setEditingEvent(null)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("tr-TR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
+  const clearFilters = () => {
+    setTypeFilter(null)
+    setEmployeeFilter(null)
+    setProductFilter(null)
+    setInventoryFilter(null)
+    setWarehouseFilter(null)
   }
 
-  const getTypeVariant = (type: CalendarEventType) => {
-    switch (type) {
-      case CalendarEventType.Maintenance:
-        return "secondary"
-      case CalendarEventType.Holiday:
-        return "default"
-      case CalendarEventType.Blockout:
-        return "destructive"
-      case CalendarEventType.Reservation:
-        return "outline"
-      case CalendarEventType.Custom:
-        return "secondary"
-      default:
-        return "default"
-    }
-  }
-
-  const columns: ColumnDef<CalendarEvent>[] = [
-    {
-      accessorKey: "title",
-      header: "Başlık",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <div
-            className="h-3 w-3 rounded-full"
-            style={{ backgroundColor: row.original.color || "#3b82f6" }}
-          />
-          <span className="font-medium">{row.original.title}</span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "type",
-      header: "Tür",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <Badge variant={getTypeVariant(row.original.type)}>
-          {CalendarEventTypeLabels[row.original.type]}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "startDate",
-      header: "Başlangıç",
-      enableSorting: false,
-      cell: ({ row }) => formatDate(row.original.startDate),
-    },
-    {
-      accessorKey: "endDate",
-      header: "Bitiş",
-      enableSorting: false,
-      cell: ({ row }) => formatDate(row.original.endDate),
-    },
-    {
-      accessorKey: "isAllDay",
-      header: "Tüm Gün",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <Badge variant={row.original.isAllDay ? "default" : "outline"}>
-          {row.original.isAllDay ? "Evet" : "Hayır"}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "isActive",
-      header: "Durum",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <Badge variant={row.original.isActive ? "default" : "secondary"}>
-          {row.original.isActive ? "Aktif" : "Pasif"}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {canManage && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                title="Düzenle"
-                onClick={() => handleEdit(row.original)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                title="Sil"
-                onClick={() => deleteEvent.mutateAsync(row.original.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ]
+  const activeFilterCount = [
+    typeFilter,
+    employeeFilter,
+    productFilter,
+    inventoryFilter,
+    warehouseFilter,
+  ].filter((v) => v !== null).length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Takvim</h1>
           <p className="text-muted-foreground">
-            Etkinlikleri ve planlamaları yönetin
+            Etkinlikler, planlamalar ve rezervasyonlar
           </p>
         </div>
         {canManage && (
@@ -181,49 +148,122 @@ export default function CalendarPage() {
         )}
       </div>
 
-      {/* Tür Filtreleri */}
-      <div className="flex gap-2 flex-wrap">
-        <Badge
-          variant={typeFilter === null ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => setTypeFilter(null)}
-        >
-          Tümü
-        </Badge>
-        {Object.entries(CalendarEventTypeLabels).map(([key, label]) => (
-          <Badge
-            key={key}
-            variant={typeFilter === Number(key) ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setTypeFilter(Number(key) as CalendarEventType)}
-          >
-            {label}
-          </Badge>
-        ))}
-      </div>
+      {/* Filters */}
+      <Card className="p-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <FilterField label="Tür">
+            <Select
+              value={typeFilter === null ? NONE : String(typeFilter)}
+              onValueChange={(v) =>
+                setTypeFilter(v === NONE ? null : (Number(v) as CalendarEventType))
+              }
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>Tüm Türler</SelectItem>
+                {Object.entries(CalendarEventTypeLabels).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterField>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <CardTitle>Etkinlik Listesi</CardTitle>
-              <CardDescription>
-                Toplam {events?.length || 0} etkinlik
-              </CardDescription>
-            </div>
+          <FilterField label="Çalışan">
+            <SelectFilter
+              value={employeeFilter}
+              onChange={setEmployeeFilter}
+              options={employees.map((e) => ({ id: e.id, name: e.name }))}
+              placeholder="Tüm çalışanlar"
+            />
+          </FilterField>
+
+          <FilterField label="Araç / Envanter">
+            <SelectFilter
+              value={inventoryFilter}
+              onChange={setInventoryFilter}
+              options={inventories.map((i) => ({ id: i.id, name: i.name }))}
+              placeholder="Tüm envanter"
+            />
+          </FilterField>
+
+          <FilterField label="Ürün">
+            <SelectFilter
+              value={productFilter}
+              onChange={setProductFilter}
+              options={products.map((p) => ({ id: p.id, name: p.name }))}
+              placeholder="Tüm ürünler"
+            />
+          </FilterField>
+
+          <FilterField label="Depo">
+            <SelectFilter
+              value={warehouseFilter}
+              onChange={setWarehouseFilter}
+              options={warehouses.map((w) => ({ id: w.id, name: w.name }))}
+              placeholder="Tüm depolar"
+            />
+          </FilterField>
+        </div>
+        {activeFilterCount > 0 && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{activeFilterCount} filtre aktif</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              onClick={clearFilters}
+            >
+              Temizle
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={columns}
-            data={events || []}
-            isLoading={isLoading}
-            emptyMessage="Henüz etkinlik eklenmemiş"
+        )}
+      </Card>
+
+      {/* Calendar */}
+      <Card className="p-3">
+        <div className="fc-prms">
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
+            locale={trLocale}
+            firstDay={1}
+            headerToolbar={{
+              left: "prev,next today",
+              center: "title",
+              right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
+            }}
+            buttonText={{
+              today: "Bugün",
+              month: "Ay",
+              week: "Hafta",
+              day: "Gün",
+              list: "Liste",
+            }}
+            allDaySlot
+            allDayText="Tüm Gün"
+            slotMinTime="06:00:00"
+            slotMaxTime="24:00:00"
+            slotDuration="00:30:00"
+            slotLabelInterval="01:00:00"
+            slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+            eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+            nowIndicator
+            navLinks
+            selectable={canManage}
+            select={handleDateSelect}
+            events={fcEvents}
+            eventClick={handleEventClick}
+            height="auto"
+            contentHeight={650}
+            eventDisplay="block"
+            displayEventEnd
           />
-        </CardContent>
+        </div>
       </Card>
 
       <EventDialog
@@ -233,6 +273,56 @@ export default function CalendarPage() {
         event={editingEvent}
       />
 
+      <RentalDetailSheet
+        open={!!rentalDetailId}
+        onOpenChange={(open) => !open && setRentalDetailId(null)}
+        rentalId={rentalDetailId}
+      />
     </div>
+  )
+}
+
+function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{label}</Label>
+      {children}
+    </div>
+  )
+}
+
+interface SelectOption {
+  id: string
+  name: string
+}
+
+function SelectFilter({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string | null
+  onChange: (v: string | null) => void
+  options: SelectOption[]
+  placeholder: string
+}) {
+  return (
+    <Select
+      value={value ?? NONE}
+      onValueChange={(v) => onChange(v === NONE ? null : v)}
+    >
+      <SelectTrigger className="h-9">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NONE}>{placeholder}</SelectItem>
+        {options.map((o) => (
+          <SelectItem key={o.id} value={o.id}>
+            {o.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }

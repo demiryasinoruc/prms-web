@@ -1,7 +1,14 @@
 import api from "@/lib/axios"
 
 // Backend JsonStringEnumConverter ile string olarak serialize ediyor
-export type LimitType = "User" | "Product" | "Warehouse" | "Inventory" | "Vehicle" | "MonthlyRental"
+export type LimitType =
+  | "User"
+  | "Product"
+  | "Warehouse"
+  | "Inventory"
+  | "Vehicle"
+  | "MonthlyRental"
+  | "Attachment"
 
 export const LimitTypeLabels: Record<LimitType, string> = {
   User: "Kullanıcı",
@@ -10,6 +17,7 @@ export const LimitTypeLabels: Record<LimitType, string> = {
   Inventory: "Envanter",
   Vehicle: "Araç",
   MonthlyRental: "Aylık Kiralama",
+  Attachment: "Dosya Eki",
 }
 
 export interface UsageItem {

@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   Package,
   Pencil,
@@ -8,7 +9,9 @@ import {
   Hash,
   Activity,
   FileText,
+  QrCode,
 } from "lucide-react"
+import { QrPrintDialog } from "./qr-print-dialog"
 import {
   Sheet,
   SheetContent,
@@ -29,6 +32,7 @@ import {
 import { ProductType, ProductTypeLabels } from "@/features/products/api"
 import { usePermission } from "@/hooks/use-permission"
 import { Permissions } from "@/lib/permissions"
+import { AttachmentSection } from "@/features/attachments/attachment-section"
 
 interface InventoryDetailSheetProps {
   open: boolean
@@ -45,6 +49,7 @@ export function InventoryDetailSheet({
 }: InventoryDetailSheetProps) {
   const canUpdate = usePermission(Permissions.Inventory.Update)
   const { data: inventory, isLoading } = useInventoryDetail(inventoryId)
+  const [qrPrintOpen, setQrPrintOpen] = useState(false)
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-"
@@ -115,16 +120,26 @@ export function InventoryDetailSheet({
                     </SheetDescription>
                   </div>
                 </div>
-                {canUpdate && onEdit && (
+                <div className="flex gap-2 shrink-0">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onEdit(inventory)}
+                    onClick={() => setQrPrintOpen(true)}
                   >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Düzenle
+                    <QrCode className="mr-2 h-4 w-4" />
+                    QR Yazdır
                   </Button>
-                )}
+                  {canUpdate && onEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(inventory)}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Düzenle
+                    </Button>
+                  )}
+                </div>
               </div>
             </SheetHeader>
 
@@ -277,6 +292,14 @@ export function InventoryDetailSheet({
 
             <Separator />
 
+            <AttachmentSection
+              entityType="Inventory"
+              entityId={inventory.id}
+              description="Tespit fotoğrafları, fatura, ürün belgesi (jpg, png, webp, pdf — max 10 MB)"
+            />
+
+            <Separator />
+
             {/* Meta Bilgiler */}
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3 w-3" />
@@ -287,6 +310,24 @@ export function InventoryDetailSheet({
           <DetailSheetEmptyState title="Envanter Detayları" message="Envanter kaydı bulunamadı" />
         )}
       </SheetContent>
+      <QrPrintDialog
+        open={qrPrintOpen}
+        onOpenChange={setQrPrintOpen}
+        items={
+          inventory
+            ? [
+                {
+                  id: inventory.id,
+                  serialNumber: inventory.serialNumber,
+                  productName: inventory.productName,
+                  productCode: inventory.productCode,
+                  variantSku: inventory.productVariantSku,
+                },
+              ]
+            : []
+        }
+        title={`QR Etiket — ${inventory?.productName ?? ""}`}
+      />
     </Sheet>
   )
 }

@@ -8,8 +8,12 @@ export interface SubscriptionPlan {
   price: number
   yearlyPrice: number
   maxUserCount: number
-  maxProjectCount: number
   maxProductCount: number
+  maxWarehouseCount: number
+  maxInventoryCount: number
+  maxVehicleCount: number
+  maxMonthlyRentalCount: number
+  maxAttachmentCount: number
   cycleType: number
   cycleValue: number
   isDemo: boolean
@@ -24,8 +28,12 @@ export interface SubscriptionPlanForEdit {
   price: number
   yearlyPrice: number
   maxUserCount: number
-  maxProjectCount: number
   maxProductCount: number
+  maxWarehouseCount: number
+  maxInventoryCount: number
+  maxVehicleCount: number
+  maxMonthlyRentalCount: number
+  maxAttachmentCount: number
   cycleType: number
   cycleValue: number
   isDemo: boolean
@@ -46,8 +54,12 @@ export interface SubscriptionPlanCreateRequest {
   price: number
   yearlyPrice: number
   maxUserCount: number
-  maxProjectCount: number
   maxProductCount: number
+  maxWarehouseCount: number
+  maxInventoryCount: number
+  maxVehicleCount: number
+  maxMonthlyRentalCount: number
+  maxAttachmentCount: number
   cycleType: number
   cycleValue: number
   isDemo: boolean
@@ -61,6 +73,25 @@ interface ApiPlanListResponse {
   pageSize: number
   pageCount: number
   data: SubscriptionPlan[]
+}
+
+function toBackendPayload(data: SubscriptionPlanCreateRequest) {
+  return {
+    Name: data.name,
+    Description: data.description,
+    Price: data.price,
+    YearlyPrice: data.yearlyPrice,
+    MaxUserCount: data.maxUserCount,
+    MaxProductCount: data.maxProductCount,
+    MaxWarehouseCount: data.maxWarehouseCount,
+    MaxInventoryCount: data.maxInventoryCount,
+    MaxVehicleCount: data.maxVehicleCount,
+    MaxMonthlyRentalCount: data.maxMonthlyRentalCount,
+    MaxAttachmentCount: data.maxAttachmentCount,
+    CycleType: data.cycleType,
+    CycleValue: data.cycleValue,
+    IsDemo: data.isDemo,
+  }
 }
 
 export const subscriptionPlanApi = {
@@ -99,34 +130,12 @@ export const subscriptionPlanApi = {
   },
 
   create: async (data: SubscriptionPlanCreateRequest) => {
-    const response = await api.post("/subscription-plan", {
-      Name: data.name,
-      Description: data.description,
-      Price: data.price,
-      YearlyPrice: data.yearlyPrice,
-      MaxUserCount: data.maxUserCount,
-      MaxProjectCount: data.maxProjectCount,
-      MaxProductCount: data.maxProductCount,
-      CycleType: data.cycleType,
-      CycleValue: data.cycleValue,
-      IsDemo: data.isDemo,
-    })
+    const response = await api.post("/subscription-plan", toBackendPayload(data))
     return response.data
   },
 
   update: async (id: number, data: SubscriptionPlanUpdateRequest) => {
-    const response = await api.put(`/subscription-plan/${id}`, {
-      Name: data.name,
-      Description: data.description,
-      Price: data.price,
-      YearlyPrice: data.yearlyPrice,
-      MaxUserCount: data.maxUserCount,
-      MaxProjectCount: data.maxProjectCount,
-      MaxProductCount: data.maxProductCount,
-      CycleType: data.cycleType,
-      CycleValue: data.cycleValue,
-      IsDemo: data.isDemo,
-    })
+    const response = await api.put(`/subscription-plan/${id}`, toBackendPayload(data))
     return response.data
   },
 

@@ -39,6 +39,8 @@ const companySchema = z.object({
   productRuleCheckMode: z.number().default(1),
   autoMaintenanceOnDamagedReturn: z.boolean(),
   allowHourlyRental: z.boolean(),
+  defaultVatRate: z.coerce.number().min(0, "0'dan küçük olamaz").max(100, "100'den büyük olamaz"),
+  pricesIncludeVat: z.boolean(),
 })
 
 type CompanyFormData = z.infer<typeof companySchema>
@@ -63,6 +65,8 @@ export default function CompanySettingsPage() {
     productRuleCheckMode: 1,
     autoMaintenanceOnDamagedReturn: false,
     allowHourlyRental: false,
+    defaultVatRate: 20,
+    pricesIncludeVat: false,
   }
 
   const formValues: CompanyFormData = companyForEdit ? {
@@ -77,6 +81,8 @@ export default function CompanySettingsPage() {
     productRuleCheckMode: companyForEdit.productRuleCheckMode,
     autoMaintenanceOnDamagedReturn: companyForEdit.autoMaintenanceOnDamagedReturn,
     allowHourlyRental: companyForEdit.allowHourlyRental,
+    defaultVatRate: companyForEdit.defaultVatRate,
+    pricesIncludeVat: companyForEdit.pricesIncludeVat,
   } : defaultValues
 
   const {
@@ -107,6 +113,8 @@ export default function CompanySettingsPage() {
           productRuleCheckMode: data.productRuleCheckMode,
           autoMaintenanceOnDamagedReturn: data.autoMaintenanceOnDamagedReturn,
           allowHourlyRental: data.allowHourlyRental,
+          defaultVatRate: data.defaultVatRate,
+          pricesIncludeVat: data.pricesIncludeVat,
         },
       })
       toast.success("Firma bilgileri güncellendi")
@@ -319,6 +327,45 @@ export default function CompanySettingsPage() {
                         />
                       )}
                     />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label>KDV Dahil Fiyat Girişi</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Açıksa girdiğiniz birim fiyatlar KDV dahildir (KDV içinden ayrıştırılır). Kapalıysa fiyatlar KDV hariçtir ve KDV üzerine eklenir.
+                      </p>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="pricesIncludeVat"
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!canManage}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Varsayılan KDV Oranı (%)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      className="w-full max-w-xs"
+                      {...register("defaultVatRate")}
+                      disabled={!canManage}
+                    />
+                    {errors.defaultVatRate && (
+                      <p className="text-sm text-destructive">{errors.defaultVatRate.message}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      Tüm kiralama kalemlerine uygulanır. Türkiye genel oranı %20'dir.
+                    </p>
                   </div>
 
                   <div className="space-y-2">

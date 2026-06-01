@@ -32,6 +32,8 @@ export interface CompanyForEdit {
   productRuleCheckMode: number
   autoMaintenanceOnDamagedReturn: boolean
   allowHourlyRental: boolean
+  defaultVatRate: number
+  pricesIncludeVat: boolean
 }
 
 export interface CompanyUpdateRequest {
@@ -46,6 +48,8 @@ export interface CompanyUpdateRequest {
   productRuleCheckMode: number
   autoMaintenanceOnDamagedReturn: boolean
   allowHourlyRental: boolean
+  defaultVatRate: number
+  pricesIncludeVat: boolean
 }
 
 export const companyApi = {
@@ -77,6 +81,8 @@ export const companyApi = {
       productRuleCheckMode: number
       autoMaintenanceOnDamagedReturn: boolean
       allowHourlyRental: boolean
+      defaultVatRate: number
+      pricesIncludeVat: boolean
     }>(`/company/edit/${id}`)
     return {
       name: response.data.name,
@@ -90,6 +96,8 @@ export const companyApi = {
       productRuleCheckMode: response.data.productRuleCheckMode,
       autoMaintenanceOnDamagedReturn: response.data.autoMaintenanceOnDamagedReturn,
       allowHourlyRental: response.data.allowHourlyRental,
+      defaultVatRate: response.data.defaultVatRate,
+      pricesIncludeVat: response.data.pricesIncludeVat,
     } as CompanyForEdit
   },
 
@@ -106,6 +114,8 @@ export const companyApi = {
       productRuleCheckMode: data.productRuleCheckMode,
       autoMaintenanceOnDamagedReturn: data.autoMaintenanceOnDamagedReturn,
       allowHourlyRental: data.allowHourlyRental,
+      defaultVatRate: data.defaultVatRate,
+      pricesIncludeVat: data.pricesIncludeVat,
     })
   },
 }
