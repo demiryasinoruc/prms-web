@@ -25,6 +25,9 @@ import {
   Wrench,
   ClipboardCheck,
   Receipt,
+  SquareStack,
+  MailPlus,
+  Gauge,
   Loader2,
   type LucideIcon,
 } from "lucide-react"
@@ -76,6 +79,9 @@ const iconMap: Record<string, LucideIcon> = {
   Wrench,
   ClipboardCheck,
   Receipt,
+  SquareStack,
+  MailPlus,
+  Gauge,
 }
 
 // Fallback icon
