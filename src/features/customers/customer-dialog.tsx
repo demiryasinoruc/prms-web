@@ -268,9 +268,10 @@ export function CustomerDialog({
                 )}
 
                 <FormField
-                  label="Telefon"
+                  label="Telefon *"
                   placeholder="0555 555 55 55"
                   {...register("phone")}
+                  error={errors.phone?.message}
                 />
 
                 <FormField

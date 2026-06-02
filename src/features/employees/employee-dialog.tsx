@@ -162,9 +162,10 @@ export function EmployeeDialog({
             />
 
             <FormField
-              label="Telefon"
+              label="Telefon *"
               placeholder="0532 123 45 67"
               {...register("phone")}
+              error={errors.phone?.message}
             />
 
             <div className="col-span-2">
