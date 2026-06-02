@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { LogOut, Settings, User } from "lucide-react"
+import { LogOut, User } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -56,10 +56,6 @@ export function UserNav() {
               <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings/profile")}>
                 <User className="mr-2 h-4 w-4" />
                 Profil
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/settings")}>
-                <Settings className="mr-2 h-4 w-4" />
-                Ayarlar
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
