@@ -18,7 +18,14 @@ import {
   AlertTriangle,
   Clock,
 } from "lucide-react"
-import { useDashboardStats, useRecentRentals, useUpcomingReturns } from "./hooks"
+import { DonutChart } from "@/components/shared/donut-chart"
+import { RentalTrendChart } from "./rental-trend-chart"
+import {
+  useDashboardStats,
+  useRecentRentals,
+  useUpcomingReturns,
+  useRentalTrend,
+} from "./hooks"
 
 const RentalStatusLabels: Record<number, string> = {
   1: "Taslak",
@@ -45,6 +52,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading } = useDashboardStats()
   const { data: recentRentals, isLoading: recentRentalsLoading } = useRecentRentals()
   const { data: upcomingReturns, isLoading: upcomingReturnsLoading } = useUpcomingReturns()
+  const { data: rentalTrend, isLoading: rentalTrendLoading } = useRentalTrend()
 
   const statCards = [
     {
@@ -73,6 +81,9 @@ export default function DashboardPage() {
       subValue: stats?.totalInventoryCount
         ? `${Math.round((stats.availableInventoryCount / stats.totalInventoryCount) * 100)}% müsait`
         : undefined,
+      ratio: stats?.totalInventoryCount
+        ? stats.availableInventoryCount / stats.totalInventoryCount
+        : undefined,
     },
   ]
 
@@ -98,14 +109,22 @@ export default function DashboardPage() {
               {isLoading ? (
                 <Skeleton className="h-8 w-20" />
               ) : (
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
               )}
               <p className="text-xs text-muted-foreground">
                 {stat.description}
                 {stat.subValue && (
-                  <span className="ml-1 text-green-600">{stat.subValue}</span>
+                  <span className="ml-1 font-medium text-primary">{stat.subValue}</span>
                 )}
               </p>
+              {!isLoading && stat.ratio !== undefined && (
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${Math.round(stat.ratio * 100)}%` }}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -122,7 +141,7 @@ export default function DashboardPage() {
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold tabular-nums">
                 {stats?.activeMaintenanceSchedulesCount ?? 0}
               </div>
             )}
@@ -139,7 +158,7 @@ export default function DashboardPage() {
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold tabular-nums">
                 {stats?.scheduledMaintenanceCount ?? 0}
               </div>
             )}
@@ -156,7 +175,7 @@ export default function DashboardPage() {
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold tabular-nums text-blue-600">
                 {stats?.inProgressMaintenanceCount ?? 0}
               </div>
             )}
@@ -173,7 +192,7 @@ export default function DashboardPage() {
             {isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
-              <div className={`text-2xl font-bold ${stats?.overdueMaintenanceCount ? "text-destructive" : ""}`}>
+              <div className={`text-2xl font-bold tabular-nums ${stats?.overdueMaintenanceCount ? "text-destructive" : ""}`}>
                 {stats?.overdueMaintenanceCount ?? 0}
               </div>
             )}
@@ -181,6 +200,24 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Kiralama Trendi</CardTitle>
+          <CardDescription>Son 14 günde oluşturulan kiralamalar</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {rentalTrendLoading ? (
+            <Skeleton className="h-[220px] w-full" />
+          ) : rentalTrend && rentalTrend.length > 0 ? (
+            <RentalTrendChart data={rentalTrend} />
+          ) : (
+            <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+              Trend verisi yok
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -313,33 +350,43 @@ export default function DashboardPage() {
                 <Skeleton className="h-4 w-full" />
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                    <span className="text-sm">Planlanmış Bakımlar</span>
+              <div className="flex items-center gap-6">
+                <DonutChart
+                  segments={[
+                    { value: stats?.scheduledMaintenanceCount ?? 0, color: "#f59e0b", label: "Planlanmış" },
+                    { value: stats?.inProgressMaintenanceCount ?? 0, color: "hsl(var(--primary))", label: "Devam Eden" },
+                    { value: stats?.overdueMaintenanceCount ?? 0, color: "hsl(var(--destructive))", label: "Gecikmiş" },
+                  ]}
+                  centerLabel="bakım"
+                />
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
+                      <span className="text-sm">Planlanmış Bakımlar</span>
+                    </div>
+                    <Badge variant="secondary" className="tabular-nums">
+                      {stats?.scheduledMaintenanceCount ?? 0}
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">
-                    {stats?.scheduledMaintenanceCount ?? 0}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                    <span className="text-sm">Devam Eden Bakımlar</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                      <span className="text-sm">Devam Eden Bakımlar</span>
+                    </div>
+                    <Badge variant="secondary" className="tabular-nums">
+                      {stats?.inProgressMaintenanceCount ?? 0}
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">
-                    {stats?.inProgressMaintenanceCount ?? 0}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-red-500" />
-                    <span className="text-sm">Gecikmiş Bakımlar</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-destructive" />
+                      <span className="text-sm">Gecikmiş Bakımlar</span>
+                    </div>
+                    <Badge variant={stats?.overdueMaintenanceCount ? "destructive" : "secondary"} className="tabular-nums">
+                      {stats?.overdueMaintenanceCount ?? 0}
+                    </Badge>
                   </div>
-                  <Badge variant={stats?.overdueMaintenanceCount ? "destructive" : "secondary"}>
-                    {stats?.overdueMaintenanceCount ?? 0}
-                  </Badge>
                 </div>
               </div>
             )}

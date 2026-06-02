@@ -29,6 +29,12 @@ export interface UpcomingReturn {
   status: number
 }
 
+export interface RentalTrendPoint {
+  /** "yyyy-MM-dd" (UTC) */
+  date: string
+  count: number
+}
+
 export const dashboardApi = {
   getStats: async (): Promise<DashboardStats> => {
     const response = await api.get<DashboardStats>("/dashboard/stats")
@@ -40,6 +46,10 @@ export const dashboardApi = {
   },
   getUpcomingReturns: async (): Promise<UpcomingReturn[]> => {
     const response = await api.get<UpcomingReturn[]>("/dashboard/upcoming-returns")
+    return response.data
+  },
+  getRentalTrend: async (): Promise<RentalTrendPoint[]> => {
+    const response = await api.get<RentalTrendPoint[]>("/dashboard/rental-trend")
     return response.data
   },
 }

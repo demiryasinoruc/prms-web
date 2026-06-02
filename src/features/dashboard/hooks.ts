@@ -6,6 +6,7 @@ export const dashboardKeys = {
   stats: () => [...dashboardKeys.all, "stats"] as const,
   recentRentals: () => [...dashboardKeys.all, "recent-rentals"] as const,
   upcomingReturns: () => [...dashboardKeys.all, "upcoming-returns"] as const,
+  rentalTrend: () => [...dashboardKeys.all, "rental-trend"] as const,
 }
 
 export function useDashboardStats() {
@@ -26,5 +27,12 @@ export function useUpcomingReturns() {
   return useQuery({
     queryKey: dashboardKeys.upcomingReturns(),
     queryFn: () => dashboardApi.getUpcomingReturns(),
+  })
+}
+
+export function useRentalTrend() {
+  return useQuery({
+    queryKey: dashboardKeys.rentalTrend(),
+    queryFn: () => dashboardApi.getRentalTrend(),
   })
 }
