@@ -63,7 +63,7 @@ export function UserNav() {
         )}
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
-          Cikis Yap
+          Çıkış Yap
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
