@@ -39,6 +39,21 @@ import { useDialogResetKey } from "@/hooks/use-dialog-reset-key"
 
 const NONE = "__none__"
 
+/**
+ * Hex rengi (#rgb / #rrggbb) verilen alfa ile rgba'ya çevirir; hex değilse
+ * (örn. "oklch(var(--primary))") olduğu gibi döner. Etkinlik tint arka planları için.
+ */
+function withAlpha(color: string, alpha: number): string {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color)
+  if (!m) return color
+  let hex = m[1]
+  if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("")
+  const r = parseInt(hex.slice(0, 2), 16)
+  const g = parseInt(hex.slice(2, 4), 16)
+  const b = parseInt(hex.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 export default function CalendarPage() {
   const canManage = usePermission(Permissions.Calendar.Manage)
   const calendarRef = useRef<FullCalendar>(null)
@@ -72,19 +87,32 @@ export default function CalendarPage() {
   const { data: inventories = [] } = useInventorySelect()
   const { data: warehouses = [] } = useWarehouseSelect()
 
-  // FullCalendar event shape — uses startDate/endDate from API, color from event.
+  // FullCalendar event shape. Solid-doygun blok yerine yumuşak tint + sol vurgu
+  // çizgisi (CSS .fc-prms .fc-event). Kiralamalar sistem-atanmış renk taşıdığı
+  // için marka rengine (primary) çekilir; kullanıcı etkinlikleri seçtikleri rengi
+  // korur. Metin foreground ile her temada okunur kalır.
   const fcEvents: EventInput[] = useMemo(
     () =>
-      events.map((e) => ({
-        id: e.id,
-        title: e.title,
-        start: e.startDate,
-        end: e.endDate,
-        allDay: e.isAllDay,
-        backgroundColor: e.color || undefined,
-        borderColor: e.color || undefined,
-        extendedProps: { source: e },
-      })),
+      events.map((e) => {
+        const isRental = e.kind === "Rental"
+        const accent = isRental ? "oklch(var(--primary))" : e.color || "oklch(var(--primary))"
+        const bg = isRental
+          ? "oklch(var(--primary) / 0.16)"
+          : e.color
+            ? withAlpha(e.color, 0.16)
+            : "oklch(var(--primary) / 0.16)"
+        return {
+          id: e.id,
+          title: e.title,
+          start: e.startDate,
+          end: e.endDate,
+          allDay: e.isAllDay,
+          backgroundColor: bg,
+          borderColor: accent,
+          textColor: "oklch(var(--foreground))",
+          extendedProps: { source: e },
+        }
+      }),
     [events],
   )
 

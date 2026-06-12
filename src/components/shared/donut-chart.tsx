@@ -2,7 +2,7 @@ import { useId } from "react"
 
 export interface DonutSegment {
   value: number
-  /** CSS renk değeri — örn. "hsl(var(--primary))" veya "#f59e0b" */
+  /** CSS renk değeri — örn. "oklch(var(--primary))" veya "#f59e0b" */
   color: string
   label: string
 }
@@ -69,7 +69,7 @@ export function DonutChart({
         cy={center}
         r={radius}
         fill="none"
-        stroke="hsl(var(--muted))"
+        stroke="oklch(var(--muted))"
         strokeWidth={thickness}
       />
       {/* Segmentler — saat 12'den başlat */}

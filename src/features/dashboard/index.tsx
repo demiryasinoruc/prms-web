@@ -354,8 +354,8 @@ export default function DashboardPage() {
                 <DonutChart
                   segments={[
                     { value: stats?.scheduledMaintenanceCount ?? 0, color: "#f59e0b", label: "Planlanmış" },
-                    { value: stats?.inProgressMaintenanceCount ?? 0, color: "hsl(var(--primary))", label: "Devam Eden" },
-                    { value: stats?.overdueMaintenanceCount ?? 0, color: "hsl(var(--destructive))", label: "Gecikmiş" },
+                    { value: stats?.inProgressMaintenanceCount ?? 0, color: "oklch(var(--primary))", label: "Devam Eden" },
+                    { value: stats?.overdueMaintenanceCount ?? 0, color: "oklch(var(--destructive))", label: "Gecikmiş" },
                   ]}
                   centerLabel="bakım"
                 />
