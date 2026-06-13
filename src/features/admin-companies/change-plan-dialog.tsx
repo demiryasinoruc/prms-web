@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { FormField } from "@/components/shared/form-field"
 import { Label } from "@/components/ui/label"
 import { DatePicker } from "@/components/shared/date-picker"
 import {
@@ -54,7 +53,6 @@ export function ChangePlanDialog({
   const { data: plans = [] } = useSubscriptionPlanSelect()
 
   const {
-    register,
     handleSubmit,
     control,
     formState: { errors },

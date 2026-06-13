@@ -40,7 +40,6 @@ export function ExtendSubscriptionDialog({
   const defaultValues: FormData = { newEndDate: "" }
 
   const {
-    register,
     handleSubmit,
     control,
     formState: { errors },

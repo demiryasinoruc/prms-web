@@ -4,7 +4,6 @@ import { type ColumnDef } from "@tanstack/react-table"
 import {
   Sparkles,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,

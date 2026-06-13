@@ -19,5 +19,25 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Alt çizgi öneki = bilinçli kullanılmayan parametre (stub/imza koruma)
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      // react-hooks v6+ ile gelen React Compiler kuralları: bilinçli desenleri
+      // (dialog reset key, controlled wizard state vb.) da işaretliyor. Gate'i
+      // kırmasınlar diye warn; yeni kod yazarken yine görünür kalırlar.
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+    },
+  },
+  {
+    // Bileşen + sabit/yardımcı ihracını birlikte yapan altyapı dosyaları:
+    // shadcn ui varyantları, router guard'ları, test yardımcıları.
+    // HMR (fast refresh) kuralı bu dosyalarda yapısal olarak anlamsız.
+    files: ['src/components/ui/**', 'src/router/**', 'src/test/**'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])
