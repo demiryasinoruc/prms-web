@@ -123,6 +123,29 @@ export default function LoginPage() {
         const companyResponse = await api.get<CompanyResponse>("/company/get-company-by-user")
         company = companyResponse.data
       } catch {
+        // Firma yoksa self-serve kayıt yarım kalmıştır — firma oluşturma adımına yönlendir.
+        try {
+          const hasCompanyResponse = await api.get<{ hasCompany: boolean }>("/company/user-has-company")
+          if (!hasCompanyResponse.data.hasCompany) {
+            const profileResponse = await api.get<ProfileResponse>("/user/profile")
+            const profile = profileResponse.data
+            setAuth({
+              id: profile.id,
+              name: profile.name,
+              surname: profile.surname,
+              email: profile.email,
+              companyId: "",
+              companyName: "",
+              roleId: "",
+              roleName: "",
+            }, token, refreshToken, userType)
+            setPermissions([])
+            navigate("/create-company")
+            return
+          }
+        } catch {
+          // user-has-company da başarısızsa aşağıdaki genel hataya düş
+        }
         clearAuthState()
         setError("Hesabınıza bağlı bir firma bulunamadı. Lütfen yöneticinizle iletişime geçin.")
         return
@@ -238,6 +261,13 @@ export default function LoginPage() {
           Şifremi unuttum
         </Link>
       </div>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Hesabınız yok mu?{" "}
+        <Link to="/register" className="font-medium text-primary hover:underline">
+          Ücretsiz kayıt olun
+        </Link>
+      </p>
     </div>
   )
 }

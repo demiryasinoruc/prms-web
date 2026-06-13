@@ -8,6 +8,8 @@ const AdminLayout = lazy(() => import("@/components/layout/admin-layout"))
 const AuthLayout = lazy(() => import("@/components/layout/auth-layout"))
 
 const LoginPage = lazy(() => import("@/features/auth/login"))
+const RegisterPage = lazy(() => import("@/features/auth/register"))
+const CreateCompanyPage = lazy(() => import("@/features/auth/create-company"))
 const ForgotPasswordPage = lazy(() => import("@/features/auth/forgot-password"))
 const DashboardPage = lazy(() => import("@/features/dashboard"))
 const ProductsPage = lazy(() => import("@/features/products"))
@@ -101,6 +103,28 @@ function PublicRoute({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+/**
+ * Self-serve kayıt funnel'ının ara adımı: giriş yapılmış ama henüz firma yok.
+ * Firması olan kullanıcı buraya gelirse ana akışa yönlenir.
+ */
+function CompanySetupRoute({ children }: { children: ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isSystemAdmin = useAuthStore((state) => state.isSystemAdmin())
+  const company = useAuthStore((state) => state.company)
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+  if (isSystemAdmin) {
+    return <Navigate to="/admin" replace />
+  }
+  if (company?.id) {
+    return <Navigate to="/" replace />
+  }
+
+  return <>{children}</>
+}
+
 export const router = createBrowserRouter([
   {
     path: "/login",
@@ -112,6 +136,30 @@ export const router = createBrowserRouter([
           </AuthLayout>
         </Suspense>
       </PublicRoute>
+    ),
+  },
+  {
+    path: "/register",
+    element: (
+      <PublicRoute>
+        <Suspense fallback={<PageLoader />}>
+          <AuthLayout>
+            <RegisterPage />
+          </AuthLayout>
+        </Suspense>
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/create-company",
+    element: (
+      <CompanySetupRoute>
+        <Suspense fallback={<PageLoader />}>
+          <AuthLayout>
+            <CreateCompanyPage />
+          </AuthLayout>
+        </Suspense>
+      </CompanySetupRoute>
     ),
   },
   {
