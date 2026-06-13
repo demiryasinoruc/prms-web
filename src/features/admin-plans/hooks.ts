@@ -23,6 +23,16 @@ export function useSubscriptionPlans(params: SubscriptionPlanListParams = {}) {
   })
 }
 
+export function useSubscriptionPlanForEdit(id: number | null) {
+  return useQuery({
+    queryKey: subscriptionPlanKeys.forEdit(id ?? 0),
+    queryFn: () => subscriptionPlanApi.getForEdit(id as number),
+    enabled: id != null,
+    staleTime: 0,
+    gcTime: 0,
+  })
+}
+
 export function useSubscriptionPlanSelect() {
   return useQuery({
     queryKey: subscriptionPlanKeys.select(),

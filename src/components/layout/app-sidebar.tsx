@@ -52,6 +52,20 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { useNavigation } from "@/features/navigation/hooks"
+import { useAuthStore } from "@/stores/auth"
+import type { FeatureKey } from "@/lib/entitlements"
+
+// Route → gerektirdiği plan özelliği. Özellik kapalıysa nav öğesi gizlenir.
+const ROUTE_FEATURE: Record<string, FeatureKey> = {
+  "/maintenance-records": "Maintenance",
+  "/maintenance-schedules": "Maintenance",
+  "/calendar": "Calendar",
+  "/product-rules": "ProductRules",
+  "/category-attributes": "CategoryAttributes",
+  "/extra-services": "ExtraServices",
+  "/certificates": "Certificates",
+  "/notifications": "Notifications",
+}
 
 // Icon mapping - backend'den gelen icon isimlerini Lucide componentlerine eşle
 const iconMap: Record<string, LucideIcon> = {
@@ -90,6 +104,17 @@ const DefaultIcon = Package
 export function AppSidebar() {
   const location = useLocation()
   const { data: navigation, isLoading } = useNavigation()
+  // Plan özelliği kapalı olan nav öğelerini gizle (re-render için features'a abone ol)
+  const features = useAuthStore((s) => s.features)
+  const isImpersonating = useAuthStore(
+    (s) => s.isSystemAdmin() && !!s.impersonatedCompany,
+  )
+  const featureVisible = (to: string): boolean => {
+    const required = ROUTE_FEATURE[to]
+    if (!required) return true
+    if (isImpersonating) return true
+    return features.includes(required)
+  }
 
   const isActive = (href: string, exact: boolean = false) => {
     if (href === "/") {
@@ -105,9 +130,21 @@ export function AppSidebar() {
     return iconMap[iconName] || DefaultIcon
   }
 
+  // Plan özelliğine göre nav öğelerini ele: alt menüsü olanlarda kapalı alt öğeleri
+  // çıkar, hiç alt öğe kalmazsa üst öğeyi de gizle; tekil öğeyi doğrudan ele.
+  const visibleNavigation = (navigation || [])
+    .map((item) => {
+      if (item.sub && item.sub.length > 0) {
+        const sub = item.sub.filter((s) => featureVisible(s.to))
+        return sub.length > 0 ? { ...item, sub } : null
+      }
+      return featureVisible(item.to) ? item : null
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+
   // Yönetim menüsü (Ayarlar) ayrı gösterilecek
-  const mainNavigation = navigation?.filter(item => item.name !== "Ayarlar") || []
-  const adminNavigation = navigation?.filter(item => item.name === "Ayarlar") || []
+  const mainNavigation = visibleNavigation.filter(item => item.name !== "Ayarlar")
+  const adminNavigation = visibleNavigation.filter(item => item.name === "Ayarlar")
 
   return (
     <Sidebar collapsible="icon">

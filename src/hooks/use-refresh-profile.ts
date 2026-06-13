@@ -2,6 +2,21 @@ import { useEffect, useState, useRef } from "react"
 import { useAuthStore, SYSTEM_ADMIN_USER_TYPE } from "@/stores/auth"
 import api from "@/lib/axios"
 
+interface EntitlementsResponse {
+  planName: string
+  items: { key: string; enabled: boolean; limitValue: number | null }[]
+}
+
+/** Aktif aboneliğin açık özelliklerini çeker (nav/route gizleme için). Hata olursa boş. */
+async function loadCompanyFeatures(): Promise<string[]> {
+  try {
+    const res = await api.get<EntitlementsResponse>("/subscription/entitlements")
+    return res.data.items.filter((i) => i.enabled).map((i) => i.key)
+  } catch {
+    return []
+  }
+}
+
 interface ProfileResponse {
   id: string
   name: string
@@ -22,7 +37,7 @@ interface CompanyResponse {
  * Can be called from anywhere (e.g., after role updates).
  */
 export async function refreshUserProfile(): Promise<void> {
-  const { token, refreshToken, userType, setAuth, setCompany, setPermissions } = useAuthStore.getState()
+  const { token, refreshToken, userType, setAuth, setCompany, setPermissions, setFeatures } = useAuthStore.getState()
 
   if (!token) return
 
@@ -79,6 +94,7 @@ export async function refreshUserProfile(): Promise<void> {
       isActive: true,
     })
     setPermissions(profile.permissions)
+    setFeatures(await loadCompanyFeatures())
   } catch {
     // Silently fail - don't logout on refresh failure
     console.error("Failed to refresh user profile")
@@ -88,7 +104,7 @@ export async function refreshUserProfile(): Promise<void> {
 export function useRefreshProfile() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { token, userType, setAuth, setCompany, setPermissions, logout, refreshToken } = useAuthStore()
+  const { token, userType, setAuth, setCompany, setPermissions, setFeatures, logout, refreshToken } = useAuthStore()
 
   // Prevent double fetch in StrictMode
   const hasFetched = useRef(false)
@@ -163,6 +179,7 @@ export function useRefreshProfile() {
           isActive: true,
         })
         setPermissions(profile.permissions)
+        setFeatures(await loadCompanyFeatures())
 
         setError(null)
       } catch {

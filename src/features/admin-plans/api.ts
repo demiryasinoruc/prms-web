@@ -1,5 +1,6 @@
 import api from "@/lib/axios"
 import type { PaginatedResponse } from "@/types/api"
+import type { PlanFeature } from "@/lib/entitlements"
 
 export interface SubscriptionPlan {
   id: number
@@ -37,6 +38,7 @@ export interface SubscriptionPlanForEdit {
   cycleType: number
   cycleValue: number
   isDemo: boolean
+  features: PlanFeature[]
 }
 
 export interface SubscriptionPlanListParams {
@@ -63,6 +65,7 @@ export interface SubscriptionPlanCreateRequest {
   cycleType: number
   cycleValue: number
   isDemo: boolean
+  features: PlanFeature[]
 }
 
 export type SubscriptionPlanUpdateRequest = SubscriptionPlanCreateRequest
@@ -91,6 +94,7 @@ function toBackendPayload(data: SubscriptionPlanCreateRequest) {
     CycleType: data.cycleType,
     CycleValue: data.cycleValue,
     IsDemo: data.isDemo,
+    Features: (data.features ?? []).map((f) => ({ Key: f.key, Enabled: f.enabled })),
   }
 }
 

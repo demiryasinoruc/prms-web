@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
@@ -23,8 +24,14 @@ import { Switch } from "@/components/ui/switch"
 import {
   useCreateSubscriptionPlan,
   useUpdateSubscriptionPlan,
+  useSubscriptionPlanForEdit,
 } from "./hooks"
 import type { SubscriptionPlan } from "./api"
+import { FEATURE_KEYS, FEATURE_LABELS, type FeatureKey } from "@/lib/entitlements"
+
+// Yeni planda tüm özellikler varsayılan AÇIK (admin sonra kapatır)
+const allFeaturesEnabled = (): Record<FeatureKey, boolean> =>
+  Object.fromEntries(FEATURE_KEYS.map((k) => [k, true])) as Record<FeatureKey, boolean>
 
 const CYCLE_TYPE_DAY = 1
 const CYCLE_TYPE_MONTH = 2
@@ -78,6 +85,23 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
   const createPlan = useCreateSubscriptionPlan()
   const updatePlan = useUpdateSubscriptionPlan()
 
+  // Özellik matrisi (boolean) — zod formundan ayrı yerel state; düzenlemede getForEdit'ten yüklenir
+  const { data: planForEdit } = useSubscriptionPlanForEdit(open && plan ? plan.id : null)
+  const [features, setFeatures] = useState<Record<FeatureKey, boolean>>(allFeaturesEnabled)
+
+  useEffect(() => {
+    if (!open) return
+    if (plan && planForEdit?.features) {
+      const map = allFeaturesEnabled()
+      for (const f of planForEdit.features) {
+        if (f.key in map) map[f.key as FeatureKey] = f.enabled
+      }
+      setFeatures(map)
+    } else if (!plan) {
+      setFeatures(allFeaturesEnabled())
+    }
+  }, [open, plan, planForEdit])
+
   const formValues: PlanFormData = (open && plan) ? {
     name: plan.name,
     description: plan.description ?? "",
@@ -126,6 +150,7 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
         cycleType: data.cycleType,
         cycleValue: data.cycleValue,
         isDemo: data.isDemo,
+        features: FEATURE_KEYS.map((k) => ({ key: k, enabled: features[k] })),
       }
       if (plan) {
         await updatePlan.mutateAsync({ id: plan.id, data: payload })
@@ -237,6 +262,33 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
                 {...register("maxAttachmentCount")}
                 error={errors.maxAttachmentCount?.message}
               />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm font-medium">Özellikler</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Bu pakette hangi modüller açık olsun. Kapalı özelliği abone kullanamaz.
+                Değişiklik yalnızca yeni/yenilenen abonelikleri etkiler; mevcut aboneler
+                aldıkları haklarla devam eder.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {FEATURE_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className="flex items-center justify-between rounded-lg border px-3 py-2"
+                >
+                  <span className="text-sm">{FEATURE_LABELS[key]}</span>
+                  <Switch
+                    checked={features[key]}
+                    onCheckedChange={(checked) =>
+                      setFeatures((prev) => ({ ...prev, [key]: checked }))
+                    }
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
