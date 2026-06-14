@@ -48,6 +48,7 @@ const planSchema = z.object({
   maxVehicleCount: z.coerce.number().int().min(0),
   maxMonthlyRentalCount: z.coerce.number().int().min(0),
   maxAttachmentCount: z.coerce.number().int().min(0),
+  maxEmployeeCount: z.coerce.number().int().min(0),
   cycleType: z.coerce.number().refine(
     (v) => v === CYCLE_TYPE_DAY || v === CYCLE_TYPE_MONTH,
     "Periyot tipi seçiniz"
@@ -76,6 +77,7 @@ const defaultValues: PlanFormData = {
   maxVehicleCount: 0,
   maxMonthlyRentalCount: 0,
   maxAttachmentCount: 0,
+  maxEmployeeCount: 0,
   cycleType: CYCLE_TYPE_MONTH,
   cycleValue: 1,
   isDemo: false,
@@ -114,6 +116,7 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
     maxVehicleCount: plan.maxVehicleCount,
     maxMonthlyRentalCount: plan.maxMonthlyRentalCount,
     maxAttachmentCount: plan.maxAttachmentCount,
+    maxEmployeeCount: plan.maxEmployeeCount,
     cycleType: plan.cycleType,
     cycleValue: plan.cycleValue,
     isDemo: plan.isDemo,
@@ -147,6 +150,7 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
         maxVehicleCount: data.maxVehicleCount,
         maxMonthlyRentalCount: data.maxMonthlyRentalCount,
         maxAttachmentCount: data.maxAttachmentCount,
+        maxEmployeeCount: data.maxEmployeeCount,
         cycleType: data.cycleType,
         cycleValue: data.cycleValue,
         isDemo: data.isDemo,
@@ -261,6 +265,12 @@ export function PlanDialog({ open, onOpenChange, plan }: PlanDialogProps) {
                 type="number"
                 {...register("maxAttachmentCount")}
                 error={errors.maxAttachmentCount?.message}
+              />
+              <FormField
+                label="Personel"
+                type="number"
+                {...register("maxEmployeeCount")}
+                error={errors.maxEmployeeCount?.message}
               />
             </div>
           </div>

@@ -9,6 +9,7 @@ export type LimitType =
   | "Vehicle"
   | "MonthlyRental"
   | "Attachment"
+  | "Employee"
 
 export const LimitTypeLabels: Record<LimitType, string> = {
   User: "Kullanıcı",
@@ -18,6 +19,7 @@ export const LimitTypeLabels: Record<LimitType, string> = {
   Vehicle: "Araç",
   MonthlyRental: "Aylık Kiralama",
   Attachment: "Dosya Eki",
+  Employee: "Personel",
 }
 
 export interface UsageItem {

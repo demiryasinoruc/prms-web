@@ -15,6 +15,7 @@ export interface SubscriptionPlan {
   maxVehicleCount: number
   maxMonthlyRentalCount: number
   maxAttachmentCount: number
+  maxEmployeeCount: number
   cycleType: number
   cycleValue: number
   isDemo: boolean
@@ -35,6 +36,7 @@ export interface SubscriptionPlanForEdit {
   maxVehicleCount: number
   maxMonthlyRentalCount: number
   maxAttachmentCount: number
+  maxEmployeeCount: number
   cycleType: number
   cycleValue: number
   isDemo: boolean
@@ -62,6 +64,7 @@ export interface SubscriptionPlanCreateRequest {
   maxVehicleCount: number
   maxMonthlyRentalCount: number
   maxAttachmentCount: number
+  maxEmployeeCount: number
   cycleType: number
   cycleValue: number
   isDemo: boolean
@@ -91,6 +94,7 @@ function toBackendPayload(data: SubscriptionPlanCreateRequest) {
     MaxVehicleCount: data.maxVehicleCount,
     MaxMonthlyRentalCount: data.maxMonthlyRentalCount,
     MaxAttachmentCount: data.maxAttachmentCount,
+    MaxEmployeeCount: data.maxEmployeeCount,
     CycleType: data.cycleType,
     CycleValue: data.cycleValue,
     IsDemo: data.isDemo,
