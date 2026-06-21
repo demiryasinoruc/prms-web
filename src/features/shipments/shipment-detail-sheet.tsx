@@ -310,9 +310,9 @@ export function ShipmentDetailSheet({
                           <TableCell>
                             <div>
                               <p className="font-medium">{item.productName}</p>
-                              {item.productVariantName && (
+                              {item.productVariantSku && (
                                 <p className="text-xs text-muted-foreground">
-                                  {item.productVariantName}
+                                  {item.productVariantSku}
                                 </p>
                               )}
                             </div>

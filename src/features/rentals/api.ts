@@ -348,6 +348,8 @@ export interface RentalForEdit {
   notes: string
   items: RentalItemForEdit[]
   services: RentalServiceForEdit[]
+  // Çoklu depo + sevkiyat (Faz 5). Düzenleme modunda ön-doldurma için planlı sevkiyatlar.
+  shipments: RentalShipmentForEdit[]
 }
 
 export interface RentalItemForEdit {
@@ -363,6 +365,19 @@ export interface RentalItemForEdit {
   discountType: DiscountType
   discountValue: number
   applyRentalDiscount: boolean
+  // Çoklu depo + sevkiyat: edit modunda kalem deposu/temin modu korunur.
+  warehouseId: string | null
+  fulfillmentMode: RentalItemFulfillmentMode
+}
+
+// Düzenleme modunda ön-doldurma için bir kiralamanın PLANLI sevkiyatı.
+export interface RentalShipmentForEdit {
+  sourceWarehouseId: string
+  fulfillmentType: ShipmentFulfillmentType
+  vehicleId: string | null
+  employeeId: string | null
+  plannedDate: string
+  notes: string | null
 }
 
 export interface RentalServiceForEdit {

@@ -39,6 +39,7 @@ import {
   RentalItemFulfillmentMode,
   ShipmentFulfillmentType,
   type RentalShipmentRequest,
+  type RentalShipmentForEdit,
 } from "./api"
 import { useCustomerSelect, useCustomerAddresses } from "@/features/customers/hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
@@ -758,10 +759,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       discountType: item.discountType || DiscountType.Percent,
       discountValue: item.discountValue || 0,
       applyRentalDiscount: item.applyRentalDiscount ?? true,
-      // Backend GetForEdit henüz kalem deposu/fulfillment döndürmüyor (Faz 5 sınırı).
-      // Edit'te varsayılan servis deposu kabul edilir; kullanıcı yeniden seçerse güncellenir.
-      warehouseId: null,
-      fulfillmentMode: RentalItemFulfillmentMode.ServiceWarehouse,
+      // Çoklu depo + sevkiyat: kalem deposu/temin modu GetForEdit'ten korunur.
+      // Aksi halde varsayılana sıfırlanıp PLANLI sevkiyatlar sessizce silinir (E1).
+      warehouseId: item.warehouseId ?? null,
+      fulfillmentMode: item.fulfillmentMode ?? RentalItemFulfillmentMode.ServiceWarehouse,
     })),
     services: editData.services.map((service) => ({
       extraServiceId: service.extraServiceId,
@@ -1056,6 +1057,18 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     return warehouses?.find((w) => w.id === id)?.name || ""
   }
 
+  // Edit modunda GetForEdit'ten gelen PLANLI sevkiyatların depo bazlı haritası.
+  // shipmentConfigs ön-doldurmasında kullanılır (kaydet'te sevkiyatlar korunsun).
+  const editShipmentMap = useMemo(() => {
+    const map = new Map<string, RentalShipmentForEdit>()
+    if (open && isEditMode && editData?.shipments) {
+      for (const s of editData.shipments) {
+        map.set(s.sourceWarehouseId, s)
+      }
+    }
+    return map
+  }, [open, isEditMode, editData])
+
   // Servis (ana) deposu dışındaki distinct kalem depoları (sevkiyat gerektirenler).
   // null depo (tedarik) hariç. Servis deposu seçili değilse tüm farklı depolar sevkiyat sayılır.
   const shipmentWarehouseIds = useMemo(() => {
@@ -1317,6 +1330,14 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     }
   }, [open])
 
+  // Edit modunda GetForEdit PLANLI sevkiyat döndürdüyse sevkiyat bölümünü aç
+  // (opsiyonel modda da görünsün). Aksi halde mevcut sevkiyat gizli kalıp kaydet'te silinir.
+  useEffect(() => {
+    if (open && isEditMode && editShipmentMap.size > 0) {
+      setShipmentEnabled(true)
+    }
+  }, [open, isEditMode, editShipmentMap])
+
   // Sevkiyat depoları değiştiğinde config state'ini senkronize et:
   //  - eksik depolar için varsayılan ayar EKLE
   //  - artık sevkiyat gerektirmeyen ("hayalet") depo key'lerini SİL (kalem silindi/depo değişti)
@@ -1335,24 +1356,36 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
           changed = true // orphan config silindi
         }
       }
-      // Eksik depolar için varsayılan ayar ekle
+      // Eksik depolar için ayar ekle. Edit modunda GetForEdit'ten gelen PLANLI
+      // sevkiyat (depo bazında) varsa onunla ön-doldur; yoksa varsayılan üret.
       for (const whId of shipmentWarehouseIds) {
         if (!next[whId]) {
-          next[whId] = {
-            fulfillmentType: ShipmentFulfillmentType.WarehouseDispatch,
-            vehicleId: null,
-            employeeId: null,
-            plannedDate: watchedPlannedStartDate
-              ? watchedPlannedStartDate.split("T")[0]
-              : "",
-            notes: "",
-          }
+          const existing = editShipmentMap.get(whId)
+          next[whId] = existing
+            ? {
+                fulfillmentType: existing.fulfillmentType,
+                vehicleId: existing.vehicleId,
+                employeeId: existing.employeeId,
+                plannedDate: existing.plannedDate
+                  ? existing.plannedDate.split("T")[0]
+                  : (watchedPlannedStartDate ? watchedPlannedStartDate.split("T")[0] : ""),
+                notes: existing.notes || "",
+              }
+            : {
+                fulfillmentType: ShipmentFulfillmentType.WarehouseDispatch,
+                vehicleId: null,
+                employeeId: null,
+                plannedDate: watchedPlannedStartDate
+                  ? watchedPlannedStartDate.split("T")[0]
+                  : "",
+                notes: "",
+              }
           changed = true
         }
       }
       return changed ? next : prev
     })
-  }, [shipmentWarehouseIds, watchedPlannedStartDate])
+  }, [shipmentWarehouseIds, watchedPlannedStartDate, editShipmentMap])
 
   // Depo değiştiğinde tracked ürünlerin inventoryId'sini temizle.
   // Envanterden türetilmiş warehouseId/fulfillmentMode da sıfırlanır (stale sevkiyat olmasın).

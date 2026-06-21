@@ -54,7 +54,8 @@ export interface RentalShipment {
 export interface RentalShipmentItem {
   id: string
   productName: string
-  productVariantName: string | null
+  // Backend RentalShipmentItemDetailDTO.ProductVariantSku döndürür (varyant etiketi = SKU).
+  productVariantSku: string | null
   serialNumber: string | null
   quantity: number
 }
