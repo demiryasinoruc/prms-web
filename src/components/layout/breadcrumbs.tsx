@@ -20,12 +20,14 @@ const routeLabels: Record<string, string> = {
   // Ürün & Stok
   products: "Ürünler",
   inventory: "Envanter",
+  "warehouse-transfers": "Depo Transferleri",
   "maintenance-schedules": "Bakım Planları",
   "maintenance-records": "Bakım Kayıtları",
   // Kaynaklar
   warehouses: "Depolar",
   vehicles: "Araçlar",
   employees: "Çalışanlar",
+  "employee-leaves": "İzinler",
   certificates: "Sertifikalar",
   // Tanımlar
   categories: "Kategoriler",

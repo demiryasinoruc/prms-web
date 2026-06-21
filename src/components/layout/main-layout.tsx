@@ -13,6 +13,7 @@ import { ThemeToggle } from "./theme-toggle"
 import { UserNav } from "./user-nav"
 import { Breadcrumbs } from "./breadcrumbs"
 import { NotificationBell } from "@/features/notifications/notification-bell"
+import { useNotificationHub } from "@/features/notifications/use-notification-hub"
 import { OnboardingWizard } from "@/features/onboarding/onboarding-wizard"
 import { useOnboardingStatus } from "@/features/onboarding/hooks"
 import { useAuthStore } from "@/stores/auth"
@@ -23,6 +24,9 @@ export default function MainLayout() {
   const navigate = useNavigate()
   const impersonatedCompany = useAuthStore((s) => s.impersonatedCompany)
   const exitImpersonation = useAuthStore((s) => s.exitImpersonation)
+
+  // Bildirimler için gerçek zamanlı SignalR bağlantısı (polling fallback olarak kalır)
+  useNotificationHub()
 
   // Onboarding tamamlanmamışsa wizard'ı otomatik aç (login sonrası ilk render)
   // Sysadmin impersonation modundaysa müşteri için tamamlanmış olabilir — wizard görünür kalır,

@@ -18,6 +18,7 @@ export enum NotificationType {
   RentalCancelled = 15,
   InventoryLost = 16,
   InventoryBroken = 17,
+  SubscriptionExpiryWarning = 18,
 }
 
 export const NotificationTypeLabels: Record<NotificationType, string> = {
@@ -38,6 +39,7 @@ export const NotificationTypeLabels: Record<NotificationType, string> = {
   [NotificationType.RentalCancelled]: "Kiralama İptal",
   [NotificationType.InventoryLost]: "Envanter Kayıp",
   [NotificationType.InventoryBroken]: "Envanter Arızalı",
+  [NotificationType.SubscriptionExpiryWarning]: "Abonelik Bitişi",
 }
 
 export enum NotificationStatus {

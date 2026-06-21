@@ -16,9 +16,11 @@ const ProductsPage = lazy(() => import("@/features/products"))
 const CustomersPage = lazy(() => import("@/features/customers"))
 const VehiclesPage = lazy(() => import("@/features/vehicles"))
 const EmployeesPage = lazy(() => import("@/features/employees"))
+const EmployeeLeavesPage = lazy(() => import("@/features/employee-leaves"))
 const WarehousesPage = lazy(() => import("@/features/warehouses"))
 const RentalsPage = lazy(() => import("@/features/rentals"))
 const InventoryPage = lazy(() => import("@/features/inventory"))
+const WarehouseTransfersPage = lazy(() => import("@/features/warehouse-transfers"))
 const CategoriesPage = lazy(() => import("@/features/categories"))
 const CategoryAttributesPage = lazy(() => import("@/features/category-attributes"))
 const ProductRulesPage = lazy(() => import("@/features/product-rules"))
@@ -244,6 +246,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "warehouse-transfers",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <WarehouseTransfersPage />
+          </Suspense>
+        ),
+      },
+      {
         path: "maintenance-schedules",
         element: (
           <Suspense fallback={<PageLoader />}>
@@ -282,6 +292,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <EmployeesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "employee-leaves",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <EmployeeLeavesPage />
           </Suspense>
         ),
       },
