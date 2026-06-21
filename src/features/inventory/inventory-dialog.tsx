@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
+import { LimitWarningAlert } from "@/components/shared/limit-warning-alert"
 import { DatePicker } from "@/components/shared/date-picker"
 import { Badge } from "@/components/ui/badge"
 import { useCreateInventory, useUpdateInventory, useInventoryDetail } from "./hooks"
@@ -244,6 +245,8 @@ export function InventoryDialog({
           </DialogTitle>
           <DialogDescription>Envanter bilgilerini girin</DialogDescription>
         </DialogHeader>
+
+        {!inventory && <LimitWarningAlert limitType="Inventory" className="mb-4" />}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">

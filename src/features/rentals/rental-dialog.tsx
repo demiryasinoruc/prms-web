@@ -43,6 +43,7 @@ import {
 } from "./api"
 import { useCustomerSelect, useCustomerAddresses } from "@/features/customers/hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
+import { LimitWarningAlert } from "@/components/shared/limit-warning-alert"
 import { useVehicleSelect, useVehicleSelectByWarehouse } from "@/features/vehicles/hooks"
 import { useEmployeeSelect, useEmployeeSelectByWarehouse } from "@/features/employees/hooks"
 import { useWarehouseSelect } from "@/features/warehouses/hooks"
@@ -1957,6 +1958,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
           <DialogTitle>{isEditMode ? "Kiralama Düzenle" : "Yeni Kiralama"}</DialogTitle>
           <DialogDescription>Kiralama bilgilerini girin</DialogDescription>
         </DialogHeader>
+
+        {!isEditMode && <LimitWarningAlert limitType="MonthlyRental" className="mb-4" />}
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
           {availabilityError && (

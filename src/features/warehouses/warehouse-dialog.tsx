@@ -3,6 +3,7 @@ import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
+import { LimitWarningAlert } from "@/components/shared/limit-warning-alert"
 import {
   Dialog,
   DialogContent,
@@ -113,6 +114,8 @@ export function WarehouseDialog({
             Depo bilgilerini girin
           </DialogDescription>
         </DialogHeader>
+
+        {!warehouse && <LimitWarningAlert limitType="Warehouse" className="mb-4" />}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-4">

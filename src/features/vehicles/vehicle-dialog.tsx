@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
+import { LimitWarningAlert } from "@/components/shared/limit-warning-alert"
 import { DatePicker } from "@/components/shared/date-picker"
 import { useCreateVehicle, useUpdateVehicle, useVehicleForEdit } from "./hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
@@ -150,6 +151,8 @@ export function VehicleDialog({
             Araç bilgilerini girin
           </DialogDescription>
         </DialogHeader>
+
+        {!vehicle && <LimitWarningAlert limitType="Vehicle" className="mb-4" />}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

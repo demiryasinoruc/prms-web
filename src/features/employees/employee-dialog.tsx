@@ -22,6 +22,7 @@ import {
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
+import { LimitWarningAlert } from "@/components/shared/limit-warning-alert"
 import { DatePicker } from "@/components/shared/date-picker"
 import { useCreateEmployee, useUpdateEmployee, useEmployeeForEdit } from "./hooks"
 import { useWarehouseSelect } from "@/features/warehouses/hooks"
@@ -122,6 +123,8 @@ export function EmployeeDialog({
             Çalışan bilgilerini girin
           </DialogDescription>
         </DialogHeader>
+
+        {!employee && <LimitWarningAlert limitType="Employee" className="mb-4" />}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

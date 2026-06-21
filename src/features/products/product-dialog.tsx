@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { FormField } from "@/components/shared/form-field"
+import { LimitWarningAlert } from "@/components/shared/limit-warning-alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   useCreateProduct,
@@ -406,6 +407,8 @@ export function ProductDialog({
             Ürün bilgilerini girin
           </DialogDescription>
         </DialogHeader>
+
+        {!product && <LimitWarningAlert limitType="Product" className="mb-4" />}
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

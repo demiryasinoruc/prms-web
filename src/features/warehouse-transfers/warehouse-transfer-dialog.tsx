@@ -1,7 +1,8 @@
 import { useForm, Controller, useFieldArray } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { z } from "zod"
-import { Loader2, Plus, Trash2 } from "lucide-react"
+import { Link } from "react-router-dom"
+import { Loader2, Plus, Trash2, AlertTriangle, ArrowUpRight } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -21,8 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { DatePicker } from "@/components/shared/date-picker"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
+import { useWarehouseSelect } from "@/features/warehouses/hooks"
 import {
   useCreateWarehouseTransfer,
   useUpdateWarehouseTransfer,
@@ -179,6 +182,10 @@ export function WarehouseTransferDialog({
   const isEditMode = !!editId
   const createTransfer = useCreateWarehouseTransfer()
   const updateTransfer = useUpdateWarehouseTransfer()
+  const { data: warehouses } = useWarehouseSelect()
+  // Transfer için en az 2 depo gerekir. Tek depo varsa (genelde plan kısıtı)
+  // select'ler sessizce pasif kalacağından, bunun yerine açık bir uyarı gösteririz.
+  const hasEnoughWarehouses = (warehouses?.length ?? 0) >= 2
   const { data: editData, isLoading: isLoadingEdit } = useWarehouseTransferForEdit(
     editId || null,
   )
@@ -264,7 +271,37 @@ export function WarehouseTransferDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {isEditMode && isLoadingEdit ? (
+        {!isEditMode && !hasEnoughWarehouses ? (
+          <div className="space-y-4">
+            <Alert variant="warning">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Transfer için en az 2 depo gerekir</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>
+                  Depo transferi için en az 2 depo gerekir. Mevcut planınız tek
+                  depoya izin veriyor olabilir — çoklu depo için Pro pakete
+                  yükseltin.
+                </p>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-400 bg-white/60 text-amber-900 hover:bg-white dark:bg-transparent dark:text-amber-200"
+                >
+                  <Link to="/settings/subscription">
+                    Paketi Yükselt
+                    <ArrowUpRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Kapat
+              </Button>
+            </div>
+          </div>
+        ) : isEditMode && isLoadingEdit ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
