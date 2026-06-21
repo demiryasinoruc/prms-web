@@ -142,6 +142,17 @@ export const vehicleApi = {
     }))
   },
 
+  // Depo-filtreli araç seçimi (sevkiyat için: kaynak depoya ait araçlar)
+  getSelectByWarehouse: async (warehouseId: string) => {
+    const response = await api.get<{ value: string; text: string }[]>(
+      `/vehicle/select/${warehouseId}`,
+    )
+    return response.data.map((item) => ({
+      id: item.value,
+      plate: item.text,
+    }))
+  },
+
   create: async (data: VehicleCreateRequest) => {
     const requestBody = {
       Type: data.vehicleType,

@@ -18,6 +18,29 @@ export const rentalKeys = {
   details: () => [...rentalKeys.all, "detail"] as const,
   detail: (id: string) => [...rentalKeys.details(), id] as const,
   forEdit: (id: string) => [...rentalKeys.all, "forEdit", id] as const,
+  warehouseStock: (
+    productId: string,
+    productVariantId: string | null | undefined,
+    start: string,
+    end: string,
+  ) =>
+    [...rentalKeys.all, "warehouseStock", productId, productVariantId ?? null, start, end] as const,
+}
+
+// Bir ürünün depolardaki müsait stoğu (kalem başına depo seçimi için).
+// productId + tarihler varsa etkin; tarihler değişince queryKey değiştiğinden yeniden çekilir.
+export function useProductWarehouseStock(
+  productId: string | null | undefined,
+  productVariantId: string | null | undefined,
+  start: string | null | undefined,
+  end: string | null | undefined,
+) {
+  return useQuery({
+    queryKey: rentalKeys.warehouseStock(productId || "", productVariantId, start || "", end || ""),
+    queryFn: () =>
+      rentalApi.getWarehouseStock(productId!, productVariantId, start!, end!),
+    enabled: !!productId && !!start && !!end,
+  })
 }
 
 // Query Hooks

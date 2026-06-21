@@ -32,12 +32,19 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { useCreateRental, useUpdateRental, useRentalForEdit } from "./hooks"
-import { RentalStatus, DiscountType } from "./api"
+import { useCreateRental, useUpdateRental, useRentalForEdit, useProductWarehouseStock } from "./hooks"
+import {
+  RentalStatus,
+  DiscountType,
+  RentalItemFulfillmentMode,
+  ShipmentFulfillmentType,
+  type RentalShipmentRequest,
+} from "./api"
 import { useCustomerSelect, useCustomerAddresses } from "@/features/customers/hooks"
 import { WarehouseSelect } from "@/components/shared/warehouse-select"
-import { useVehicleSelect } from "@/features/vehicles/hooks"
-import { useEmployeeSelect } from "@/features/employees/hooks"
+import { useVehicleSelect, useVehicleSelectByWarehouse } from "@/features/vehicles/hooks"
+import { useEmployeeSelect, useEmployeeSelectByWarehouse } from "@/features/employees/hooks"
+import { useWarehouseSelect } from "@/features/warehouses/hooks"
 import { useProductSelectForRental, useCurrencySelect, usePricePeriodSelect } from "@/features/products/hooks"
 import { ProductType } from "@/features/products/api"
 import { useInventorySelectByProduct } from "@/features/inventory/hooks"
@@ -101,6 +108,9 @@ const rentalItemSchema = z.object({
   discountType: z.nativeEnum(DiscountType).default(DiscountType.Percent),
   discountValue: z.number().default(0),
   applyRentalDiscount: z.boolean().default(true),
+  // Çoklu depo + sevkiyat (Faz 5). warehouseId null = tedarik edilecek.
+  warehouseId: z.string().nullable().optional(),
+  fulfillmentMode: z.nativeEnum(RentalItemFulfillmentMode).default(RentalItemFulfillmentMode.ServiceWarehouse),
 })
 
 const rentalServiceSchema = z.object({
@@ -330,6 +340,215 @@ function RentalItemInventorySelect({
   )
 }
 
+// Kalem başına depo seçimi (sayılabilir/sarf ürünler için).
+// Müsait depoları "{Depo} — {adet} adet" olarak listeler + "Tedarik edilecek" seçeneği.
+// Seçilen depoya göre fulfillmentMode hesaplanır (servis deposu / sevkiyat / tedarik).
+function RentalItemWarehouseSelect({
+  productId,
+  productVariantId,
+  start,
+  end,
+  serviceWarehouseId,
+  warehouseId,
+  fulfillmentMode,
+  onChange,
+}: {
+  productId: string
+  productVariantId: string | null | undefined
+  start: string | null | undefined
+  end: string | null | undefined
+  serviceWarehouseId: string | null | undefined
+  warehouseId: string | null | undefined
+  fulfillmentMode: RentalItemFulfillmentMode | undefined
+  // (warehouseId, fulfillmentMode) birlikte güncellenir
+  onChange: (warehouseId: string | null, mode: RentalItemFulfillmentMode) => void
+}) {
+  const { data: stock, isLoading } = useProductWarehouseStock(
+    productId,
+    productVariantId,
+    start,
+    end,
+  )
+
+  // Seçili değer: depo seçildiyse depo ID'si; açıkça tedarik moduna alındıysa "none";
+  // henüz hiç seçim yapılmadıysa placeholder göster (boş).
+  const selectValue = warehouseId
+    ? warehouseId
+    : fulfillmentMode === RentalItemFulfillmentMode.Procurement
+      ? "none"
+      : ""
+
+  const handleChange = (value: string) => {
+    if (value === "none") {
+      onChange(null, RentalItemFulfillmentMode.Procurement)
+      return
+    }
+    const mode =
+      serviceWarehouseId && value === serviceWarehouseId
+        ? RentalItemFulfillmentMode.ServiceWarehouse
+        : RentalItemFulfillmentMode.Shipment
+    onChange(value, mode)
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>Kaynak Depo *</Label>
+      <Select
+        key={`item-warehouse-${selectValue}`}
+        value={selectValue}
+        onValueChange={handleChange}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Depo seçiniz" />
+        </SelectTrigger>
+        <SelectContent>
+          {stock?.map((s) => (
+            <SelectItem key={s.warehouseId} value={s.warehouseId}>
+              {s.warehouseName} — {s.availableQuantity} adet
+              {serviceWarehouseId && s.warehouseId === serviceWarehouseId ? " (servis deposu)" : ""}
+            </SelectItem>
+          ))}
+          <SelectItem value="none">Tedarik edilecek (stok yok)</SelectItem>
+        </SelectContent>
+      </Select>
+      {!isLoading && stock && stock.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Bu ürün için müsait stok bulunamadı. Tedarik edilecek olarak işaretlenebilir.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// Bir kaynak depo için sevkiyat kartı: fulfillment tipi + (depodan gönderimde) araç/personel/tarih.
+interface ShipmentCardConfig {
+  fulfillmentType: ShipmentFulfillmentType
+  vehicleId: string | null
+  employeeId: string | null
+  plannedDate: string
+  notes: string
+}
+
+function ShipmentCard({
+  warehouseId,
+  warehouseName,
+  itemCount,
+  config,
+  onChange,
+}: {
+  warehouseId: string
+  warehouseName: string
+  itemCount: number
+  config: ShipmentCardConfig
+  onChange: (next: ShipmentCardConfig) => void
+}) {
+  // Araç/personel seçenekleri yalnızca depodan gönderimde (kaynak depoya filtreli) gerekir
+  const isDispatch = config.fulfillmentType === ShipmentFulfillmentType.WarehouseDispatch
+  const { data: vehicles } = useVehicleSelectByWarehouse(isDispatch ? warehouseId : null)
+  const { data: employees } = useEmployeeSelectByWarehouse(isDispatch ? warehouseId : null)
+
+  return (
+    <div className="rounded-lg border p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="font-medium">{warehouseName || "Depo"}</p>
+        <span className="text-xs text-muted-foreground">{itemCount} kalem</span>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Sevkiyat Tipi</Label>
+        <Select
+          key={`ship-type-${warehouseId}-${config.fulfillmentType}`}
+          value={String(config.fulfillmentType)}
+          onValueChange={(v) =>
+            onChange({ ...config, fulfillmentType: Number(v) as ShipmentFulfillmentType })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={String(ShipmentFulfillmentType.WarehouseDispatch)}>
+              Depodan gönderim
+            </SelectItem>
+            <SelectItem value={String(ShipmentFulfillmentType.PickupEnRoute)}>
+              Nakliyat esnasında depodan alınacak
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isDispatch && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Araç</Label>
+            <Select
+              key={`ship-vehicle-${warehouseId}-${config.vehicleId || "none"}`}
+              value={config.vehicleId || "none"}
+              onValueChange={(v) =>
+                onChange({ ...config, vehicleId: v === "none" ? null : v })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Araç seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Araç seçiniz</SelectItem>
+                {vehicles?.map((vehicle) => (
+                  <SelectItem key={vehicle.id} value={vehicle.id}>
+                    {vehicle.plate}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Personel</Label>
+            <Select
+              key={`ship-employee-${warehouseId}-${config.employeeId || "none"}`}
+              value={config.employeeId || "none"}
+              onValueChange={(v) =>
+                onChange({ ...config, employeeId: v === "none" ? null : v })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Personel seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Personel seçiniz</SelectItem>
+                {employees?.map((employee) => (
+                  <SelectItem key={employee.id} value={employee.id}>
+                    {employee.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label>Planlanan Tarih</Label>
+        <DatePicker
+          value={config.plannedDate}
+          onChange={(v) => onChange({ ...config, plannedDate: v })}
+          placeholder="Tarih seçiniz"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Notlar</Label>
+        <Textarea
+          value={config.notes}
+          onChange={(e) => onChange({ ...config, notes: e.target.value })}
+          placeholder="Sevkiyat notu (opsiyonel)"
+          rows={2}
+        />
+      </div>
+    </div>
+  )
+}
+
 interface RentalDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -351,9 +570,12 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const { data: pricePeriods, isLoading: isLoadingPricePeriods } = usePricePeriodSelect()
   const { data: extraServices, isLoading: isLoadingExtraServices } = useExtraServiceSelectForRental()
   const { data: companySettings } = useCompanySettings()
+  const { data: warehouses } = useWarehouseSelect()
   const allowHourlyRental = companySettings?.allowHourlyRental ?? false
   // AvailabilityCheckMode: 1 = Warn, 2 = Block. Default Warn.
   const isWarnMode = (companySettings?.availabilityCheckMode ?? 1) === 1
+  // Farklı depolardan gelen kalemler için sevkiyat zorunlu mu?
+  const requireShipment = companySettings?.requireShipmentForMultiWarehouseRental ?? false
   const { data: productRules } = useAllProductRules()
 
   // Lookup veriler yüklenene kadar loading göster
@@ -371,6 +593,18 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
   // Fiyat özeti footer açık/kapalı
   const [isPriceSummaryOpen, setIsPriceSummaryOpen] = useState(true)
+
+  // Sevkiyat bölümü: kullanıcı (opsiyonel modda) sevkiyat oluşturmayı açtı mı?
+  const [shipmentEnabled, setShipmentEnabled] = useState(false)
+  // Her kaynak depo için sevkiyat ayarları (depoId -> ayar)
+  interface ShipmentConfig {
+    fulfillmentType: ShipmentFulfillmentType
+    vehicleId: string | null
+    employeeId: string | null
+    plannedDate: string
+    notes: string
+  }
+  const [shipmentConfigs, setShipmentConfigs] = useState<Record<string, ShipmentConfig>>({})
 
   // Döviz kuru bilgi dialog'u
   const [isExchangeRateInfoOpen, setIsExchangeRateInfoOpen] = useState(false)
@@ -464,6 +698,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       discountType: item.discountType || DiscountType.Percent,
       discountValue: item.discountValue || 0,
       applyRentalDiscount: item.applyRentalDiscount ?? true,
+      // Backend GetForEdit henüz kalem deposu/fulfillment döndürmüyor (Faz 5 sınırı).
+      // Edit'te varsayılan servis deposu kabul edilir; kullanıcı yeniden seçerse güncellenir.
+      warehouseId: null,
+      fulfillmentMode: RentalItemFulfillmentMode.ServiceWarehouse,
     })),
     services: editData.services.map((service) => ({
       extraServiceId: service.extraServiceId,
@@ -751,6 +989,43 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     return map
   }, [availabilityData])
 
+  // ---- Çoklu depo + sevkiyat hesaplamaları (Faz 5) ----
+  // Depo adı yardımcı
+  const getWarehouseName = (id: string | null | undefined): string => {
+    if (!id) return ""
+    return warehouses?.find((w) => w.id === id)?.name || ""
+  }
+
+  // Servis (ana) deposu dışındaki distinct kalem depoları (sevkiyat gerektirenler).
+  // null depo (tedarik) hariç. Servis deposu seçili değilse tüm farklı depolar sevkiyat sayılır.
+  const shipmentWarehouseIds = useMemo(() => {
+    const serviceWh = watchedSourceWarehouseId || null
+    const set = new Set<string>()
+    for (const item of watchedItems || []) {
+      if (!item?.productId) continue
+      const wh = item.warehouseId || null
+      if (!wh) continue // tedarik
+      if (serviceWh && wh === serviceWh) continue // servis deposu = sevkiyat gerektirmez
+      set.add(wh)
+    }
+    return Array.from(set)
+  }, [watchedItems, watchedSourceWarehouseId])
+
+  // Tedarik bekleyen kalem indeksleri (açıkça "Tedarik edilecek" seçilenler)
+  const procurementItemIndexes = useMemo(() => {
+    const list: number[] = []
+    ;(watchedItems || []).forEach((item, idx) => {
+      if (item?.productId && item.fulfillmentMode === RentalItemFulfillmentMode.Procurement) {
+        list.push(idx)
+      }
+    })
+    return list
+  }, [watchedItems])
+
+  const hasMultiWarehouse = shipmentWarehouseIds.length > 0
+  // Zorunlu modda her zaman görünür; opsiyonel modda kullanıcı açtıysa görünür.
+  const showShipmentSection = hasMultiWarehouse && (requireShipment || shipmentEnabled)
+
   // Seçili para birimi TL mi? (TL varsayılan olarak ID=1 kabul ediyoruz)
   // Eğer currencies'den TL'nin ID'sini bulmak istersek currencies listesini kontrol edebiliriz
   const selectedCurrency = currencies?.find(c => c.value === watchedCurrencyId)
@@ -970,15 +1245,42 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     }
   }, [watchedDeliveryType, setValue])
 
-  // Dialog yeniden açıldığında nakliye banner state'ini sıfırla
+  // Dialog yeniden açıldığında nakliye banner ve sevkiyat state'ini sıfırla
   useEffect(() => {
     if (open) {
       setTransportBannerDismissed(false)
       setSelectedTransportServiceId("")
       setBulkServiceId("")
       setBulkCount(1)
+      setShipmentEnabled(false)
+      setShipmentConfigs({})
     }
   }, [open])
+
+  // Yeni bir sevkiyat deposu ortaya çıktığında varsayılan ayar oluştur.
+  // Mevcut ayarları korur; sadece eksik depolar için ekler.
+  useEffect(() => {
+    if (shipmentWarehouseIds.length === 0) return
+    setShipmentConfigs((prev) => {
+      let changed = false
+      const next = { ...prev }
+      for (const whId of shipmentWarehouseIds) {
+        if (!next[whId]) {
+          next[whId] = {
+            fulfillmentType: ShipmentFulfillmentType.WarehouseDispatch,
+            vehicleId: null,
+            employeeId: null,
+            plannedDate: watchedPlannedStartDate
+              ? watchedPlannedStartDate.split("T")[0]
+              : "",
+            notes: "",
+          }
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [shipmentWarehouseIds, watchedPlannedStartDate])
 
   // Depo değiştiğinde tracked ürünlerin inventoryId'sini temizle
   useEffect(() => {
@@ -1038,6 +1340,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       discountType: lastItem?.discountType ?? DiscountType.Percent,
       discountValue: 0,
       applyRentalDiscount: true,
+      warehouseId: null,
+      fulfillmentMode: RentalItemFulfillmentMode.ServiceWarehouse,
     })
 
     // Yeni eklenen kalemi otomatik aç
@@ -1259,9 +1563,11 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
   // Ürün seçildiğinde fiyat ve periyodu otomatik doldur
   const handleProductChange = (index: number, productId: string) => {
-    // Ürün değiştiğinde varyantı ve envanteri temizle
+    // Ürün değiştiğinde varyantı, envanteri ve depo seçimini temizle
     setValue(`items.${index}.productVariantId`, null)
     setValue(`items.${index}.inventoryId`, null)
+    setValue(`items.${index}.warehouseId`, null)
+    setValue(`items.${index}.fulfillmentMode`, RentalItemFulfillmentMode.ServiceWarehouse)
     const product = products?.find((p) => p.id === productId)
     if (product) {
       setValue(`items.${index}.unitPrice`, product.basePrice)
@@ -1402,6 +1708,27 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       return
     }
     try {
+      // Sevkiyat girişleri: yalnızca sevkiyat bölümü görünüyorsa (zorunlu mod ya da
+      // kullanıcı açtıysa) ve farklı depo varsa gönderilir. Aksi halde boş → eski davranış.
+      const shipments: RentalShipmentRequest[] = showShipmentSection
+        ? shipmentWarehouseIds
+            .map((whId) => {
+              const cfg = shipmentConfigs[whId]
+              if (!cfg) return null
+              const isDispatch =
+                cfg.fulfillmentType === ShipmentFulfillmentType.WarehouseDispatch
+              return {
+                sourceWarehouseId: whId,
+                fulfillmentType: cfg.fulfillmentType,
+                vehicleId: isDispatch ? cfg.vehicleId || null : null,
+                employeeId: isDispatch ? cfg.employeeId || null : null,
+                plannedDate: cfg.plannedDate || data.plannedStartDate.split("T")[0],
+                notes: cfg.notes || null,
+              } as RentalShipmentRequest
+            })
+            .filter((s): s is RentalShipmentRequest => s !== null)
+        : []
+
       const payload = {
         ...data,
         deliveryAddressId: data.deliveryAddressId || null,
@@ -1415,6 +1742,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
           pricePeriodId: item.pricePeriodId || null,
           startDateTime: item.startDateTime || null,
           endDateTime: item.endDateTime || null,
+          warehouseId: item.warehouseId || null,
+          fulfillmentMode: item.fulfillmentMode ?? RentalItemFulfillmentMode.ServiceWarehouse,
         })),
         services: data.services.map((service) => ({
           ...service,
@@ -1424,6 +1753,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
           startDateTime: service.startDateTime || null,
           endDateTime: service.endDateTime || null,
         })),
+        shipments,
       }
 
       if (isEditMode && editId) {
@@ -1914,6 +2244,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                       discountType: lastItem?.discountType ?? DiscountType.Percent,
                       discountValue: 0,
                       applyRentalDiscount: true,
+                      warehouseId: null,
+                      fulfillmentMode: RentalItemFulfillmentMode.ServiceWarehouse,
                     })
 
                     // Yeni eklenen kalemi otomatik aç
@@ -2083,6 +2415,39 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                         onChange={inventoryField.onChange}
                                       />
                                     )}
+                                  />
+                                )
+                              })()}
+
+                              {/* Kalem başına depo seçimi (çoklu depo + sevkiyat).
+                                  Takipli ürünlerde depo seri-no/envanterden türetilir;
+                                  burada yalnızca sayılabilir/sarf ürünler için seçim sunulur. */}
+                              {(() => {
+                                const selectedProduct = products?.find(p => p.id === watchedItems?.[index]?.productId)
+                                if (!selectedProduct) return null
+                                if (selectedProduct.type === ProductType.Tracked) {
+                                  return (
+                                    <div className="space-y-2">
+                                      <Label>Kaynak Depo</Label>
+                                      <p className="text-xs text-muted-foreground h-9 flex items-center">
+                                        Seçilen seri numarasının deposundan karşılanır.
+                                      </p>
+                                    </div>
+                                  )
+                                }
+                                return (
+                                  <RentalItemWarehouseSelect
+                                    productId={selectedProduct.id}
+                                    productVariantId={watchedItems?.[index]?.productVariantId}
+                                    start={watchedItems?.[index]?.startDateTime || watchedPlannedStartDate}
+                                    end={watchedItems?.[index]?.endDateTime || watchedPlannedEndDate}
+                                    serviceWarehouseId={watchedSourceWarehouseId}
+                                    warehouseId={watchedItems?.[index]?.warehouseId}
+                                    fulfillmentMode={watchedItems?.[index]?.fulfillmentMode}
+                                    onChange={(whId, mode) => {
+                                      setValue(`items.${index}.warehouseId`, whId)
+                                      setValue(`items.${index}.fulfillmentMode`, mode)
+                                    }}
                                   />
                                 )
                               })()}
@@ -2398,6 +2763,78 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                   </div>
                 )
               })()}
+
+              {/* ---- Çoklu Depo + Sevkiyat Bölümü (Faz 5) ---- */}
+              {hasMultiWarehouse && (
+                <div className="space-y-3 rounded-lg border border-blue-200 bg-blue-50/40 p-4 dark:border-blue-900 dark:bg-blue-950/20">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 mt-0.5 shrink-0 text-blue-700 dark:text-blue-400" />
+                    <div className="flex-1 space-y-2">
+                      <p className="text-sm font-medium">
+                        Farklı depolardan ürünler var
+                      </p>
+                      {requireShipment ? (
+                        <p className="text-sm text-muted-foreground">
+                          Servis deposu dışındaki kalemler için sevkiyat oluşturulması zorunludur.
+                        </p>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={shipmentEnabled}
+                            onCheckedChange={setShipmentEnabled}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            Sevkiyat oluşturmak ister misiniz?
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {showShipmentSection && (
+                    <div className="space-y-3 pt-1">
+                      {shipmentWarehouseIds.map((whId) => {
+                        const cfg = shipmentConfigs[whId]
+                        if (!cfg) return null
+                        const count = (watchedItems || []).filter(
+                          (it) => it?.productId && it.warehouseId === whId,
+                        ).length
+                        return (
+                          <ShipmentCard
+                            key={whId}
+                            warehouseId={whId}
+                            warehouseName={getWarehouseName(whId)}
+                            itemCount={count}
+                            config={cfg}
+                            onChange={(next) =>
+                              setShipmentConfigs((prev) => ({ ...prev, [whId]: next }))
+                            }
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tedarik bekleyen kalemler (bilgi amaçlı) */}
+              {procurementItemIndexes.length > 0 && (
+                <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                    Tedarik bekleyen kalemler
+                  </p>
+                  <ul className="list-disc list-inside text-sm text-muted-foreground space-y-0.5">
+                    {procurementItemIndexes.map((idx) => (
+                      <li key={idx}>
+                        {getProductName(watchedItems?.[idx]?.productId || "")}
+                        {" — "}
+                        {watchedItems?.[idx]?.quantity || 0} adet
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </TabsContent>
 
             {/* Ek Hizmetler */}

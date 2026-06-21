@@ -43,6 +43,15 @@ export function useVehicleSelect() {
   })
 }
 
+// Depo-filtreli araç seçimi (sevkiyat bölümü için). warehouseId yoksa devre dışı.
+export function useVehicleSelectByWarehouse(warehouseId: string | null | undefined) {
+  return useQuery({
+    queryKey: [...vehicleKeys.select(), "byWarehouse", warehouseId],
+    queryFn: () => vehicleApi.getSelectByWarehouse(warehouseId!),
+    enabled: !!warehouseId,
+  })
+}
+
 export function useCreateVehicle() {
   const queryClient = useQueryClient()
 

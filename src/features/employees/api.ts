@@ -109,6 +109,18 @@ export const employeeApi = {
     }))
   },
 
+  // Depo-filtreli personel seçimi (sevkiyat için: depo personeli + firma geneli null'lar)
+  getSelectByWarehouse: async (warehouseId: string) => {
+    const response = await api.get<{ value: string; text: string }[]>(
+      `/employee/select/${warehouseId}`,
+    )
+    return response.data.map((item) => ({
+      id: item.value,
+      name: item.text,
+      surname: "",
+    }))
+  },
+
   create: async (data: EmployeeCreateRequest) => {
     const requestBody = {
       Name: data.name,

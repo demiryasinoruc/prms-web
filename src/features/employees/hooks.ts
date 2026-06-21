@@ -43,6 +43,15 @@ export function useEmployeeSelect() {
   })
 }
 
+// Depo-filtreli personel seçimi (sevkiyat bölümü için). warehouseId yoksa devre dışı.
+export function useEmployeeSelectByWarehouse(warehouseId: string | null | undefined) {
+  return useQuery({
+    queryKey: [...employeeKeys.select(), "byWarehouse", warehouseId],
+    queryFn: () => employeeApi.getSelectByWarehouse(warehouseId!),
+    enabled: !!warehouseId,
+  })
+}
+
 export function useCreateEmployee() {
   const queryClient = useQueryClient()
 

@@ -12,6 +12,7 @@ export interface CompanySettings {
   allowHourlyRental: boolean
   defaultVatRate: number
   pricesIncludeVat: boolean
+  requireShipmentForMultiWarehouseRental: boolean
 }
 
 export const settingsApi = {

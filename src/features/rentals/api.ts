@@ -67,6 +67,19 @@ export enum DiscountType {
   Amount = 2,
 }
 
+// Kiralama kaleminin nasıl temin edileceği (backend RentalItemFulfillmentMode ile birebir)
+export enum RentalItemFulfillmentMode {
+  ServiceWarehouse = 1, // Servis (ana) deposundan — sevkiyat gerekmez
+  Shipment = 2,         // Başka bir depodan sevkiyatla
+  Procurement = 3,      // Tedarik bekliyor — kaynak depo henüz yok
+}
+
+// Sevkiyatın nasıl gerçekleştirileceği (backend ShipmentFulfillmentType ile birebir)
+export enum ShipmentFulfillmentType {
+  WarehouseDispatch = 1, // Depodan gönderim — araç/personel ile
+  PickupEnRoute = 2,     // Nakliyatta alınacak — yol üstü teslim
+}
+
 export const DiscountTypeLabels: Record<DiscountType, string> = {
   [DiscountType.Percent]: "Yüzde",
   [DiscountType.Amount]: "Tutar",
@@ -251,6 +264,27 @@ export interface RentalItemRequest {
   discountType: DiscountType
   discountValue: number
   applyRentalDiscount: boolean
+  // Çoklu depo + sevkiyat (Faz 5). Gönderilmezse backend ServiceWarehouse + null sayar.
+  warehouseId?: string | null
+  fulfillmentMode?: RentalItemFulfillmentMode
+}
+
+// Servis deposu dışındaki kalemler için üretilecek sevkiyat tanımı.
+// Aynı sourceWarehouseId'ye sahip Shipment modlu kalemler bu girişe bağlanır.
+export interface RentalShipmentRequest {
+  sourceWarehouseId: string
+  fulfillmentType: ShipmentFulfillmentType
+  vehicleId?: string | null
+  employeeId?: string | null
+  plannedDate: string
+  notes?: string | null
+}
+
+// Ürünün belirli bir depodaki tarih-aralığına göre müsait stoğu (yalnızca >0 dönülür)
+export interface ProductWarehouseStock {
+  warehouseId: string
+  warehouseName: string
+  availableQuantity: number
 }
 
 export interface RentalServiceRequest {
@@ -285,6 +319,7 @@ export interface RentalCreateRequest {
   notes: string
   items: RentalItemRequest[]
   services: RentalServiceRequest[]
+  shipments?: RentalShipmentRequest[]
 }
 
 export interface RentalUpdateStatusRequest {
@@ -364,6 +399,7 @@ export interface RentalUpdateRequest {
   notes: string
   items: RentalItemRequest[]
   services: RentalServiceRequest[]
+  shipments?: RentalShipmentRequest[]
 }
 
 export interface RentalPaymentRequest {
@@ -482,6 +518,8 @@ export const rentalApi = {
         DiscountType: item.discountType,
         DiscountValue: item.discountValue,
         ApplyRentalDiscount: item.applyRentalDiscount,
+        WarehouseId: item.warehouseId || null,
+        FulfillmentMode: item.fulfillmentMode ?? RentalItemFulfillmentMode.ServiceWarehouse,
       })),
       Services: data.services.map((service) => ({
         ExtraServiceId: service.extraServiceId,
@@ -497,6 +535,16 @@ export const rentalApi = {
         ApplyRentalDiscount: service.applyRentalDiscount,
         Notes: service.notes || "",
       })),
+      Shipments: (data.shipments && data.shipments.length > 0)
+        ? data.shipments.map((s) => ({
+            SourceWarehouseId: s.sourceWarehouseId,
+            FulfillmentType: s.fulfillmentType,
+            VehicleId: s.vehicleId || null,
+            EmployeeId: s.employeeId || null,
+            PlannedDate: s.plannedDate,
+            Notes: s.notes || null,
+          }))
+        : null,
     })
     return response.data
   },
@@ -530,6 +578,8 @@ export const rentalApi = {
         DiscountType: item.discountType,
         DiscountValue: item.discountValue,
         ApplyRentalDiscount: item.applyRentalDiscount,
+        WarehouseId: item.warehouseId || null,
+        FulfillmentMode: item.fulfillmentMode ?? RentalItemFulfillmentMode.ServiceWarehouse,
       })),
       Services: data.services.map((service) => ({
         ExtraServiceId: service.extraServiceId,
@@ -545,7 +595,36 @@ export const rentalApi = {
         ApplyRentalDiscount: service.applyRentalDiscount,
         Notes: service.notes || "",
       })),
+      Shipments: (data.shipments && data.shipments.length > 0)
+        ? data.shipments.map((s) => ({
+            SourceWarehouseId: s.sourceWarehouseId,
+            FulfillmentType: s.fulfillmentType,
+            VehicleId: s.vehicleId || null,
+            EmployeeId: s.employeeId || null,
+            PlannedDate: s.plannedDate,
+            Notes: s.notes || null,
+          }))
+        : null,
     })
+    return response.data
+  },
+
+  getWarehouseStock: async (
+    productId: string,
+    productVariantId: string | null | undefined,
+    start: string,
+    end: string,
+  ): Promise<ProductWarehouseStock[]> => {
+    const response = await api.get<ProductWarehouseStock[]>(
+      `/product/${productId}/warehouse-stock`,
+      {
+        params: {
+          productVariantId: productVariantId || undefined,
+          start,
+          end,
+        },
+      },
+    )
     return response.data
   },
 
