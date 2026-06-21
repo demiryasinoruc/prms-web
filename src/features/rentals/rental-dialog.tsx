@@ -339,8 +339,11 @@ function RentalItemInventorySelect({
     if (!inv) return
     if (itemWarehouseId === inv.warehouseId) return
     deriveFromInventory(inv)
+    // serviceWarehouseId eklendi (M2): servis deposu sonradan değişirse seçili
+    // envanterin fulfillmentMode'u yeniden hesaplansın. Idempotent guard
+    // (itemWarehouseId === inv.warehouseId) sonsuz render'ı önler.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inventories, value])
+  }, [inventories, value, serviceWarehouseId])
 
   return (
     <div className="space-y-2">
@@ -418,6 +421,8 @@ function RentalItemWarehouseSelect({
   // (warehouseId, fulfillmentMode) birlikte güncellenir
   onChange: (warehouseId: string | null, mode: RentalItemFulfillmentMode) => void
 }) {
+  // TODO(faz-7): kalem başına warehouse-stock isteği batch endpoint'e taşınmalı /
+  // useAvailabilityBatch ile birleştirilmeli (N istek + tutarsızlık riski).
   const { data: stock, isLoading } = useProductWarehouseStock(
     productId,
     productVariantId,
@@ -1312,13 +1317,25 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     }
   }, [open])
 
-  // Yeni bir sevkiyat deposu ortaya çıktığında varsayılan ayar oluştur.
-  // Mevcut ayarları korur; sadece eksik depolar için ekler.
+  // Sevkiyat depoları değiştiğinde config state'ini senkronize et:
+  //  - eksik depolar için varsayılan ayar EKLE
+  //  - artık sevkiyat gerektirmeyen ("hayalet") depo key'lerini SİL (kalem silindi/depo değişti)
+  // Tek setState ile (ekleme + silme birlikte). Yeni referans yalnızca gerçek değişiklik
+  // varsa üretilir (changed bayrağı) — aksi halde eski state döner, sonsuz render önlenir.
   useEffect(() => {
-    if (shipmentWarehouseIds.length === 0) return
+    const activeIds = new Set(shipmentWarehouseIds)
     setShipmentConfigs((prev) => {
       let changed = false
-      const next = { ...prev }
+      const next: Record<string, ShipmentConfig> = {}
+      // Yalnızca hâlâ aktif olan depoların ayarlarını koru
+      for (const key of Object.keys(prev)) {
+        if (activeIds.has(key)) {
+          next[key] = prev[key]
+        } else {
+          changed = true // orphan config silindi
+        }
+      }
+      // Eksik depolar için varsayılan ayar ekle
       for (const whId of shipmentWarehouseIds) {
         if (!next[whId]) {
           next[whId] = {
@@ -1764,6 +1781,45 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       toast.error(
         `${requiredSuggestions.length} zorunlu ürün kuralı karşılanmadı. Lütfen ürünler sekmesindeki uyarıları kontrol edin.`,
         { duration: 5000 }
+      )
+      return
+    }
+    // Fix C1: Sevkiyat bölümü görünürken eksik sevkiyat verisini sessizce backend'e
+    // göndermeyi engelle. Yalnızca showShipmentSection true iken (zorunlu mod ya da
+    // kullanıcı sevkiyatı açtığında) devreye girer; tek-depo / sevkiyatsız akışı etkilemez.
+    if (showShipmentSection) {
+      for (const whId of shipmentWarehouseIds) {
+        const cfg = shipmentConfigs[whId]
+        const whName = getWarehouseName(whId) || "Depo"
+        // Aktif sevkiyat grubunun ayarı henüz oluşmadıysa (örn. çoklu depo var ama
+        // sevkiyat bölümü doldurulmadı) kullanıcıyı uyar.
+        if (!cfg) {
+          toast.error(`"${whName}" deposu için sevkiyat bilgilerini doldurun.`)
+          return
+        }
+        // Depodan gönderimde araç ve personel zorunlu.
+        if (cfg.fulfillmentType === ShipmentFulfillmentType.WarehouseDispatch) {
+          if (!cfg.vehicleId) {
+            toast.error(`"${whName}" deposundan gönderim için araç seçin.`)
+            return
+          }
+          if (!cfg.employeeId) {
+            toast.error(`"${whName}" deposundan gönderim için personel seçin.`)
+            return
+          }
+        }
+        // Her grupta planlanan tarih zorunlu.
+        if (!cfg.plannedDate) {
+          toast.error(`"${whName}" deposu için planlanan sevkiyat tarihini seçin.`)
+          return
+        }
+      }
+    } else if (requireShipment && hasMultiWarehouse) {
+      // Zorunlu modda çoklu depo varken sevkiyat bölümü her zaman görünür olmalı;
+      // bu dala normalde düşülmez. Yine de bir kalem servis-dışı depoda olup
+      // sevkiyat doldurulmadıysa kullanıcıyı uyar (backend de reddeder, UX için guard).
+      toast.error(
+        "Farklı depolardan gelen kalemler için sevkiyat bilgileri doldurulmalıdır.",
       )
       return
     }
