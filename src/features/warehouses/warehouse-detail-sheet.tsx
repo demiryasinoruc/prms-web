@@ -1,5 +1,6 @@
-import { Pencil, Warehouse, MapPin, Phone } from "lucide-react"
+import { Pencil, Warehouse, MapPin, Phone, Navigation } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { LocationPickerMap } from "@/components/shared/location-picker-map"
 import {
   Sheet,
   SheetContent,
@@ -38,6 +39,17 @@ export function WarehouseDetailSheet({
       onEdit(warehouse)
       onOpenChange(false)
     }
+  }
+
+  const hasLocation =
+    warehouse != null &&
+    warehouse.latitude != null &&
+    warehouse.longitude != null
+
+  const handleDirections = () => {
+    if (!hasLocation) return
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${warehouse!.latitude},${warehouse!.longitude}`
+    window.open(url, "_blank", "noopener")
   }
 
   return (
@@ -98,7 +110,43 @@ export function WarehouseDetailSheet({
                 </Card>
               )}
 
-              {!warehouse.address && !warehouse.contactInfo && (
+              {hasLocation && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Konum</CardTitle>
+                    <CardDescription>Harita üzerinde depo konumu</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <LocationPickerMap
+                      latitude={warehouse.latitude ?? null}
+                      longitude={warehouse.longitude ?? null}
+                      readonly
+                    />
+                    {warehouse.locationAddress && (
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <p className="text-sm whitespace-pre-wrap">
+                          {warehouse.locationAddress}
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {warehouse.latitude?.toFixed(6)}, {warehouse.longitude?.toFixed(6)}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={handleDirections}
+                    >
+                      <Navigation className="mr-2 h-4 w-4" />
+                      Yol Tarifi
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {!warehouse.address && !warehouse.contactInfo && !hasLocation && (
                 <Card>
                   <CardContent className="py-8">
                     <p className="text-center text-muted-foreground">

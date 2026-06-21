@@ -15,6 +15,9 @@ export interface WarehouseCreateRequest {
   address: string
   contactInfo: string
   isActive: boolean
+  latitude?: number | null
+  longitude?: number | null
+  locationAddress?: string | null
 }
 
 export interface WarehouseUpdateRequest {
@@ -22,6 +25,9 @@ export interface WarehouseUpdateRequest {
   address: string
   contactInfo: string
   isActive: boolean
+  latitude?: number | null
+  longitude?: number | null
+  locationAddress?: string | null
 }
 
 // API response types (matching backend PascalCase)
@@ -40,6 +46,9 @@ interface ApiWarehouse {
   contactInfo: string
   isActive: boolean
   createdDate: string
+  latitude?: number | null
+  longitude?: number | null
+  locationAddress?: string | null
 }
 
 // Transform API response to frontend format
@@ -50,6 +59,9 @@ function transformWarehouse(apiWarehouse: ApiWarehouse): Warehouse {
     address: apiWarehouse.address,
     contactInfo: apiWarehouse.contactInfo,
     isActive: apiWarehouse.isActive,
+    latitude: apiWarehouse.latitude ?? null,
+    longitude: apiWarehouse.longitude ?? null,
+    locationAddress: apiWarehouse.locationAddress ?? null,
   }
 }
 
@@ -91,6 +103,9 @@ export const warehouseApi = {
       address: response.data.address,
       contactInfo: response.data.contactInfo,
       isActive: response.data.isActive,
+      latitude: response.data.latitude ?? null,
+      longitude: response.data.longitude ?? null,
+      locationAddress: response.data.locationAddress ?? null,
     } as Warehouse
   },
 
@@ -105,6 +120,9 @@ export const warehouseApi = {
       Address: data.address,
       ContactInfo: data.contactInfo,
       IsActive: data.isActive,
+      Latitude: data.latitude ?? null,
+      Longitude: data.longitude ?? null,
+      LocationAddress: data.locationAddress ?? null,
     }
     const response = await api.post<Warehouse>("/warehouse", requestBody)
     return response.data
@@ -116,6 +134,9 @@ export const warehouseApi = {
       Address: data.address,
       ContactInfo: data.contactInfo,
       IsActive: data.isActive,
+      Latitude: data.latitude ?? null,
+      Longitude: data.longitude ?? null,
+      LocationAddress: data.locationAddress ?? null,
     }
     const response = await api.put<Warehouse>(`/warehouse/${id}`, requestBody)
     return response.data

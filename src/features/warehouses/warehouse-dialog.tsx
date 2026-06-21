@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
 import { FormField } from "@/components/shared/form-field"
+import { LocationPickerMap } from "@/components/shared/location-picker-map"
 import { useCreateWarehouse, useUpdateWarehouse, useWarehouseForEdit } from "./hooks"
 import type { Warehouse } from "@/types/api"
 
@@ -22,6 +24,9 @@ const warehouseSchema = z.object({
   address: z.string().min(1, "Adres zorunludur").max(500, "Adres en fazla 500 karakter olabilir"),
   contactInfo: z.string().max(500, "İletişim bilgisi en fazla 500 karakter olabilir").optional().default(""),
   isActive: z.boolean().default(true),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  locationAddress: z.string().max(500, "Adres en fazla 500 karakter olabilir").nullable().optional(),
 })
 
 type WarehouseFormData = z.infer<typeof warehouseSchema>
@@ -37,6 +42,9 @@ const defaultValues: WarehouseFormData = {
   address: "",
   contactInfo: "",
   isActive: true,
+  latitude: null,
+  longitude: null,
+  locationAddress: "",
 }
 
 export function WarehouseDialog({
@@ -55,11 +63,17 @@ export function WarehouseDialog({
     address: editWarehouse.address || "",
     contactInfo: editWarehouse.contactInfo || "",
     isActive: editWarehouse.isActive,
+    latitude: editWarehouse.latitude ?? null,
+    longitude: editWarehouse.longitude ?? null,
+    locationAddress: editWarehouse.locationAddress ?? "",
   } : (open && warehouse) ? {
     name: warehouse.name,
     address: warehouse.address || "",
     contactInfo: warehouse.contactInfo || "",
     isActive: warehouse.isActive,
+    latitude: warehouse.latitude ?? null,
+    longitude: warehouse.longitude ?? null,
+    locationAddress: warehouse.locationAddress ?? "",
   } : defaultValues
 
   const {
@@ -74,6 +88,19 @@ export function WarehouseDialog({
   })
 
   const isActive = watch("isActive")
+  const latitude = watch("latitude") ?? null
+  const longitude = watch("longitude") ?? null
+  const hasLocation = latitude !== null && longitude !== null
+
+  const handleLocationChange = (lat: number, lng: number) => {
+    setValue("latitude", lat, { shouldDirty: true })
+    setValue("longitude", lng, { shouldDirty: true })
+  }
+
+  const handleClearLocation = () => {
+    setValue("latitude", null, { shouldDirty: true })
+    setValue("longitude", null, { shouldDirty: true })
+  }
 
   const onSubmit = async (data: WarehouseFormData) => {
     try {
@@ -85,6 +112,9 @@ export function WarehouseDialog({
             address: data.address || "",
             contactInfo: data.contactInfo || "",
             isActive: data.isActive,
+            latitude: data.latitude ?? null,
+            longitude: data.longitude ?? null,
+            locationAddress: data.locationAddress || null,
           },
         })
       } else {
@@ -93,6 +123,9 @@ export function WarehouseDialog({
           address: data.address || "",
           contactInfo: data.contactInfo || "",
           isActive: data.isActive,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
+          locationAddress: data.locationAddress || null,
         })
       }
       onOpenChange(false)
@@ -105,7 +138,7 @@ export function WarehouseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {warehouse ? "Depo Düzenle" : "Yeni Depo"}
@@ -138,6 +171,46 @@ export function WarehouseDialog({
               label="İletişim Bilgisi"
               placeholder="Telefon, e-posta..."
               {...register("contactInfo")}
+            />
+
+            <div className="space-y-2">
+              <Label>Konum (opsiyonel)</Label>
+              <p className="text-xs text-muted-foreground">
+                Haritaya tıklayarak depo konumunu işaretleyin. İşareti
+                sürükleyerek taşıyabilirsiniz.
+              </p>
+              <LocationPickerMap
+                latitude={latitude}
+                longitude={longitude}
+                onChange={handleLocationChange}
+              />
+              {hasLocation ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Seçilen konum: {latitude!.toFixed(6)}, {longitude!.toFixed(6)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearLocation}
+                  >
+                    Konumu temizle
+                  </Button>
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  Henüz konum seçilmedi.
+                </span>
+              )}
+            </div>
+
+            <FormField
+              label="Konum Adresi (opsiyonel)"
+              placeholder="Açık adres / tarif..."
+              multiline
+              rows={2}
+              {...register("locationAddress")}
             />
 
             {warehouse && (

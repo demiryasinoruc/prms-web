@@ -62,6 +62,9 @@ export interface Warehouse {
   address?: string
   contactInfo?: string
   isActive: boolean
+  latitude?: number | null
+  longitude?: number | null
+  locationAddress?: string | null
 }
 
 export interface Inventory {
