@@ -263,7 +263,12 @@ function RentalItemVariantSelect({
   )
 }
 
-// Envanter select bileşeni - tracked ürünler için seri numarası seçimi
+// Envanter select bileşeni - tracked ürünler için seri numarası seçimi.
+// Seçilen envanterin deposundan kalemin warehouseId + fulfillmentMode'unu türetir:
+//   warehouseId == servis deposu  → ServiceWarehouse (sevkiyat gerekmez)
+//   farklı depo                   → Shipment (sevkiyat bölümü tetiklenir)
+// Edit modunda value zaten doluysa (InventoryId taşıyorsa), liste yüklendiğinde
+// o envanterin deposundan türetir.
 function RentalItemInventorySelect({
   productId,
   productVariantId,
@@ -272,8 +277,11 @@ function RentalItemInventorySelect({
   endDate,
   excludeRentalId,
   isWarnMode,
+  serviceWarehouseId,
   value,
+  itemWarehouseId,
   onChange,
+  onWarehouseDerived,
 }: {
   productId: string
   productVariantId: string | null | undefined
@@ -282,8 +290,13 @@ function RentalItemInventorySelect({
   endDate: string | null | undefined
   excludeRentalId: string | null | undefined
   isWarnMode: boolean
+  serviceWarehouseId: string | null | undefined
   value: string | null | undefined
+  // Kalemin mevcut warehouseId'si (edit modu türetmesinin gereksiz tekrarını engellemek için)
+  itemWarehouseId: string | null | undefined
   onChange: (value: string | null) => void
+  // Seçilen envanterin deposundan türetilen (warehouseId, mode) ikilisi
+  onWarehouseDerived: (warehouseId: string | null, mode: RentalItemFulfillmentMode) => void
 }) {
   // Warn modunda çakışan envanter de listede gösterilir (badge ile)
   const { data: inventories } = useInventorySelectByProduct(
@@ -296,7 +309,38 @@ function RentalItemInventorySelect({
     isWarnMode,
   )
 
-  const selectedConflict = inventories?.find((i) => i.id === value && i.isConflicting)
+  const selected = inventories?.find((i) => i.id === value)
+  const selectedConflict = selected?.isConflicting ? selected : undefined
+
+  // Seçilen envanterin deposundan kalem warehouseId/fulfillmentMode türetimi.
+  const deriveFromInventory = (inv: { warehouseId: string } | undefined) => {
+    if (!inv) {
+      onWarehouseDerived(null, RentalItemFulfillmentMode.ServiceWarehouse)
+      return
+    }
+    const mode =
+      serviceWarehouseId && inv.warehouseId === serviceWarehouseId
+        ? RentalItemFulfillmentMode.ServiceWarehouse
+        : RentalItemFulfillmentMode.Shipment
+    onWarehouseDerived(inv.warehouseId, mode)
+  }
+
+  const handleChange = (v: string) => {
+    const next = v === "none" ? null : v
+    onChange(next)
+    deriveFromInventory(next ? inventories?.find((i) => i.id === next) : undefined)
+  }
+
+  // Edit modu / liste sonradan yüklenme türetmesi: value dolu ama kalemin warehouseId'si
+  // henüz seçilen envanterin deposuyla uyuşmuyorsa, liste geldiğinde bir kez türet.
+  useEffect(() => {
+    if (!value || !inventories) return
+    const inv = inventories.find((i) => i.id === value)
+    if (!inv) return
+    if (itemWarehouseId === inv.warehouseId) return
+    deriveFromInventory(inv)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inventories, value])
 
   return (
     <div className="space-y-2">
@@ -304,7 +348,7 @@ function RentalItemInventorySelect({
       <Select
         key={`inventory-${value}`}
         value={value || "none"}
-        onValueChange={(v) => onChange(v === "none" ? null : v)}
+        onValueChange={handleChange}
       >
         <SelectTrigger>
           <SelectValue placeholder="Envanter seçiniz" />
@@ -315,6 +359,7 @@ function RentalItemInventorySelect({
             <SelectItem key={inv.id} value={inv.id}>
               <span className="flex items-center gap-2">
                 <span>{inv.name}</span>
+                <span className="text-[10px] text-muted-foreground">{inv.warehouseName}</span>
                 {inv.isConflicting && (
                   <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                     Çakışıyor{inv.conflictRentalNumber ? ` · ${inv.conflictRentalNumber}` : ""}
@@ -325,6 +370,16 @@ function RentalItemInventorySelect({
           ))}
         </SelectContent>
       </Select>
+      {selected && (
+        <p className="text-xs text-muted-foreground">
+          Depo: {selected.warehouseName}
+          {serviceWarehouseId && selected.warehouseId !== serviceWarehouseId && (
+            <span className="text-amber-700 dark:text-amber-400">
+              {" "}— servis deposundan farklı, sevkiyat gerekecek
+            </span>
+          )}
+        </p>
+      )}
       {selectedConflict && (
         <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1">
           <AlertCircle className="h-3 w-3" />
@@ -1282,7 +1337,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     })
   }, [shipmentWarehouseIds, watchedPlannedStartDate])
 
-  // Depo değiştiğinde tracked ürünlerin inventoryId'sini temizle
+  // Depo değiştiğinde tracked ürünlerin inventoryId'sini temizle.
+  // Envanterden türetilmiş warehouseId/fulfillmentMode da sıfırlanır (stale sevkiyat olmasın).
   useEffect(() => {
     if (!watchedItems || !products) return
     watchedItems.forEach((item, index) => {
@@ -1290,6 +1346,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       const product = products.find((p) => p.id === item.productId)
       if (product?.type === ProductType.Tracked) {
         setValue(`items.${index}.inventoryId`, null)
+        setValue(`items.${index}.warehouseId`, null)
+        setValue(`items.${index}.fulfillmentMode`, RentalItemFulfillmentMode.ServiceWarehouse)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1305,6 +1363,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
       const product = products.find((p) => p.id === item.productId)
       if (product?.type === ProductType.Tracked) {
         setValue(`items.${index}.inventoryId`, null)
+        setValue(`items.${index}.warehouseId`, null)
+        setValue(`items.${index}.fulfillmentMode`, RentalItemFulfillmentMode.ServiceWarehouse)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2406,13 +2466,19 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                       <RentalItemInventorySelect
                                         productId={watchedItems?.[index]?.productId || ""}
                                         productVariantId={watchedItems?.[index]?.productVariantId}
-                                        warehouseId={watchedSourceWarehouseId}
+                                        warehouseId={undefined}
                                         startDate={watchedItems?.[index]?.startDateTime || watchedPlannedStartDate}
                                         endDate={watchedItems?.[index]?.endDateTime || watchedPlannedEndDate}
                                         excludeRentalId={isEditMode ? editData?.id : null}
                                         isWarnMode={isWarnMode}
+                                        serviceWarehouseId={watchedSourceWarehouseId}
                                         value={inventoryField.value}
+                                        itemWarehouseId={watchedItems?.[index]?.warehouseId}
                                         onChange={inventoryField.onChange}
+                                        onWarehouseDerived={(whId, mode) => {
+                                          setValue(`items.${index}.warehouseId`, whId)
+                                          setValue(`items.${index}.fulfillmentMode`, mode)
+                                        }}
                                       />
                                     )}
                                   />
@@ -2420,20 +2486,15 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                               })()}
 
                               {/* Kalem başına depo seçimi (çoklu depo + sevkiyat).
-                                  Takipli ürünlerde depo seri-no/envanterden türetilir;
-                                  burada yalnızca sayılabilir/sarf ürünler için seçim sunulur. */}
+                                  Takipli ürünlerde depo seri-no/envanterden türetilir
+                                  (envanter seçiminde gösterilir); burada yalnızca
+                                  sayılabilir/sarf ürünler için seçim sunulur. */}
                               {(() => {
                                 const selectedProduct = products?.find(p => p.id === watchedItems?.[index]?.productId)
                                 if (!selectedProduct) return null
                                 if (selectedProduct.type === ProductType.Tracked) {
-                                  return (
-                                    <div className="space-y-2">
-                                      <Label>Kaynak Depo</Label>
-                                      <p className="text-xs text-muted-foreground h-9 flex items-center">
-                                        Seçilen seri numarasının deposundan karşılanır.
-                                      </p>
-                                    </div>
-                                  )
+                                  // Depo, envanter (seri-no) seçiminden türetilir; ayrı bir seçim yok.
+                                  return null
                                 }
                                 return (
                                   <RentalItemWarehouseSelect

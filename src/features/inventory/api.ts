@@ -163,7 +163,7 @@ export const inventoryApi = {
     excludeRentalId?: string,
     includeConflicting?: boolean,
   ) => {
-    const response = await api.get<{ id: string; serialNumber: string; isConflicting: boolean; conflictRentalNumber: string | null }[]>(
+    const response = await api.get<{ id: string; serialNumber: string; isConflicting: boolean; conflictRentalNumber: string | null; warehouseId: string; warehouseName: string }[]>(
       "/inventory/select-by-product",
       {
         params: {
@@ -182,6 +182,8 @@ export const inventoryApi = {
       name: item.serialNumber,
       isConflicting: item.isConflicting,
       conflictRentalNumber: item.conflictRentalNumber,
+      warehouseId: item.warehouseId,
+      warehouseName: item.warehouseName,
     }))
   },
 
