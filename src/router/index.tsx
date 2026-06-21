@@ -19,6 +19,7 @@ const EmployeesPage = lazy(() => import("@/features/employees"))
 const EmployeeLeavesPage = lazy(() => import("@/features/employee-leaves"))
 const WarehousesPage = lazy(() => import("@/features/warehouses"))
 const RentalsPage = lazy(() => import("@/features/rentals"))
+const ShipmentsPage = lazy(() => import("@/features/shipments"))
 const InventoryPage = lazy(() => import("@/features/inventory"))
 const WarehouseTransfersPage = lazy(() => import("@/features/warehouse-transfers"))
 const CategoriesPage = lazy(() => import("@/features/categories"))
@@ -200,6 +201,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <RentalsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "shipments",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ShipmentsPage />
           </Suspense>
         ),
       },

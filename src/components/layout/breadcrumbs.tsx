@@ -14,6 +14,7 @@ const routeLabels: Record<string, string> = {
   "": "Ana Sayfa",
   // Ana İşlemler
   rentals: "Kiralamalar",
+  shipments: "Sevkiyatlar",
   calendar: "Takvim",
   customers: "Müşteriler",
   notifications: "Bildirimler",
