@@ -3,7 +3,7 @@ import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form"
 import { formResolver } from "@/lib/form-resolver"
 import { cn } from "@/lib/utils"
 import { z } from "zod"
-import { Loader2, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Settings2, ChevronUp, Receipt, AlertCircle, Info } from "lucide-react"
+import { Loader2, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, Settings2, ChevronUp, Receipt, AlertCircle, Info, HelpCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -670,6 +670,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
   // Döviz kuru bilgi dialog'u
   const [isExchangeRateInfoOpen, setIsExchangeRateInfoOpen] = useState(false)
+
+  // Kalem gelişmiş seçenekler bilgi dialog'ları (paylaşılan; içerik kalemden bağımsız)
+  const [showCustomDateInfo, setShowCustomDateInfo] = useState(false)
+  const [showGeneralDiscountInfo, setShowGeneralDiscountInfo] = useState(false)
 
   // Nakliye banner state'i (CompanyDelivery + Transport hizmeti yoksa gösterilir)
   const [transportBannerDismissed, setTransportBannerDismissed] = useState(false)
@@ -2678,7 +2682,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                 {/* Özel Tarihler */}
                                 <div className="grid grid-cols-2 gap-4">
                                   <div className="space-y-2">
-                                    <Label>Özel Başlangıç</Label>
+                                    <div className="inline-flex items-center gap-1">
+                                      <Label>Özel Başlangıç</Label>
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowCustomDateInfo(true)}
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
+                                      >
+                                        <HelpCircle className="h-4 w-4" />
+                                      </button>
+                                    </div>
                                     <Input
                                       type="datetime-local"
                                       {...register(`items.${index}.startDateTime`)}
@@ -2747,7 +2760,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                     name={`items.${index}.applyRentalDiscount`}
                                     render={({ field }) => (
                                       <div className="space-y-2">
-                                        <Label>Genel İndirim</Label>
+                                        <div className="inline-flex items-center gap-1">
+                                          <Label>Genel İndirim</Label>
+                                          <button
+                                            type="button"
+                                            onClick={() => setShowGeneralDiscountInfo(true)}
+                                            className="text-muted-foreground hover:text-foreground transition-colors"
+                                          >
+                                            <HelpCircle className="h-4 w-4" />
+                                          </button>
+                                        </div>
                                         <div className="flex items-center gap-2 h-9">
                                           <Switch
                                             checked={field.value !== false}
@@ -3540,7 +3562,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                 {/* Özel Tarihler */}
                                 <div className="grid grid-cols-2 gap-4">
                                   <div className="space-y-2">
-                                    <Label>Özel Başlangıç</Label>
+                                    <div className="inline-flex items-center gap-1">
+                                      <Label>Özel Başlangıç</Label>
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowCustomDateInfo(true)}
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
+                                      >
+                                        <HelpCircle className="h-4 w-4" />
+                                      </button>
+                                    </div>
                                     <Input
                                       type="datetime-local"
                                       {...register(`services.${index}.startDateTime`)}
@@ -3609,7 +3640,16 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                     name={`services.${index}.applyRentalDiscount`}
                                     render={({ field }) => (
                                       <div className="space-y-2">
-                                        <Label>Genel İndirim</Label>
+                                        <div className="inline-flex items-center gap-1">
+                                          <Label>Genel İndirim</Label>
+                                          <button
+                                            type="button"
+                                            onClick={() => setShowGeneralDiscountInfo(true)}
+                                            className="text-muted-foreground hover:text-foreground transition-colors"
+                                          >
+                                            <HelpCircle className="h-4 w-4" />
+                                          </button>
+                                        </div>
                                         <div className="flex items-center gap-2 h-9">
                                           <Switch
                                             checked={field.value !== false}
@@ -4051,6 +4091,63 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
         </div>
         <div className="flex justify-end">
           <Button type="button" onClick={() => setIsExchangeRateInfoOpen(false)}>
+            Anladım
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Özel Tarih Aralığı Bilgi Dialogu */}
+    <Dialog open={showCustomDateInfo} onOpenChange={setShowCustomDateInfo}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Özel Tarih Aralığı</DialogTitle>
+          <DialogDescription>
+            Bu kaleme kiralamanın genelinden farklı bir süre tanımlayın
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Normalde her kalem, kiralamanın genel başlangıç ve bitiş tarihleri
+            boyunca kiralanır. Bu kaleme farklı bir süre vermek isterseniz Özel
+            Başlangıç/Bitiş tarihlerini doldurun — örneğin bir ürünü 3 gün,
+            diğerini tüm kiralama boyunca kiralamak gibi. Boş bırakırsanız
+            kiralamanın genel tarihleri kullanılır. Girdiğiniz aralık, bu kalemin
+            periyot (gün/saat) sayısını ve dolayısıyla satır tutarını belirler.
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <Button type="button" variant="outline" onClick={() => setShowCustomDateInfo(false)}>
+            Anladım
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Genel İndirim Bilgi Dialogu */}
+    <Dialog open={showGeneralDiscountInfo} onOpenChange={setShowGeneralDiscountInfo}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Genel İndirim Bu Kaleme Uygulansın mı?</DialogTitle>
+          <DialogDescription>
+            Kiralama geneli indirimin bu kaleme dağıtılıp dağıtılmayacağını belirler
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Kiralama genelinde tanımladığınız toplam indirim varsayılan olarak tüm
+            kalemlere dağıtılır. Bu anahtarı kapatırsanız (Muaf), genel indirim bu
+            kaleme uygulanmaz; indirim yalnızca diğer kalemlere dağıtılır ve bu kalem
+            tam fiyatı üzerinden hesaplanır. Açık (Uygulanır) bırakırsanız genel
+            indirim bu kalemi de kapsar.
+          </p>
+          <p>
+            Not: Bu ayar, kalemin kendi 'İndirim (%)' alanından bağımsızdır — o
+            indirim her durumda uygulanır.
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <Button type="button" variant="outline" onClick={() => setShowGeneralDiscountInfo(false)}>
             Anladım
           </Button>
         </div>
