@@ -41,6 +41,7 @@ const companySchema = z.object({
   allowHourlyRental: z.boolean(),
   defaultVatRate: z.coerce.number().min(0, "0'dan küçük olamaz").max(100, "100'den büyük olamaz"),
   pricesIncludeVat: z.boolean(),
+  requireShipmentForMultiWarehouseRental: z.boolean(),
 })
 
 type CompanyFormData = z.infer<typeof companySchema>
@@ -67,6 +68,7 @@ export default function CompanySettingsPage() {
     allowHourlyRental: false,
     defaultVatRate: 20,
     pricesIncludeVat: false,
+    requireShipmentForMultiWarehouseRental: false,
   }
 
   const formValues: CompanyFormData = companyForEdit ? {
@@ -83,6 +85,7 @@ export default function CompanySettingsPage() {
     allowHourlyRental: companyForEdit.allowHourlyRental,
     defaultVatRate: companyForEdit.defaultVatRate,
     pricesIncludeVat: companyForEdit.pricesIncludeVat,
+    requireShipmentForMultiWarehouseRental: companyForEdit.requireShipmentForMultiWarehouseRental,
   } : defaultValues
 
   const {
@@ -115,6 +118,7 @@ export default function CompanySettingsPage() {
           allowHourlyRental: data.allowHourlyRental,
           defaultVatRate: data.defaultVatRate,
           pricesIncludeVat: data.pricesIncludeVat,
+          requireShipmentForMultiWarehouseRental: data.requireShipmentForMultiWarehouseRental,
         },
       })
       toast.success("Firma bilgileri güncellendi")
@@ -319,6 +323,26 @@ export default function CompanySettingsPage() {
                     <Controller
                       control={control}
                       name="allowHourlyRental"
+                      render={({ field }) => (
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!canManage}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label>Çoklu depoda sevkiyat zorunlu</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Açıkken, farklı depolardan ürün içeren kiralamalarda sevkiyat oluşturmak zorunludur.
+                      </p>
+                    </div>
+                    <Controller
+                      control={control}
+                      name="requireShipmentForMultiWarehouseRental"
                       render={({ field }) => (
                         <Switch
                           checked={field.value}

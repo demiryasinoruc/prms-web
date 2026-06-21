@@ -34,6 +34,7 @@ export interface CompanyForEdit {
   allowHourlyRental: boolean
   defaultVatRate: number
   pricesIncludeVat: boolean
+  requireShipmentForMultiWarehouseRental: boolean
 }
 
 export interface CompanyUpdateRequest {
@@ -50,6 +51,7 @@ export interface CompanyUpdateRequest {
   allowHourlyRental: boolean
   defaultVatRate: number
   pricesIncludeVat: boolean
+  requireShipmentForMultiWarehouseRental: boolean
 }
 
 export const companyApi = {
@@ -83,6 +85,7 @@ export const companyApi = {
       allowHourlyRental: boolean
       defaultVatRate: number
       pricesIncludeVat: boolean
+      requireShipmentForMultiWarehouseRental: boolean
     }>(`/company/edit/${id}`)
     return {
       name: response.data.name,
@@ -98,6 +101,7 @@ export const companyApi = {
       allowHourlyRental: response.data.allowHourlyRental,
       defaultVatRate: response.data.defaultVatRate,
       pricesIncludeVat: response.data.pricesIncludeVat,
+      requireShipmentForMultiWarehouseRental: response.data.requireShipmentForMultiWarehouseRental,
     } as CompanyForEdit
   },
 
@@ -116,6 +120,7 @@ export const companyApi = {
       allowHourlyRental: data.allowHourlyRental,
       defaultVatRate: data.defaultVatRate,
       pricesIncludeVat: data.pricesIncludeVat,
+      requireShipmentForMultiWarehouseRental: data.requireShipmentForMultiWarehouseRental,
     })
   },
 }

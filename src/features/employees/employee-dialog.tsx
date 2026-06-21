@@ -12,11 +12,19 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
 import { DatePicker } from "@/components/shared/date-picker"
 import { useCreateEmployee, useUpdateEmployee, useEmployeeForEdit } from "./hooks"
+import { useWarehouseSelect } from "@/features/warehouses/hooks"
 import { Gender, type Employee } from "@/types/api"
 
 const employeeSchema = z.object({
@@ -28,6 +36,7 @@ const employeeSchema = z.object({
   phone: z.string().min(1, "İletişim numarası zorunludur").max(20, "İletişim numarası en fazla 20 karakter olabilir"),
   isActive: z.boolean().optional().default(true),
   notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").optional().default(""),
+  warehouseId: z.string().nullable().optional(),
 })
 
 type EmployeeFormData = z.infer<typeof employeeSchema>
@@ -47,6 +56,7 @@ const defaultValues: EmployeeFormData = {
   phone: "",
   isActive: true,
   notes: "",
+  warehouseId: null,
 }
 
 export function EmployeeDialog({
@@ -56,6 +66,7 @@ export function EmployeeDialog({
 }: EmployeeDialogProps) {
   const createEmployee = useCreateEmployee()
   const updateEmployee = useUpdateEmployee()
+  const { data: warehouses } = useWarehouseSelect()
 
   const { data: employeeData } = useEmployeeForEdit(employee?.id || "")
   const editEmployee = employee ? employeeData : null
@@ -69,6 +80,7 @@ export function EmployeeDialog({
     phone: editEmployee?.phone ?? employee.phone ?? "",
     isActive: editEmployee?.isActive ?? employee.isActive,
     notes: editEmployee?.notes ?? "",
+    warehouseId: editEmployee?.warehouseId ?? null,
   } : defaultValues
 
   const {
@@ -167,6 +179,39 @@ export function EmployeeDialog({
               {...register("phone")}
               error={errors.phone?.message}
             />
+
+            <div className="col-span-2 space-y-2">
+              <Label>Depo</Label>
+              <Controller
+                control={control}
+                name="warehouseId"
+                render={({ field }) => (
+                  <Select
+                    key={`employee-warehouse-${field.value || "none"}`}
+                    value={field.value || "none"}
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? null : value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Depo seçiniz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Depo Yok / Firma Geneli</SelectItem>
+                      {warehouses?.map((warehouse) => (
+                        <SelectItem key={warehouse.id} value={warehouse.id}>
+                          {warehouse.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-sm text-muted-foreground">
+                Bir depoya atanan personel, &quot;depodan gönderim&quot; sevkiyatlarında
+                o deponun personeli olarak listelenir. Boş bırakılırsa tüm depolarda görünür.
+              </p>
+            </div>
 
             <div className="col-span-2">
               <FormField

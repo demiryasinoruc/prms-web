@@ -19,6 +19,7 @@ export interface EmployeeCreateRequest {
   email?: string
   phone?: string
   notes?: string
+  warehouseId?: string | null
 }
 
 export interface EmployeeUpdateRequest extends EmployeeCreateRequest {
@@ -45,6 +46,8 @@ interface ApiEmployee {
   phone: string
   isActive: boolean
   notes?: string
+  warehouseId?: string | null
+  warehouseName?: string
   createdDate?: string
 }
 
@@ -60,6 +63,8 @@ function transformEmployee(apiEmployee: ApiEmployee): Employee {
     phone: apiEmployee.phone,
     isActive: apiEmployee.isActive,
     notes: apiEmployee.notes,
+    warehouseId: apiEmployee.warehouseId ?? null,
+    warehouseName: apiEmployee.warehouseName,
   }
 }
 
@@ -130,6 +135,7 @@ export const employeeApi = {
       Email: data.email || "",
       Phone: data.phone || "",
       Notes: data.notes || "",
+      WarehouseId: data.warehouseId || null,
     }
     const response = await api.post<Employee>("/employee", requestBody)
     return response.data
@@ -145,6 +151,7 @@ export const employeeApi = {
       Phone: data.phone || "",
       IsActive: data.isActive,
       Notes: data.notes || "",
+      WarehouseId: data.warehouseId || null,
     }
     const response = await api.put<Employee>(`/employee/${id}`, requestBody)
     return response.data

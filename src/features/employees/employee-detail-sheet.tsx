@@ -10,6 +10,7 @@ import {
   Plus,
   Trash2,
   AlertTriangle,
+  Warehouse,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -186,6 +187,15 @@ export function EmployeeDetailSheet({
                     <div>
                       <p className="text-xs text-muted-foreground">Doğum Tarihi</p>
                       <p className="text-sm font-medium">{formatDate(employee.birthDate)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Warehouse className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Depo</p>
+                      <p className="text-sm font-medium">
+                        {employee.warehouseName || "Firma Geneli"}
+                      </p>
                     </div>
                   </div>
                 </CardContent>

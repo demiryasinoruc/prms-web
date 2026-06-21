@@ -173,6 +173,8 @@ export interface Employee {
   gender: Gender
   notes?: string
   isActive: boolean
+  warehouseId?: string | null
+  warehouseName?: string
 }
 
 export enum Gender {
