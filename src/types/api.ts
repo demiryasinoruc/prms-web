@@ -30,6 +30,8 @@ export interface User {
   email: string
   name: string
   surname: string
+  /** E-posta doğrulandı mı (yumuşak doğrulama — false ise banner gösterilir) */
+  emailConfirmed?: boolean
   companyId: string
   companyName: string
   roleId: string

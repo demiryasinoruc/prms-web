@@ -13,6 +13,7 @@ const RegisterPage = lazy(() => import("@/features/auth/register"))
 const CreateCompanyPage = lazy(() => import("@/features/auth/create-company"))
 const ForgotPasswordPage = lazy(() => import("@/features/auth/forgot-password"))
 const ResetPasswordPage = lazy(() => import("@/features/auth/reset-password"))
+const VerifyEmailPage = lazy(() => import("@/features/auth/verify-email"))
 const NotFoundPage = lazy(() => import("@/features/not-found"))
 const DashboardPage = lazy(() => import("@/features/dashboard"))
 const ProductsPage = lazy(() => import("@/features/products"))
@@ -195,6 +196,18 @@ export const router = createBrowserRouter([
           </AuthLayout>
         </Suspense>
       </PublicRoute>
+    ),
+  },
+  {
+    // Bilinçli olarak guard YOK: giriş yapmış kullanıcı da e-postadaki linkten doğrulayabilmeli.
+    path: "/verify-email",
+    errorElement: <RouteError />,
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <AuthLayout>
+          <VerifyEmailPage />
+        </AuthLayout>
+      </Suspense>
     ),
   },
   {

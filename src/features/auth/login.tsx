@@ -80,8 +80,11 @@ export default function LoginPage() {
         token = authResponse.data.token
         refreshToken = authResponse.data.refreshToken
         userType = authResponse.data.userType
-      } catch {
-        setError("E-posta veya şifre hatalı.")
+      } catch (err) {
+        // Sunucu mesajı varsa onu göster (örn. hesap kilidi: "Çok fazla başarısız
+        // giriş denemesi..."); yoksa generic mesaja düş.
+        const axiosErr = err as { response?: { data?: { message?: string } } }
+        setError(axiosErr.response?.data?.message || "E-posta veya şifre hatalı.")
         return
       }
 

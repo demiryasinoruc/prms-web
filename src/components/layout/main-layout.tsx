@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Outlet, useNavigate } from "react-router-dom"
+import { EmailVerificationBanner } from "@/components/shared/email-verification-banner"
 import { ShieldAlert, LogOut } from "lucide-react"
 import {
   SidebarProvider,
@@ -66,6 +67,7 @@ export default function MainLayout() {
             </Button>
           </div>
         )}
+        <EmailVerificationBanner />
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />

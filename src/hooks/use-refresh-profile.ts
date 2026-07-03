@@ -22,6 +22,7 @@ interface ProfileResponse {
   name: string
   surname: string
   email: string
+  emailConfirmed: boolean
   roleId: string | null
   roleName: string | null
   permissions: string[]
@@ -51,6 +52,7 @@ export async function refreshUserProfile(): Promise<void> {
           name: profile.name,
           surname: profile.surname,
           email: profile.email,
+          emailConfirmed: profile.emailConfirmed,
           companyId: "",
           companyName: "",
           roleId: "",
@@ -78,6 +80,7 @@ export async function refreshUserProfile(): Promise<void> {
         name: profile.name,
         surname: profile.surname,
         email: profile.email,
+          emailConfirmed: profile.emailConfirmed,
         companyId: company.id,
         companyName: company.name,
         roleId: profile.roleId || "",
@@ -133,6 +136,7 @@ export function useRefreshProfile() {
               name: profile.name,
               surname: profile.surname,
               email: profile.email,
+          emailConfirmed: profile.emailConfirmed,
               companyId: "",
               companyName: "",
               roleId: "",
@@ -163,6 +167,7 @@ export function useRefreshProfile() {
             name: profile.name,
             surname: profile.surname,
             email: profile.email,
+          emailConfirmed: profile.emailConfirmed,
             companyId: company.id,
             companyName: company.name,
             roleId: profile.roleId || "",

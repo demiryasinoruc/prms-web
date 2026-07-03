@@ -25,8 +25,8 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>
 
 const passwordSchema = z.object({
-  password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
-  passwordConfirmation: z.string().min(6, "Şifre tekrar en az 6 karakter olmalıdır"),
+  password: z.string().min(8, "Şifre en az 8 karakter olmalıdır").regex(/[A-Za-zÇĞİÖŞÜçğıöşü]/, "Şifre en az bir harf içermelidir").regex(/[0-9]/, "Şifre en az bir rakam içermelidir"),
+  passwordConfirmation: z.string().min(1, "Şifre tekrarı zorunludur"),
 }).refine((data) => data.password === data.passwordConfirmation, {
   message: "Şifreler eşleşmiyor",
   path: ["passwordConfirmation"],

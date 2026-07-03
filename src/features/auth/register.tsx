@@ -39,7 +39,7 @@ const registerSchema = z.object({
   name: z.string().min(1, "Ad zorunludur").max(200),
   surname: z.string().min(1, "Soyad zorunludur").max(200),
   email: z.string().min(1, "E-posta adresi zorunludur").max(256).email("Geçerli bir e-posta adresi giriniz"),
-  password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
+  password: z.string().min(8, "Şifre en az 8 karakter olmalıdır").regex(/[A-Za-zÇĞİÖŞÜçğıöşü]/, "Şifre en az bir harf içermelidir").regex(/[0-9]/, "Şifre en az bir rakam içermelidir"),
   passwordAgain: z.string().min(1, "Şifre tekrarı zorunludur"),
   terms: z.boolean().refine((v) => v, "Kullanım koşulları kabul edilmelidir"),
 }).refine((data) => data.password === data.passwordAgain, {
