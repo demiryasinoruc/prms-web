@@ -540,7 +540,7 @@ function ShipmentCard({
       </div>
 
       {isDispatch && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Araç</Label>
             <Select
@@ -2014,7 +2014,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
             </div>
           )}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto">
               <TabsTrigger value="general">Genel</TabsTrigger>
               <TabsTrigger value="delivery">Teslimat</TabsTrigger>
               <TabsTrigger value="items">Ürünler</TabsTrigger>
@@ -2024,7 +2024,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
             {/* Genel Bilgiler */}
             <TabsContent value="general" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Müşteri *</Label>
                   <Controller
@@ -2237,7 +2237,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
             {/* Teslimat Bilgileri */}
             <TabsContent value="delivery" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {companySettings?.defaultDeliveryType === DeliveryType.PerRental && (
                   <div className="space-y-2">
                     <Label>Teslimat Tipi</Label>
@@ -2500,7 +2500,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                         <CollapsibleContent>
                           <div className="p-4 pt-2 space-y-4 border-t">
                             {/* Temel Alanlar */}
-                            <div className="grid grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                               <div className="space-y-2">
                                 <Label>Ürün *</Label>
                                 <Controller
@@ -2680,7 +2680,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
                               <CollapsibleContent className="pt-4 space-y-4">
                                 {/* Özel Tarihler */}
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   <div className="space-y-2">
                                     <div className="inline-flex items-center gap-1">
                                       <Label>Özel Başlangıç</Label>
@@ -2714,7 +2714,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                 </div>
 
                                 {/* İndirim Ayarları */}
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                   <div className="space-y-2">
                                     <Label>İndirim Tipi</Label>
                                     <Controller
@@ -3334,7 +3334,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                         <CollapsibleContent>
                           <div className="p-4 pt-2 space-y-4 border-t">
                             {/* Temel Alanlar */}
-                            <div className="grid grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                               <div className="space-y-2">
                                 <Label>Hizmet *</Label>
                                 <Controller
@@ -3420,7 +3420,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                               const showVehicle = !!selectedService?.requiresVehicle
                               const colCount = 1 + (showEmployee ? 1 : 0) + (showVehicle ? 1 : 0)
                               const gridClass =
-                                colCount === 3 ? "grid-cols-3" : colCount === 2 ? "grid-cols-2" : "grid-cols-1"
+                                colCount === 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : colCount === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
                               const conflict = serviceConflicts[index]
                               const employeeConflict = !!conflict?.employee
                               const vehicleConflict = !!conflict?.vehicle
@@ -3560,7 +3560,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
                               <CollapsibleContent className="pt-4 space-y-4">
                                 {/* Özel Tarihler */}
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   <div className="space-y-2">
                                     <div className="inline-flex items-center gap-1">
                                       <Label>Özel Başlangıç</Label>
@@ -3594,7 +3594,7 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
                                 </div>
 
                                 {/* İndirim Ayarları */}
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                   <div className="space-y-2">
                                     <Label>İndirim Tipi</Label>
                                     <Controller

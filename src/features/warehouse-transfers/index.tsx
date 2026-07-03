@@ -194,7 +194,7 @@ export default function WarehouseTransfersPage() {
     <div className="space-y-6">
       <PageHeader
         title="Depo Transferleri"
-        description="Depolar arası stok transferlerini yönetin"
+        description="Depolar arası stok taşıma (depo → depo). Kiralama teslimatı için Sevkiyatlar'ı kullanın."
         action={{
           label: "Yeni Transfer",
           onClick: () => setDialogOpen(true),

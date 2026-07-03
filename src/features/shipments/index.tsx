@@ -220,7 +220,7 @@ export default function ShipmentsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Sevkiyatlar"
-        description="Kiralamalara bağlı depo sevkiyatlarını yönetin"
+        description="Kiralama kalemlerini depodan müşteriye ulaştırma lojistiği (araç + personel atamalı). Depolar arası stok taşımak için Depo Transferleri'ni kullanın."
       />
 
       <Card>
