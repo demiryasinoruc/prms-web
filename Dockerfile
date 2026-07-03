@@ -6,7 +6,9 @@ WORKDIR /app
 # Vite build-time inline'lar — image'ı bir API URL'sine bağlar.
 # Farklı ortamlar için farklı image build'lenmesi gerekir:
 #   docker build --build-arg VITE_API_URL=https://api.prod.com -t prms-web:prod .
-ARG VITE_API_URL=https://localhost:7118
+# Bilinçli olarak DEFAULT YOK: argüman verilmezse vite.config.ts build'i
+# açık bir hatayla durdurur (localhost'lu prod imajı üretmeyi engeller).
+ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 
 COPY package*.json ./
