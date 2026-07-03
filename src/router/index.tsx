@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom"
 import { useAuthStore } from "@/stores/auth"
 import { lazy, Suspense, type ReactNode } from "react"
 import { useRefreshProfile } from "@/hooks/use-refresh-profile"
+import { RouteError } from "@/components/shared/route-error"
 
 const MainLayout = lazy(() => import("@/components/layout/main-layout"))
 const AdminLayout = lazy(() => import("@/components/layout/admin-layout"))
@@ -11,6 +12,8 @@ const LoginPage = lazy(() => import("@/features/auth/login"))
 const RegisterPage = lazy(() => import("@/features/auth/register"))
 const CreateCompanyPage = lazy(() => import("@/features/auth/create-company"))
 const ForgotPasswordPage = lazy(() => import("@/features/auth/forgot-password"))
+const ResetPasswordPage = lazy(() => import("@/features/auth/reset-password"))
+const NotFoundPage = lazy(() => import("@/features/not-found"))
 const DashboardPage = lazy(() => import("@/features/dashboard"))
 const ProductsPage = lazy(() => import("@/features/products"))
 const CustomersPage = lazy(() => import("@/features/customers"))
@@ -131,6 +134,7 @@ function CompanySetupRoute({ children }: { children: ReactNode }) {
 export const router = createBrowserRouter([
   {
     path: "/login",
+    errorElement: <RouteError />,
     element: (
       <PublicRoute>
         <Suspense fallback={<PageLoader />}>
@@ -143,6 +147,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/register",
+    errorElement: <RouteError />,
     element: (
       <PublicRoute>
         <Suspense fallback={<PageLoader />}>
@@ -155,6 +160,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/create-company",
+    errorElement: <RouteError />,
     element: (
       <CompanySetupRoute>
         <Suspense fallback={<PageLoader />}>
@@ -167,6 +173,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/forgot-password",
+    errorElement: <RouteError />,
     element: (
       <PublicRoute>
         <Suspense fallback={<PageLoader />}>
@@ -178,7 +185,21 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: "/reset-password",
+    errorElement: <RouteError />,
+    element: (
+      <PublicRoute>
+        <Suspense fallback={<PageLoader />}>
+          <AuthLayout>
+            <ResetPasswordPage />
+          </AuthLayout>
+        </Suspense>
+      </PublicRoute>
+    ),
+  },
+  {
     path: "/",
+    errorElement: <RouteError />,
     element: (
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
@@ -436,6 +457,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/admin",
+    errorElement: <RouteError />,
     element: (
       <SystemAdminRoute>
         <Suspense fallback={<PageLoader />}>
@@ -468,6 +490,10 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <Navigate to="/" replace />,
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <NotFoundPage />
+      </Suspense>
+    ),
   },
 ])
