@@ -89,6 +89,44 @@ function isSystemAdminEndpoint(url: string): boolean {
     cleanUrl.includes("/subscription-plan")
 }
 
+// --- Token yenileme: tüm eşzamanlı 401'ler TEK refresh isteğini paylaşır ---
+// Aksi halde her istek kendi refresh çağrısını atar; dönen refresh token'lar
+// birbirini ezer ve kullanıcı rastgele login'e düşer (yarış durumu).
+let refreshPromise: Promise<string> | null = null
+
+function refreshAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    const refreshToken = localStorage.getItem("refreshToken")
+    if (!refreshToken) {
+      return Promise.reject(new Error("Refresh token yok"))
+    }
+    refreshPromise = axios
+      .post(`${import.meta.env.VITE_API_URL}/auth/refresh-token`, { refreshToken })
+      .then((response) => {
+        const { token, refreshToken: newRefreshToken } = response.data
+        localStorage.setItem("token", token)
+        localStorage.setItem("refreshToken", newRefreshToken)
+        return token as string
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+  return refreshPromise
+}
+
+// --- Ağ hatası toast'ı: paralel isteklerde tek bildirim ---
+let lastNetworkErrorToastAt = 0
+
+function showNetworkErrorToastOnce() {
+  const now = Date.now()
+  if (now - lastNetworkErrorToastAt < 5000) return
+  lastNetworkErrorToastAt = now
+  toast.error("Sunucuya ulaşılamıyor.", {
+    description: "İnternet bağlantınızı kontrol edin ve tekrar deneyin.",
+  })
+}
+
 api.interceptors.request.use(
   async (config) => {
     const token = localStorage.getItem("token")
@@ -144,31 +182,26 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    // Ağ hatası (sunucuya hiç ulaşılamadı): status bazlı bloklar çalışmaz,
+    // kullanıcı sessiz bir başarısızlık görmesin. Paralel isteklerde toast
+    // seli olmaması için kısa pencerede tek toast gösterilir.
+    if (!error.response) {
+      showNetworkErrorToastOnce()
+      return Promise.reject(error)
+    }
+
     const originalRequest = error.config
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
-      const refreshToken = localStorage.getItem("refreshToken")
-      if (refreshToken) {
-        try {
-          const response = await axios.post(
-            `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
-            { refreshToken }
-          )
-
-          const { token, refreshToken: newRefreshToken } = response.data
-          localStorage.setItem("token", token)
-          localStorage.setItem("refreshToken", newRefreshToken)
-
-          originalRequest.headers.Authorization = `Bearer ${token}`
-          return api(originalRequest)
-        } catch {
-          localStorage.removeItem("token")
-          localStorage.removeItem("refreshToken")
-          window.location.href = "/login"
-        }
-      } else {
+      try {
+        const token = await refreshAccessToken()
+        originalRequest.headers.Authorization = `Bearer ${token}`
+        return api(originalRequest)
+      } catch {
+        localStorage.removeItem("token")
+        localStorage.removeItem("refreshToken")
         window.location.href = "/login"
       }
     }

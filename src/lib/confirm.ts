@@ -17,15 +17,18 @@ export function unregisterConfirmListener() {
 }
 
 export async function confirmDelete(entityName: string | null): Promise<boolean> {
-  if (!_listener) return true
   const name = entityName || "Kaydı"
+  const title = `${name} silmek istediğinize emin misiniz?`
+  // Provider henüz mount olmadıysa ONAYSIZ silmeye düşme (fail-closed):
+  // tarayıcının yerleşik onayına geri düşülür.
+  if (!_listener) return window.confirm(title)
   return _listener({
-    title: `${name} silmek istediğinize emin misiniz?`,
+    title,
     description: "Bu işlem geri alınamaz. Kayıt kalıcı olarak silinecektir.",
   })
 }
 
 export async function confirm(options: ConfirmOptions): Promise<boolean> {
-  if (!_listener) return true
+  if (!_listener) return window.confirm(options.title)
   return _listener(options)
 }
