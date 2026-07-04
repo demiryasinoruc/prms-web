@@ -44,7 +44,7 @@ export function NotificationBell() {
   const navigate = useNavigate()
 
   const { data: count } = useUnreadCount()
-  const { data: notifications, isLoading } = useNotifications({})
+  const { data: notifications, isLoading } = useNotifications({ limit: MAX_VISIBLE })
   const markRead = useMarkNotificationRead()
   const markAllRead = useMarkAllNotificationsRead()
   const deleteNotification = useDeleteNotification()

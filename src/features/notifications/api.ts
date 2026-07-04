@@ -19,6 +19,7 @@ export enum NotificationType {
   InventoryLost = 16,
   InventoryBroken = 17,
   SubscriptionExpiryWarning = 18,
+  ShipmentReminder = 19,
 }
 
 export const NotificationTypeLabels: Record<NotificationType, string> = {
@@ -40,6 +41,7 @@ export const NotificationTypeLabels: Record<NotificationType, string> = {
   [NotificationType.InventoryLost]: "Envanter Kayıp",
   [NotificationType.InventoryBroken]: "Envanter Arızalı",
   [NotificationType.SubscriptionExpiryWarning]: "Abonelik Bitişi",
+  [NotificationType.ShipmentReminder]: "Sevkiyat Hatırlatması",
 }
 
 export enum NotificationStatus {
@@ -83,6 +85,9 @@ export interface NotificationListParams {
   status?: NotificationStatus
   channel?: NotificationChannel
   onlyUnread?: boolean
+  /** Sunucu tavanı 200; varsayılan 50 */
+  limit?: number
+  offset?: number
 }
 
 export interface NotificationUpdateStatusRequest {
@@ -97,6 +102,8 @@ export const notificationApi = {
     if (params.status !== undefined) query.append("status", params.status.toString())
     if (params.channel !== undefined) query.append("channel", params.channel.toString())
     if (params.onlyUnread !== undefined) query.append("onlyUnread", params.onlyUnread.toString())
+    if (params.limit !== undefined) query.append("limit", params.limit.toString())
+    if (params.offset !== undefined) query.append("offset", params.offset.toString())
     const qs = query.toString()
     const url = qs ? `/notification?${qs}` : "/notification"
     const response = await api.get<NotificationListItem[]>(url)

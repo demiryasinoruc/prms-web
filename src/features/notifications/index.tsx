@@ -45,13 +45,17 @@ const statusFilters = [
 
 type StatusFilter = (typeof statusFilters)[number]["value"]
 
+const PAGE_SIZE = 100
+
 export default function NotificationsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
+  const [limit, setLimit] = useState(PAGE_SIZE)
 
   const params = {
     onlyUnread: statusFilter === "unread" ? true : undefined,
     type: typeFilter !== "all" ? (Number(typeFilter) as NotificationType) : undefined,
+    limit,
   }
   const { data: notifications, isLoading } = useNotifications(params)
   const markAll = useMarkAllNotificationsRead()
@@ -88,7 +92,7 @@ export default function NotificationsPage() {
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium truncate">{n.title}</p>
             <Badge variant="outline" className="text-xs shrink-0">
-              {NotificationTypeLabels[n.type]}
+              {NotificationTypeLabels[n.type] ?? "Bildirim"}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.message}</p>
@@ -164,7 +168,9 @@ export default function NotificationsPage() {
                 Liste
               </CardTitle>
               <CardDescription>
-                Toplam {notifications?.length ?? 0} bildirim
+                {notifications && notifications.length >= limit
+                  ? `Son ${notifications.length} bildirim gösteriliyor`
+                  : `Toplam ${notifications?.length ?? 0} bildirim`}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -215,6 +221,17 @@ export default function NotificationsPage() {
           ) : (
             <div className="space-y-2">
               {notifications.map(renderItem)}
+              {notifications.length >= limit && limit < 200 && (
+                <div className="pt-2 text-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLimit((l) => Math.min(l + PAGE_SIZE, 200))}
+                  >
+                    Daha Fazla Yükle
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
