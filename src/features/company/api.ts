@@ -35,6 +35,13 @@ export interface CompanyForEdit {
   defaultVatRate: number
   pricesIncludeVat: boolean
   requireShipmentForMultiWarehouseRental: boolean
+  defaultRentalStartTime: string | null
+  defaultRentalEndTime: string | null
+  address: string | null
+  taxOffice: string | null
+  taxNumber: string | null
+  iban: string | null
+  cariCode: string | null
 }
 
 export interface CompanyUpdateRequest {
@@ -52,6 +59,13 @@ export interface CompanyUpdateRequest {
   defaultVatRate: number
   pricesIncludeVat: boolean
   requireShipmentForMultiWarehouseRental: boolean
+  defaultRentalStartTime: string | null
+  defaultRentalEndTime: string | null
+  address: string | null
+  taxOffice: string | null
+  taxNumber: string | null
+  iban: string | null
+  cariCode: string | null
 }
 
 export const companyApi = {
@@ -86,6 +100,13 @@ export const companyApi = {
       defaultVatRate: number
       pricesIncludeVat: boolean
       requireShipmentForMultiWarehouseRental: boolean
+      defaultRentalStartTime: string | null
+      defaultRentalEndTime: string | null
+      address: string | null
+      taxOffice: string | null
+      taxNumber: string | null
+      iban: string | null
+      cariCode: string | null
     }>(`/company/edit/${id}`)
     return {
       name: response.data.name,
@@ -102,6 +123,13 @@ export const companyApi = {
       defaultVatRate: response.data.defaultVatRate,
       pricesIncludeVat: response.data.pricesIncludeVat,
       requireShipmentForMultiWarehouseRental: response.data.requireShipmentForMultiWarehouseRental,
+      defaultRentalStartTime: response.data.defaultRentalStartTime,
+      defaultRentalEndTime: response.data.defaultRentalEndTime,
+      address: response.data.address,
+      taxOffice: response.data.taxOffice,
+      taxNumber: response.data.taxNumber,
+      iban: response.data.iban,
+      cariCode: response.data.cariCode,
     } as CompanyForEdit
   },
 
@@ -121,6 +149,13 @@ export const companyApi = {
       defaultVatRate: data.defaultVatRate,
       pricesIncludeVat: data.pricesIncludeVat,
       requireShipmentForMultiWarehouseRental: data.requireShipmentForMultiWarehouseRental,
+      defaultRentalStartTime: data.defaultRentalStartTime,
+      defaultRentalEndTime: data.defaultRentalEndTime,
+      address: data.address,
+      taxOffice: data.taxOffice,
+      taxNumber: data.taxNumber,
+      iban: data.iban,
+      cariCode: data.cariCode,
     })
   },
 }

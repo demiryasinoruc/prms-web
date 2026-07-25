@@ -345,17 +345,21 @@ export function InventoryDialog({
           />
 
           <div className="grid grid-cols-2 gap-4">
-            <FormSelectField
-              label="Durum *"
-              name="status"
-              control={control}
-              valueType="number"
-              options={Object.entries(InventoryStatusLabels).map(([key, label]) => ({
-                value: key,
-                label,
-              }))}
-              placeholder="Durum seçiniz"
-            />
+            {/* Durum yalnızca düzenlemede gösterilir; yeni girişte ürün "Müsait" başlar,
+                durum kiralama/transfer/bakım akışlarıyla otomatik değişir. */}
+            {inventory && (
+              <FormSelectField
+                label="Durum *"
+                name="status"
+                control={control}
+                valueType="number"
+                options={Object.entries(InventoryStatusLabels).map(([key, label]) => ({
+                  value: key,
+                  label,
+                }))}
+                placeholder="Durum seçiniz"
+              />
+            )}
 
             {/* Seri Numarası: Tracked için zorunlu, Countable için opsiyonel, Consumable için gizli */}
             {showSerialNumber && (

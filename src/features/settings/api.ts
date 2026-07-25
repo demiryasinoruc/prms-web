@@ -13,6 +13,8 @@ export interface CompanySettings {
   defaultVatRate: number
   pricesIncludeVat: boolean
   requireShipmentForMultiWarehouseRental: boolean
+  defaultRentalStartTime: string | null
+  defaultRentalEndTime: string | null
 }
 
 export const settingsApi = {

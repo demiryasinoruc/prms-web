@@ -20,6 +20,9 @@ export interface EmployeeCreateRequest {
   phone?: string
   notes?: string
   warehouseId?: string | null
+  emergencyContactName?: string | null
+  emergencyContactPhone?: string | null
+  emergencyContactRelation?: string | null
 }
 
 export interface EmployeeUpdateRequest extends EmployeeCreateRequest {
@@ -48,6 +51,9 @@ interface ApiEmployee {
   notes?: string
   warehouseId?: string | null
   warehouseName?: string
+  emergencyContactName?: string | null
+  emergencyContactPhone?: string | null
+  emergencyContactRelation?: string | null
   createdDate?: string
 }
 
@@ -65,6 +71,9 @@ function transformEmployee(apiEmployee: ApiEmployee): Employee {
     notes: apiEmployee.notes,
     warehouseId: apiEmployee.warehouseId ?? null,
     warehouseName: apiEmployee.warehouseName,
+    emergencyContactName: apiEmployee.emergencyContactName ?? null,
+    emergencyContactPhone: apiEmployee.emergencyContactPhone ?? null,
+    emergencyContactRelation: apiEmployee.emergencyContactRelation ?? null,
   }
 }
 
@@ -136,6 +145,9 @@ export const employeeApi = {
       Phone: data.phone || "",
       Notes: data.notes || "",
       WarehouseId: data.warehouseId || null,
+      EmergencyContactName: data.emergencyContactName || null,
+      EmergencyContactPhone: data.emergencyContactPhone || null,
+      EmergencyContactRelation: data.emergencyContactRelation || null,
     }
     const response = await api.post<Employee>("/employee", requestBody)
     return response.data
@@ -152,6 +164,9 @@ export const employeeApi = {
       IsActive: data.isActive,
       Notes: data.notes || "",
       WarehouseId: data.warehouseId || null,
+      EmergencyContactName: data.emergencyContactName || null,
+      EmergencyContactPhone: data.emergencyContactPhone || null,
+      EmergencyContactRelation: data.emergencyContactRelation || null,
     }
     const response = await api.put<Employee>(`/employee/${id}`, requestBody)
     return response.data

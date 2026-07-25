@@ -44,6 +44,7 @@ const routeLabels: Record<string, string> = {
   usage: "Plan Kullanımı",
   subscription: "Abonelik",
   upgrade: "Plan Yükselt",
+  "sector-template": "Sektör Şablonu",
   // Geriye uyumluluk
   operations: "Operasyon",
   "category-attributes": "Kategori Özellikleri",

@@ -38,6 +38,9 @@ const employeeSchema = z.object({
   isActive: z.boolean().optional().default(true),
   notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").optional().default(""),
   warehouseId: z.string().nullable().optional(),
+  emergencyContactName: z.string().max(200).optional().default(""),
+  emergencyContactPhone: z.string().max(20).optional().default(""),
+  emergencyContactRelation: z.string().max(100).optional().default(""),
 })
 
 type EmployeeFormData = z.infer<typeof employeeSchema>
@@ -58,6 +61,9 @@ const defaultValues: EmployeeFormData = {
   isActive: true,
   notes: "",
   warehouseId: null,
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+  emergencyContactRelation: "",
 }
 
 export function EmployeeDialog({
@@ -82,6 +88,9 @@ export function EmployeeDialog({
     isActive: editEmployee?.isActive ?? employee.isActive,
     notes: editEmployee?.notes ?? "",
     warehouseId: editEmployee?.warehouseId ?? null,
+    emergencyContactName: editEmployee?.emergencyContactName ?? "",
+    emergencyContactPhone: editEmployee?.emergencyContactPhone ?? "",
+    emergencyContactRelation: editEmployee?.emergencyContactRelation ?? "",
   } : defaultValues
 
   const {
@@ -214,6 +223,33 @@ export function EmployeeDialog({
                 Bir depoya atanan personel, &quot;depodan gönderim&quot; sevkiyatlarında
                 o deponun personeli olarak listelenir. Boş bırakılırsa tüm depolarda görünür.
               </p>
+            </div>
+
+            <div className="col-span-2 pt-2">
+              <Separator className="mb-3" />
+              <p className="text-sm font-medium mb-1">Acil Durum İletişim</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Acil bir durumda ulaşılacak kişi bilgileri (opsiyonel).
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  label="Ad Soyad"
+                  placeholder="Yakının adı"
+                  {...register("emergencyContactName")}
+                />
+                <FormField
+                  label="Telefon"
+                  placeholder="0532 123 45 67"
+                  {...register("emergencyContactPhone")}
+                />
+                <div className="col-span-2">
+                  <FormField
+                    label="Yakınlık"
+                    placeholder="Eş, Anne, Kardeş..."
+                    {...register("emergencyContactRelation")}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="col-span-2">

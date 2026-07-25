@@ -34,6 +34,7 @@ const CertificatesPage = lazy(() => import("@/features/certificates"))
 const RolesPage = lazy(() => import("@/features/roles"))
 const UsersPage = lazy(() => import("@/features/users"))
 const CompanySettingsPage = lazy(() => import("@/features/company"))
+const SectorTemplateSettingsPage = lazy(() => import("@/features/onboarding"))
 const UsagePage = lazy(() => import("@/features/usage"))
 const SubscriptionPage = lazy(() => import("@/features/subscription"))
 const SubscriptionUpgradePage = lazy(() => import("@/features/subscription/upgrade"))
@@ -427,6 +428,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <ProfilePage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "settings/sector-template",
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <SectorTemplateSettingsPage />
           </Suspense>
         ),
       },

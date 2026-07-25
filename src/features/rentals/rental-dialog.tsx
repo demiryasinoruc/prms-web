@@ -634,6 +634,14 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
   const { data: companySettings } = useCompanySettings()
   const { data: warehouses } = useWarehouseSelect()
   const allowHourlyRental = companySettings?.allowHourlyRental ?? false
+  // Saatlik kiralama kapalıyken kullanılacak sabit gün başlangıç/bitiş saati ("HH:mm").
+  // Firma ayarında tanımlıysa onu, değilse gün başı (00:00) / gün sonu (23:59) kullan.
+  const fixedStartSuffix = companySettings?.defaultRentalStartTime
+    ? `T${companySettings.defaultRentalStartTime}:00`
+    : "T00:00:00"
+  const fixedEndSuffix = companySettings?.defaultRentalEndTime
+    ? `T${companySettings.defaultRentalEndTime}:00`
+    : "T23:59:59"
   // AvailabilityCheckMode: 1 = Warn, 2 = Block. Default Warn.
   const isWarnMode = (companySettings?.availabilityCheckMode ?? 1) === 1
   // Farklı depolardan gelen kalemler için sevkiyat zorunlu mu?
@@ -937,10 +945,10 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     const endHasTime = /T\d{2}:\d{2}/.test(watchedPlannedEndDate)
     const defaultStartDate = startHasTime
       ? `${watchedPlannedStartDate}:00`
-      : `${watchedPlannedStartDate}T00:00:00`
+      : `${watchedPlannedStartDate}${fixedStartSuffix}`
     const defaultEndDate = endHasTime
       ? `${watchedPlannedEndDate}:00`
-      : `${watchedPlannedEndDate}T23:59:59`
+      : `${watchedPlannedEndDate}${fixedEndSuffix}`
 
     const items = (watchedItems || [])
       .filter((item) => !!item?.productId)
@@ -1118,8 +1126,8 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
     if (!startStr || !endStr) return null
     const hasTimeStart = /T\d{2}:\d{2}/.test(startStr)
     const hasTimeEnd = /T\d{2}:\d{2}/.test(endStr)
-    const startIso = hasTimeStart ? startStr : `${startStr}T00:00:00`
-    const endIso = hasTimeEnd ? endStr : `${endStr}T23:59:59`
+    const startIso = hasTimeStart ? startStr : `${startStr}${fixedStartSuffix}`
+    const endIso = hasTimeEnd ? endStr : `${endStr}${fixedEndSuffix}`
     const start = new Date(startIso)
     const end = new Date(endIso)
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
@@ -1885,6 +1893,13 @@ export function RentalDialog({ open, onOpenChange, editId }: RentalDialogProps) 
 
       const payload = {
         ...data,
+        // Saatlik kapalıyken tarih-only değerlere firma sabit saatini uygula
+        plannedStartDate: /T\d{2}:\d{2}/.test(data.plannedStartDate)
+          ? data.plannedStartDate
+          : `${data.plannedStartDate}${fixedStartSuffix}`,
+        plannedEndDate: /T\d{2}:\d{2}/.test(data.plannedEndDate)
+          ? data.plannedEndDate
+          : `${data.plannedEndDate}${fixedEndSuffix}`,
         deliveryAddressId: data.deliveryAddressId || null,
         sourceWarehouseId: data.sourceWarehouseId || null,
         deliveryVehicleId: data.deliveryVehicleId || null,
