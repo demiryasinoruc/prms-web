@@ -22,6 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
 import { StatusSwitchField } from "@/components/shared/status-switch-field"
 import { FormField } from "@/components/shared/form-field"
 import { FormSelectField } from "@/components/shared/form-select-field"
@@ -51,6 +53,25 @@ const customerSchema = z.object({
   email: z.string().min(1, "E-posta adresi zorunludur").email("Geçerli bir e-posta adresi giriniz").max(256, "E-posta en fazla 256 karakter olabilir"),
   notes: z.string().max(2000, "Not en fazla 2000 karakter olabilir").optional().default(""),
   isActive: z.boolean().default(true),
+  isForeigner: z.boolean().default(false),
+  nationality: z.string().max(100, "Uyruk en fazla 100 karakter olabilir").optional().default(""),
+  passportNumber: z.string().max(50, "Pasaport no en fazla 50 karakter olabilir").optional().default(""),
+  customFields: z.array(
+    z.object({
+      key: z.string().max(100, "Alan adı en fazla 100 karakter olabilir"),
+      value: z.string().max(500, "Değer en fazla 500 karakter olabilir"),
+    })
+  ).default([]),
+  contacts: z.array(
+    z.object({
+      id: z.string().optional(),
+      name: z.string().min(1, "Ad zorunlu").max(200, "Ad en fazla 200 karakter olabilir"),
+      position: z.string().max(200).optional().default(""),
+      phone: z.string().max(20).optional().default(""),
+      email: z.string().max(256).optional().default(""),
+      isDefault: z.boolean().default(false),
+    })
+  ).default([]),
   addresses: z.array(addressSchema),
 })
 
@@ -72,6 +93,11 @@ const defaultValues: CustomerFormData = {
   email: "",
   notes: "",
   isActive: true,
+  isForeigner: false,
+  nationality: "",
+  passportNumber: "",
+  customFields: [],
+  contacts: [],
   addresses: [],
 }
 
@@ -97,6 +123,20 @@ export function CustomerDialog({
     email: editCustomer.email || "",
     notes: editCustomer.notes || "",
     isActive: editCustomer.isActive ?? true,
+    isForeigner: editCustomer.isForeigner ?? false,
+    nationality: editCustomer.nationality || "",
+    passportNumber: editCustomer.passportNumber || "",
+    customFields:
+      editCustomer.customFields?.map((f) => ({ key: f.key, value: f.value })) || [],
+    contacts:
+      editCustomer.contacts?.map((c) => ({
+        id: c.id,
+        name: c.name,
+        position: c.position || "",
+        phone: c.phone || "",
+        email: c.email || "",
+        isDefault: c.isDefault,
+      })) || [],
     addresses:
       editCustomer.addresses?.map((addr) => ({
         id: addr.id,
@@ -120,6 +160,18 @@ export function CustomerDialog({
     email: customer.email || "",
     notes: customer.notes || "",
     isActive: customer.isActive ?? true,
+    isForeigner: customer.isForeigner ?? false,
+    nationality: customer.nationality || "",
+    passportNumber: customer.passportNumber || "",
+    customFields: customer.customFields?.map((f) => ({ key: f.key, value: f.value })) || [],
+    contacts: customer.contacts?.map((c) => ({
+      id: c.id,
+      name: c.name,
+      position: c.position || "",
+      phone: c.phone || "",
+      email: c.email || "",
+      isDefault: c.isDefault,
+    })) || [],
     addresses: [],
   } : defaultValues
 
@@ -136,17 +188,22 @@ export function CustomerDialog({
 
   // Sekme bazlı navigasyon — tab sırasına göre ilk hatalı sekmeye geç
   const [activeTab, setActiveTab] = useState("info")
-  const tabsOrder = ["info", "addresses"]
+  const tabsOrder = ["info", "contacts", "custom-fields", "addresses"]
   const fieldToTab: Record<string, string> = {
     name: "info",
     customerType: "info",
     identityNumber: "info",
     taxNumber: "info",
     taxOffice: "info",
+    nationality: "info",
+    passportNumber: "info",
+    isForeigner: "info",
     phone: "info",
     email: "info",
     notes: "info",
     isActive: "info",
+    customFields: "custom-fields",
+    contacts: "contacts",
     addresses: "addresses",
   }
   const onInvalid = (formErrors: typeof errors) => {
@@ -165,7 +222,26 @@ export function CustomerDialog({
     name: "addresses",
   })
 
+  const {
+    fields: customFieldsArr,
+    append: appendCustomField,
+    remove: removeCustomField,
+  } = useFieldArray({
+    control,
+    name: "customFields",
+  })
+
+  const {
+    fields: contactFields,
+    append: appendContact,
+    remove: removeContact,
+  } = useFieldArray({
+    control,
+    name: "contacts",
+  })
+
   const customerType = watch("customerType")
+  const isForeigner = watch("isForeigner")
 
   const onSubmit = async (data: CustomerFormData) => {
     try {
@@ -217,8 +293,14 @@ export function CustomerDialog({
 
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="info">Genel Bilgiler</TabsTrigger>
+              <TabsTrigger value="contacts">
+                İletişim Kişileri ({contactFields.length})
+              </TabsTrigger>
+              <TabsTrigger value="custom-fields">
+                Özel Alanlar ({customFieldsArr.length})
+              </TabsTrigger>
               <TabsTrigger value="addresses">
                 Adresler ({fields.length})
               </TabsTrigger>
@@ -247,11 +329,46 @@ export function CustomerDialog({
                 />
 
                 {customerType === CustomerType.Individual ? (
-                  <FormField
-                    label="TC Kimlik No"
-                    placeholder="11 haneli TC no"
-                    {...register("identityNumber")}
-                  />
+                  <>
+                    <div className="col-span-2 flex items-center gap-3 rounded-md border p-3">
+                      <Controller
+                        control={control}
+                        name="isForeigner"
+                        render={({ field }) => (
+                          <Switch
+                            id="isForeigner"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        )}
+                      />
+                      <Label htmlFor="isForeigner" className="cursor-pointer">
+                        Yabancı uyruklu müşteri
+                      </Label>
+                    </div>
+                    {isForeigner ? (
+                      <>
+                        <FormField
+                          label="Uyruk"
+                          placeholder="Örn. Almanya"
+                          {...register("nationality")}
+                          error={errors.nationality?.message}
+                        />
+                        <FormField
+                          label="Pasaport No"
+                          placeholder="Pasaport numarası"
+                          {...register("passportNumber")}
+                          error={errors.passportNumber?.message}
+                        />
+                      </>
+                    ) : (
+                      <FormField
+                        label="TC Kimlik No"
+                        placeholder="11 haneli TC no"
+                        {...register("identityNumber")}
+                      />
+                    )}
+                  </>
                 ) : (
                   <>
                     <FormField
@@ -309,6 +426,140 @@ export function CustomerDialog({
                   </div>
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="contacts" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Müşteri firmasındaki yetkili/iletişim kişileri
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    appendContact({
+                      name: "",
+                      position: "",
+                      phone: "",
+                      email: "",
+                      isDefault: contactFields.length === 0,
+                    })
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Kişi Ekle
+                </Button>
+              </div>
+
+              {contactFields.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                  <p>Henüz iletişim kişisi eklenmemiş</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {contactFields.map((field, index) => (
+                    <div key={field.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">Kişi {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => removeContact(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormField
+                          label="Ad Soyad *"
+                          placeholder="Yetkili adı"
+                          {...register(`contacts.${index}.name`)}
+                          error={errors.contacts?.[index]?.name?.message}
+                        />
+                        <FormField
+                          label="Görev / Ünvan"
+                          placeholder="Satın Alma Müdürü"
+                          {...register(`contacts.${index}.position`)}
+                        />
+                        <FormField
+                          label="Telefon"
+                          placeholder="0555 555 55 55"
+                          {...register(`contacts.${index}.phone`)}
+                        />
+                        <FormField
+                          label="E-posta"
+                          placeholder="kisi@firma.com"
+                          {...register(`contacts.${index}.email`)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="custom-fields" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Müşteriye özel serbest alanlar (ör. "Referans", "Sözleşme No")
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendCustomField({ key: "", value: "" })}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Alan Ekle
+                </Button>
+              </div>
+
+              {customFieldsArr.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                  <p>Henüz özel alan eklenmemiş</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {customFieldsArr.map((field, index) => (
+                    <div key={field.id} className="flex items-start gap-2">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Alan adı (ör. Referans)"
+                          {...register(`customFields.${index}.key`)}
+                        />
+                        {errors.customFields?.[index]?.key?.message && (
+                          <p className="mt-1 text-xs text-destructive">
+                            {errors.customFields[index]?.key?.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Değer"
+                          {...register(`customFields.${index}.value`)}
+                        />
+                        {errors.customFields?.[index]?.value?.message && (
+                          <p className="mt-1 text-xs text-destructive">
+                            {errors.customFields[index]?.value?.message}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-destructive shrink-0"
+                        onClick={() => removeCustomField(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="addresses" className="space-y-4 mt-4">

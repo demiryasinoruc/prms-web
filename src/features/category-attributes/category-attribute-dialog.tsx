@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -225,6 +226,47 @@ export function CategoryAttributeDialog({
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Bilgilendirme: alanlar ne işe yarar */}
+            <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1.5">
+              <div className="flex items-center gap-1.5 font-medium text-foreground">
+                <Info className="h-3.5 w-3.5" /> Bu alanlar ne işe yarar?
+              </div>
+              <p>
+                <strong>Özellik Adı (Kod):</strong> Sistemin kullandığı benzersiz, boşluksuz kod
+                (ör. <code>renk</code>). Sonradan değiştirilemez.
+              </p>
+              <p>
+                <strong>Görünen Ad:</strong> Formlarda kullanıcıya gösterilen etiket (ör. "Renk").
+              </p>
+              <p>
+                <strong>Veri Tipi:</strong> Değerin türü — metin, sayı, tarih, Evet/Hayır veya seçim
+                listesi. "Seçim / Çoklu Seçim" seçilirse aşağıda <strong>Seçenekler</strong> listesi çıkar.
+              </p>
+              <p>
+                <strong>Varyant Özelliği:</strong> Bu özellikten ürün varyantları (ör. Beden: S/M/L)
+                üretilsin mi? Yalnızca "Seçim" tipinde kullanılabilir.
+              </p>
+              <p>
+                <strong>Seçenekler:</strong> Yalnızca "Seçim / Çoklu Seçim" tipinde görünür;
+                kullanıcıya sunulacak hazır değerleri (ör. Kırmızı, Mavi) buradan eklersiniz.
+              </p>
+              <p>
+                <strong>Placeholder:</strong> Alan boşken içinde gösterilen ipucu metni.{" "}
+                <strong>Varsayılan Değer:</strong> Yeni üründe otomatik dolu gelecek değer.{" "}
+                <strong>Yardım Metni:</strong> Alanın altında görünen açıklama.
+              </p>
+              <p>
+                <strong>Miras:</strong> Bu özellik alt kategorilere de otomatik uygulansın.
+              </p>
+              <p>
+                <strong>Listede / Filtrede Göster · Aranabilir:</strong> Özelliğin ürün listesinde
+                kolon olarak, filtre panelinde ölçüt olarak ve aramada dikkate alınıp alınmayacağı.
+              </p>
+              <p>
+                <strong>Zorunlu:</strong> Ürün eklenirken bu alanın doldurulması zorunlu olsun.
+              </p>
+            </div>
+
             {/* Kategori */}
             <Controller
               control={control}

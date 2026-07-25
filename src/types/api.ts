@@ -93,7 +93,26 @@ export interface Customer {
   email?: string
   notes?: string
   isActive: boolean
+  isForeigner?: boolean
+  nationality?: string
+  passportNumber?: string
+  customFields?: CustomerCustomField[]
+  contacts?: CustomerContactInfo[]
   addresses?: CustomerAddress[]
+}
+
+export interface CustomerCustomField {
+  key: string
+  value: string
+}
+
+export interface CustomerContactInfo {
+  id?: string
+  name: string
+  position?: string
+  phone?: string
+  email?: string
+  isDefault: boolean
 }
 
 export enum CustomerType {
@@ -180,6 +199,9 @@ export interface Employee {
   isActive: boolean
   warehouseId?: string | null
   warehouseName?: string
+  emergencyContactName?: string | null
+  emergencyContactPhone?: string | null
+  emergencyContactRelation?: string | null
 }
 
 export enum Gender {

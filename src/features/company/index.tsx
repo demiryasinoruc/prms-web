@@ -42,6 +42,13 @@ const companySchema = z.object({
   defaultVatRate: z.coerce.number().min(0, "0'dan küçük olamaz").max(100, "100'den büyük olamaz"),
   pricesIncludeVat: z.boolean(),
   requireShipmentForMultiWarehouseRental: z.boolean(),
+  defaultRentalStartTime: z.string().optional().default(""),
+  defaultRentalEndTime: z.string().optional().default(""),
+  address: z.string().max(500, "Adres en fazla 500 karakter olabilir").optional().default(""),
+  taxOffice: z.string().max(200).optional().default(""),
+  taxNumber: z.string().max(50).optional().default(""),
+  iban: z.string().max(50).optional().default(""),
+  cariCode: z.string().max(100).optional().default(""),
 })
 
 type CompanyFormData = z.infer<typeof companySchema>
@@ -69,6 +76,13 @@ export default function CompanySettingsPage() {
     defaultVatRate: 20,
     pricesIncludeVat: false,
     requireShipmentForMultiWarehouseRental: false,
+    defaultRentalStartTime: "",
+    defaultRentalEndTime: "",
+    address: "",
+    taxOffice: "",
+    taxNumber: "",
+    iban: "",
+    cariCode: "",
   }
 
   const formValues: CompanyFormData = companyForEdit ? {
@@ -86,17 +100,27 @@ export default function CompanySettingsPage() {
     defaultVatRate: companyForEdit.defaultVatRate,
     pricesIncludeVat: companyForEdit.pricesIncludeVat,
     requireShipmentForMultiWarehouseRental: companyForEdit.requireShipmentForMultiWarehouseRental,
+    defaultRentalStartTime: companyForEdit.defaultRentalStartTime || "",
+    defaultRentalEndTime: companyForEdit.defaultRentalEndTime || "",
+    address: companyForEdit.address || "",
+    taxOffice: companyForEdit.taxOffice || "",
+    taxNumber: companyForEdit.taxNumber || "",
+    iban: companyForEdit.iban || "",
+    cariCode: companyForEdit.cariCode || "",
   } : defaultValues
 
   const {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors, isDirty },
   } = useForm<CompanyFormData>({
     resolver: formResolver<CompanyFormData>(companySchema),
     values: formValues,
   })
+
+  const allowHourlyRental = watch("allowHourlyRental")
 
   const onSubmit = async (data: CompanyFormData) => {
     if (!company?.id) return
@@ -119,6 +143,13 @@ export default function CompanySettingsPage() {
           defaultVatRate: data.defaultVatRate,
           pricesIncludeVat: data.pricesIncludeVat,
           requireShipmentForMultiWarehouseRental: data.requireShipmentForMultiWarehouseRental,
+          defaultRentalStartTime: data.defaultRentalStartTime?.trim() || null,
+          defaultRentalEndTime: data.defaultRentalEndTime?.trim() || null,
+          address: data.address?.trim() || null,
+          taxOffice: data.taxOffice?.trim() || null,
+          taxNumber: data.taxNumber?.trim() || null,
+          iban: data.iban?.trim() || null,
+          cariCode: data.cariCode?.trim() || null,
         },
       })
       toast.success("Firma bilgileri güncellendi")
@@ -197,6 +228,36 @@ export default function CompanySettingsPage() {
                 {errors.phone && (
                   <p className="text-sm text-destructive">{errors.phone.message}</p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Adres</Label>
+                <Input placeholder="Firma adresi" {...register("address")} disabled={!canManage} />
+                {errors.address && (
+                  <p className="text-sm text-destructive">{errors.address.message}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Vergi Dairesi</Label>
+                  <Input placeholder="Vergi dairesi" {...register("taxOffice")} disabled={!canManage} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Vergi No</Label>
+                  <Input placeholder="Vergi / TCKN" {...register("taxNumber")} disabled={!canManage} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>IBAN</Label>
+                  <Input placeholder="TR.." {...register("iban")} disabled={!canManage} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Genel Cari</Label>
+                  <Input placeholder="Cari kodu / bilgisi" {...register("cariCode")} disabled={!canManage} />
+                </div>
               </div>
 
               {/* Ayarlar Bölümü */}
@@ -332,6 +393,37 @@ export default function CompanySettingsPage() {
                       )}
                     />
                   </div>
+
+                  {!allowHourlyRental && (
+                    <div className="rounded-lg border p-4 space-y-3">
+                      <div className="space-y-0.5">
+                        <Label>Sabit Gün Başlangıç / Bitiş Saati</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Saatlik kiralama kapalıyken günlük kiralamaların başlangıç ve bitişinde
+                          kullanılacak sabit saatler. Boş bırakılırsa gün başı (00:00) ve gün sonu
+                          (23:59) kullanılır.
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Başlangıç Saati</Label>
+                          <Input
+                            type="time"
+                            {...register("defaultRentalStartTime")}
+                            disabled={!canManage}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Bitiş Saati</Label>
+                          <Input
+                            type="time"
+                            {...register("defaultRentalEndTime")}
+                            disabled={!canManage}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">

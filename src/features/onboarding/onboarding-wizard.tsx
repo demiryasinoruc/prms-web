@@ -411,9 +411,10 @@ function ContentPickerStep({
   return (
     <ScrollArea className="h-[55vh] pr-3">
       <p className="text-xs text-muted-foreground mb-3 bg-muted/30 border rounded px-2 py-2">
-        Listede olmayan kategori, marka veya modeli daha sonra <strong>Kategoriler</strong> ve{" "}
-        <strong>Ürünler</strong> sayfalarından ekleyebilirsiniz. Aynı isimle önceden eklenenler
-        atlanır.
+        Bu liste yalnızca hızlı başlangıç içindir. Listede olmayan kategori, ek hizmet, marka veya
+        modeli daha sonra <strong>Kategoriler</strong>, <strong>Ek Hizmetler</strong> ve{" "}
+        <strong>Ürünler</strong> sayfalarından istediğiniz zaman ekleyebilirsiniz. Aynı isimle
+        önceden eklenenler atlanır.
       </p>
 
       <Accordion type="multiple" defaultValue={["categories", "services", "products"]} className="space-y-2">

@@ -25,7 +25,21 @@ export interface CustomerCreateRequest {
   email?: string
   notes?: string
   isActive: boolean
+  isForeigner?: boolean
+  nationality?: string
+  passportNumber?: string
+  customFields?: { key: string; value: string }[]
+  contacts?: CustomerContactRequest[]
   addresses?: CustomerAddressRequest[]
+}
+
+export interface CustomerContactRequest {
+  id?: string
+  name: string
+  position?: string
+  phone?: string
+  email?: string
+  isDefault: boolean
 }
 
 export interface CustomerAddressRequest {
@@ -80,6 +94,18 @@ interface ApiCustomer {
   taxOffice: string
   notes?: string
   isActive?: boolean
+  isForeigner?: boolean
+  nationality?: string
+  passportNumber?: string
+  customFields?: { key: string; value: string }[]
+  contacts?: {
+    id: string
+    name: string
+    position?: string
+    phone?: string
+    email?: string
+    isDefault: boolean
+  }[]
   addresses?: ApiCustomerAddress[]
 }
 
@@ -113,6 +139,18 @@ function transformCustomer(apiCustomer: ApiCustomer): Customer {
     taxOffice: apiCustomer.taxOffice,
     notes: apiCustomer.notes,
     isActive: apiCustomer.isActive ?? true,
+    isForeigner: apiCustomer.isForeigner ?? false,
+    nationality: apiCustomer.nationality,
+    passportNumber: apiCustomer.passportNumber,
+    customFields: apiCustomer.customFields ?? [],
+    contacts: apiCustomer.contacts?.map((c) => ({
+      id: c.id,
+      name: c.name,
+      position: c.position,
+      phone: c.phone,
+      email: c.email,
+      isDefault: c.isDefault,
+    })) ?? [],
     addresses: apiCustomer.addresses?.map(transformAddress) || [],
   }
 }
@@ -178,6 +216,22 @@ export const customerApi = {
       TaxOffice: data.taxOffice || "",
       Notes: data.notes || "",
       IsActive: data.isActive,
+      IsForeigner: data.isForeigner ?? false,
+      Nationality: data.nationality || null,
+      PassportNumber: data.passportNumber || null,
+      CustomFields: (data.customFields || [])
+        .filter((f) => f.key.trim())
+        .map((f) => ({ Key: f.key.trim(), Value: f.value || "" })),
+      Contacts: (data.contacts || [])
+        .filter((c) => c.name.trim())
+        .map((c) => ({
+          Id: c.id || null,
+          Name: c.name.trim(),
+          Position: c.position || "",
+          Phone: c.phone || "",
+          Email: c.email || "",
+          IsDefault: c.isDefault,
+        })),
       Addresses: data.addresses?.map((addr) => ({
         Id: addr.id || null,
         Type: addr.addressType,
@@ -207,6 +261,22 @@ export const customerApi = {
       TaxOffice: data.taxOffice || "",
       Notes: data.notes || "",
       IsActive: data.isActive,
+      IsForeigner: data.isForeigner ?? false,
+      Nationality: data.nationality || null,
+      PassportNumber: data.passportNumber || null,
+      CustomFields: (data.customFields || [])
+        .filter((f) => f.key.trim())
+        .map((f) => ({ Key: f.key.trim(), Value: f.value || "" })),
+      Contacts: (data.contacts || [])
+        .filter((c) => c.name.trim())
+        .map((c) => ({
+          Id: c.id || null,
+          Name: c.name.trim(),
+          Position: c.position || "",
+          Phone: c.phone || "",
+          Email: c.email || "",
+          IsDefault: c.isDefault,
+        })),
       Addresses: data.addresses?.map((addr) => ({
         Id: addr.id || null,
         Type: addr.addressType,

@@ -28,6 +28,7 @@ import {
   SquareStack,
   MailPlus,
   Gauge,
+  Sparkles,
   Loader2,
   type LucideIcon,
 } from "lucide-react"
@@ -96,6 +97,7 @@ const iconMap: Record<string, LucideIcon> = {
   SquareStack,
   MailPlus,
   Gauge,
+  Sparkles,
 }
 
 // Fallback icon
